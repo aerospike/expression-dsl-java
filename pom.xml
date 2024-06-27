@@ -14,6 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <aerospike-client-jdk21>8.1.1</aerospike-client-jdk21>
         <antlr>4.13.1</antlr>
+        <junit-jupiter>5.8.1</junit-jupiter>
     </properties>
 
     <dependencies>
@@ -26,6 +27,12 @@
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
             <version>${antlr}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit-jupiter}</version>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
