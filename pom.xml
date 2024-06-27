@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.aerospike</groupId>
+    <artifactId>expression-dsl-java</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <aerospike-client-jdk21>8.1.1</aerospike-client-jdk21>
+        <antlr>4.13.1</antlr>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.aerospike</groupId>
+            <artifactId>aerospike-client-jdk21</artifactId>
+            <version>${aerospike-client-jdk21}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>${antlr}</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <sourceDirectory>src/main/java</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <version>${antlr}</version>
+                <executions>
+                    <execution>
+                        <id>antlr</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>src/main/antlr4/com/aerospike</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-sources/antlr4/com/aerospike</outputDirectory>
+                            <listener>false</listener>
+                            <arguments>
+                                <argument>-visitor</argument>
+                                <argument>-no-listener</argument>
+                            </arguments>
+                            <includes>
+                                <include>Condition.g4</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    
+</project>
