@@ -3,6 +3,8 @@ package com.aerospike;
 import com.aerospike.client.exp.Expression;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 public class RecordAndBinExpressionsTests {
 
     @Test
@@ -13,6 +15,14 @@ public class RecordAndBinExpressionsTests {
     @Test
     void stringBinEquals() {
         translateAndPrint("$.strBin == \"yes\"");
+        translateAndPrint("$.strBin == 'yes'");
+    }
+
+    @Test
+    void stringBinEqualsNegativeTest() {
+        assertThatThrownBy(() -> translateAndPrint("$.strBin == yes"))
+                .isInstanceOf(NumberFormatException.class)
+                .hasMessage("For input string: \"yes\"");
     }
 
     @Test
