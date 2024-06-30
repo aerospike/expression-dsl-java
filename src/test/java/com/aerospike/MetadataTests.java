@@ -1,4 +1,5 @@
-import com.aerospike.ConditionTranslator;
+package com.aerospike;
+
 import com.aerospike.client.exp.Expression;
 import org.junit.jupiter.api.Test;
 
