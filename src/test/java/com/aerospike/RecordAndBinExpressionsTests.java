@@ -2,6 +2,7 @@ package com.aerospike;
 
 import com.aerospike.client.exp.Exp;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
 import static com.aerospike.TestUtils.translateAndPrint;
 import static com.aerospike.TestUtils.translatePrintAndCompare;
@@ -55,6 +56,10 @@ public class RecordAndBinExpressionsTests {
                 )
         );
         translatePrintAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", testExp3);
+
+        // check that parentheses make difference
+        assertThatThrownBy(() -> translatePrintAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", testExp2))
+                .isInstanceOf(AssertionFailedError.class);
     }
 
     @Test
