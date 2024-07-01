@@ -98,6 +98,32 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
     public Expression visitOperandExpression(ConditionParser.OperandExpressionContext ctx) {
         return visit(ctx.operand());
     }
+
+
+    /**
+     * Aggregates the results of visiting multiple children of a node. After
+     * either all children are visited or {@link #shouldVisitNextChild} returns
+     * {@code false}, the aggregate value is returned as the result of
+     * {@link #visitChildren}.
+     *
+     * <p>The default implementation returns {@code nextResult}, meaning
+     * {@link #visitChildren} will return the result of the last child visited
+     * (or return the initial value if the node has no children).</p>
+     *
+     * @param aggregate The previous aggregate value. In the default
+     * implementation, the aggregate value is initialized to
+     * {@link #defaultResult}, which is passed as the {@code aggregate} argument
+     * to this method after the first child node is visited.
+     * @param nextResult The result of the immediately preceeding call to visit
+     * a child node.
+     *
+     * @return The updated aggregate result.
+     */
+    @Override
+    protected Expression aggregateResult(Expression aggregate, Expression nextResult) {
+        return nextResult == null ? aggregate : nextResult;
+    }
+
 //
 //    @Override
 //    public Expression visitFunctionCall(ConditionParser.FunctionCallContext ctx) {

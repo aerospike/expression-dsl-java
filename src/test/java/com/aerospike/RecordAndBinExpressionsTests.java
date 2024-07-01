@@ -10,15 +10,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class RecordAndBinExpressionsTests {
 
     @Test
-    void intBinGT() {
-        translatePrintAndCompare("$.intBin1 > 10", Exp.gt(Exp.intBin("intBin1"), Exp.val(10)));
+    void binGT() {
+        translatePrintAndCompare("$.intBin1 > 100", Exp.gt(Exp.intBin("intBin1"), Exp.val(100)));
         translatePrintAndCompare("$.stringBin1 > 'text'", Exp.gt(Exp.stringBin("stringBin1"), Exp.val("text")));
         translatePrintAndCompare("$.stringBin1 > \"text\"", Exp.gt(Exp.stringBin("stringBin1"), Exp.val("text")));
 
     }
 
     @Test
-    void stringBinEquals() {
+    void binEquals() {
+        translatePrintAndCompare("$.intBin1 == 100", Exp.eq(Exp.intBin("intBin1"), Exp.val(100)));
         translatePrintAndCompare("$.strBin == \"yes\"", Exp.eq(Exp.stringBin("strBin"), Exp.val("yes")));
         translatePrintAndCompare("$.strBin == 'yes'", Exp.eq(Exp.stringBin("strBin"), Exp.val("yes")));
     }
@@ -31,14 +32,33 @@ public class RecordAndBinExpressionsTests {
     }
 
     @Test
-    void testAnd_SimpleBinComparison() {
-        Exp testExp = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+    void logicalOperators_SimpleBinComparison() {
+        Exp testExp1 = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
-        translatePrintAndCompare("$.intBin1 > 100 and $.intBin2 > 100", testExp);
+        translatePrintAndCompare("$.intBin1 > 100 and $.intBin2 > 100", testExp1);
+
+        Exp testExp2 = Exp.or(
+                Exp.and(
+                        Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
+                ),
+                Exp.lt(Exp.intBin("intBin3"), Exp.val(100))
+        );
+        translatePrintAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 < 100", testExp2); // TODO: what should be the default behaviour with no parentheses?
+        translatePrintAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 < 100", testExp2);
+
+        Exp testExp3 = Exp.and(
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                Exp.or(
+                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100)),
+                        Exp.lt(Exp.intBin("intBin3"), Exp.val(100))
+                )
+        );
+        translatePrintAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", testExp3);
     }
 
     @Test
-    void testAnd_functionCalls() {
+    void logicalOperators_functionCalls() {
         translateAndPrint("$.a.exists() and $.b.exists()");
     }
 }

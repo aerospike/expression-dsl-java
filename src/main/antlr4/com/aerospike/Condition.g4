@@ -18,7 +18,7 @@ expression
     | operand                        # OperandExpression
     ;
 
-operand: NUMBER | quotedString | path | functionCall;
+operand: NUMBER | quotedString | path | functionCall | '(' expression ')';
 
 NUMBER  : [0-9]+;
 
@@ -33,3 +33,5 @@ functionCall : '$.' functionName;
 functionName : ('deviceSize' | 'ttl' | 'exists')  '()';
 
 WS  : [ \t\r\n]+ -> skip;
+
+SKIP  : ['(' ')']+ -> skip;
