@@ -33,5 +33,3 @@ functionCall : '$.' functionName;
 functionName : ('deviceSize' | 'ttl' | 'exists')  '()';
 
 WS  : [ \t\r\n]+ -> skip;
-
-SKIP  : ['(' ')']+ -> skip;
