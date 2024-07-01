@@ -57,7 +57,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
 
         // Handle Record Metadata expressions
         if (isMetadataExpression(leftOperandText)) {
-            return operator.apply(visitFunctionName(leftOperandText.replace("$.", "")), right);
+            return operator.apply(visitFunctionName(extractMetadataExpression(leftOperandText)), right);
         }
         // Handle Bin expressions
         return operator.apply(Exp.bin(leftOperandText.replace("$.", ""), binType), right);
@@ -113,17 +113,17 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
 
     private Exp visitFunctionName(String functionName) {
         return switch (functionName) {
-            case "deviceSize()" -> Exp.deviceSize();
-            case "memorySize()" -> Exp.memorySize();
-            case "recordSize()" -> Exp.recordSize();
-            //case "digestModulo()" -> Exp.digestModulo(); // TODO: Support param
-            case "isTombstone()" -> Exp.isTombstone();
-            case "keyExists()" -> Exp.keyExists();
-            case "lastUpdate()" -> Exp.lastUpdate();
-            case "sinceUpdate()" -> Exp.sinceUpdate();
-            case "setName()" -> Exp.setName();
-            case "ttl()" -> Exp.ttl();
-            case "voidTime()" -> Exp.voidTime();
+            case "deviceSize" -> Exp.deviceSize();
+            case "memorySize" -> Exp.memorySize();
+            case "recordSize" -> Exp.recordSize();
+            //case "digestModulo" -> Exp.digestModulo(); // TODO: Support param
+            case "isTombstone" -> Exp.isTombstone();
+            case "keyExists" -> Exp.keyExists();
+            case "lastUpdate" -> Exp.lastUpdate();
+            case "sinceUpdate" -> Exp.sinceUpdate();
+            case "setName" -> Exp.setName();
+            case "ttl" -> Exp.ttl();
+            case "voidTime" -> Exp.voidTime();
             // TODO: exists doesn't belong here, this is metadata function name?
             case "exists" -> Exp.binExists("test"); // TODO: get the preceding path
             default -> throw new IllegalArgumentException("Unknown function: " + functionName);
@@ -163,6 +163,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
             return false;
         }
         return operand.contains("(") && operand.contains(")");
+    }
+
+    private String extractMetadataExpression(String operand) {
+        int indexOfParenthesis = operand.indexOf("(");
+        if (indexOfParenthesis != -1) {
+            operand = operand.substring(0, indexOfParenthesis);
+        }
+        return operand.replace("$.", "");
     }
 
 //
