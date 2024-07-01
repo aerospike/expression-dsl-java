@@ -24,7 +24,7 @@ NUMBER  : [0-9]+;
 
 quotedString : ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
-path : '$.' NAME_IDENTIFIER ('.' NAME_IDENTIFIER)*? ('.' functionName)*?;
+path : '$.' NAME_IDENTIFIER ('.' NAME_IDENTIFIER)*? ('.' functionName)?;
 
 NAME_IDENTIFIER : [a-zA-Z0-9_]+;
 
