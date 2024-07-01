@@ -10,6 +10,7 @@ public class RecordAndBinExpressionsTests {
     @Test
     void intBinGT() {
         translateAndPrint("$.intBin1 > 10");
+        translateAndPrint("$.intBin1 > 'text'");
     }
 
     @Test
@@ -26,7 +27,12 @@ public class RecordAndBinExpressionsTests {
     }
 
     @Test
-    void testAnd() {
+    void testAnd_SimpleBinComparison() {
+        translateAndPrint("$.intBin1 > 100 and $.intBin2 > 100");
+    }
+
+    @Test
+    void testAnd_functionCalls() {
         translateAndPrint("$.a.exists() and $.b.exists()");
     }
 

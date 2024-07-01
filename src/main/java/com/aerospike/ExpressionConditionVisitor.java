@@ -3,6 +3,7 @@ package com.aerospike;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
 
+import java.util.Objects;
 import java.util.function.BinaryOperator;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression> {
@@ -23,34 +24,29 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
 
     @Override
     public Expression visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {
-        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, must be not just String
+        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, should there be support for byte[]?
         Exp expr = getSimpleComparisonExpr(ctx.getChild(0).getText(), rightOperand, Exp::gt);
 
         return Exp.build(expr);
     }
 
     private Exp getSimpleComparisonExpr(String leftOperandText, Object rightOperand, BinaryOperator<Exp> operator) {
-        Exp right = null;
+        Exp right;
         Exp.Type binType;
 
         // set Exp value type and bin type based on right operand
-        switch (rightOperand) {
-            case String str -> {
-                if (isInQuotes(str)) {
-                    right = Exp.val((String) rightOperand);
-                    binType = Exp.Type.STRING;
-                } else {
-                    right = Exp.val(Long.parseLong((String) rightOperand));
-                    binType = Exp.Type.INT;
-                }
+        if (Objects.requireNonNull(rightOperand) instanceof String str) {
+            if (isInQuotes(str)) {
+                right = Exp.val((String) rightOperand);
+                binType = Exp.Type.STRING;
+            } else {
+                right = Exp.val(Long.parseLong((String) rightOperand));
+                binType = Exp.Type.INT;
             }
-            default -> throw new UnsupportedOperationException("Unexpected right operand type: " + rightOperand);
+        } else {
+            throw new UnsupportedOperationException("Unexpected right operand type: " + rightOperand);
         }
         return operator.apply(Exp.bin(leftOperandText.replace("$.", ""), binType), right);
-    }
-
-    private Exp getRightExp() {
-        return null;
     }
 
     private boolean isInQuotes(String str) {
@@ -66,7 +62,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
 
     @Override
     public Expression visitEqualityExpression(ConditionParser.EqualityExpressionContext ctx) {
-        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, must be not just String
+        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, should there be support for byte[]?
         Exp expr = getSimpleComparisonExpr(ctx.getChild(0).getText(), rightOperand, Exp::eq);
 
         return Exp.build(expr);
