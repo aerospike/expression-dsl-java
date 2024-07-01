@@ -30,6 +30,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
         return Exp.build(expr);
     }
 
+    @Override
+    public Expression visitGreaterThanOrEqualExpression(ConditionParser.GreaterThanOrEqualExpressionContext ctx) {
+        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, should there be support for byte[]?
+        Exp expr = getSimpleComparisonExpr(ctx.getChild(0).getText(), rightOperand, Exp::ge);
+
+        return Exp.build(expr);
+    }
+
     private Exp getSimpleComparisonExpr(String leftOperandText, Object rightOperand, BinaryOperator<Exp> operator) {
         Exp right;
         Exp.Type binType;
@@ -46,6 +54,12 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
         } else {
             throw new UnsupportedOperationException("Unexpected right operand type: " + rightOperand);
         }
+
+        // Handle Record Metadata expressions
+        if (isMetadataExpression(leftOperandText)) {
+            return operator.apply(visitFunctionName(leftOperandText.replace("$.", "")), right);
+        }
+        // Handle Bin expressions
         return operator.apply(Exp.bin(leftOperandText.replace("$.", ""), binType), right);
     }
 
@@ -70,6 +84,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
     }
 
     @Override
+    public Expression visitLessThanOrEqualExpression(ConditionParser.LessThanOrEqualExpressionContext ctx) {
+        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, should there be support for byte[]?
+        Exp expr = getSimpleComparisonExpr(ctx.getChild(0).getText(), rightOperand, Exp::le);
+
+        return Exp.build(expr);
+    }
+
+    @Override
     public Expression visitEqualityExpression(ConditionParser.EqualityExpressionContext ctx) {
         Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, should there be support for byte[]?
         Exp expr = getSimpleComparisonExpr(ctx.getChild(0).getText(), rightOperand, Exp::eq);
@@ -86,10 +108,24 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
     @Override
     public Expression visitFunctionName(ConditionParser.FunctionNameContext ctx) {
         String functionName = ctx.getChild(0).getText();
+        return Exp.build(visitFunctionName(functionName));
+    }
+
+    private Exp visitFunctionName(String functionName) {
         return switch (functionName) {
-            case "deviceSize" -> Exp.build(Exp.deviceSize());
-            case "ttl" -> Exp.build(Exp.ttl());
-            case "exists" -> Exp.build(Exp.binExists("test")); // TODO: get the preceding path
+            case "deviceSize()" -> Exp.deviceSize();
+            case "memorySize()" -> Exp.memorySize();
+            case "recordSize()" -> Exp.recordSize();
+            //case "digestModulo()" -> Exp.digestModulo(); // TODO: Support param
+            case "isTombstone()" -> Exp.isTombstone();
+            case "keyExists()" -> Exp.keyExists();
+            case "lastUpdate()" -> Exp.lastUpdate();
+            case "sinceUpdate()" -> Exp.sinceUpdate();
+            case "setName()" -> Exp.setName();
+            case "ttl()" -> Exp.ttl();
+            case "voidTime()" -> Exp.voidTime();
+            // TODO: exists doesn't belong here, this is metadata function name?
+            case "exists" -> Exp.binExists("test"); // TODO: get the preceding path
             default -> throw new IllegalArgumentException("Unknown function: " + functionName);
         };
     }
@@ -98,7 +134,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
     public Expression visitOperandExpression(ConditionParser.OperandExpressionContext ctx) {
         return visit(ctx.operand());
     }
-
 
     /**
      * Aggregates the results of visiting multiple children of a node. After
@@ -110,18 +145,24 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
      * {@link #visitChildren} will return the result of the last child visited
      * (or return the initial value if the node has no children).</p>
      *
-     * @param aggregate The previous aggregate value. In the default
-     * implementation, the aggregate value is initialized to
-     * {@link #defaultResult}, which is passed as the {@code aggregate} argument
-     * to this method after the first child node is visited.
+     * @param aggregate  The previous aggregate value. In the default
+     *                   implementation, the aggregate value is initialized to
+     *                   {@link #defaultResult}, which is passed as the {@code aggregate} argument
+     *                   to this method after the first child node is visited.
      * @param nextResult The result of the immediately preceeding call to visit
-     * a child node.
-     *
+     *                   a child node.
      * @return The updated aggregate result.
      */
     @Override
     protected Expression aggregateResult(Expression aggregate, Expression nextResult) {
         return nextResult == null ? aggregate : nextResult;
+    }
+
+    private boolean isMetadataExpression(String operand) {
+        if (isInQuotes(operand)) {
+            return false;
+        }
+        return operand.contains("(") && operand.contains(")");
     }
 
 //

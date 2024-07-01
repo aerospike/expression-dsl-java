@@ -30,6 +30,6 @@ NAME_IDENTIFIER : [a-zA-Z0-9_]+;
 
 functionCall : '$.' functionName;
 
-functionName : ('deviceSize' | 'ttl' | 'exists')  '()';
+functionName : ('deviceSize' | 'memorySize' | 'recordSize' | 'isTombstone' | 'keyExists' | 'lastUpdate' | 'sinceUpdate' | 'setName' | 'ttl' | 'voidTime' | 'exists')  '()';
 
 WS  : [ \t\r\n]+ -> skip;
