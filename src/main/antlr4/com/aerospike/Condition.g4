@@ -20,7 +20,7 @@ expression
 
 operand: NUMBER | quotedString | path | functionCall | '(' expression ')';
 
-NUMBER  : [0-9]+;
+NUMBER  : '-'?[0-9]+;
 
 quotedString : ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 

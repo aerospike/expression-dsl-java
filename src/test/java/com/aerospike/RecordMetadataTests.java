@@ -117,7 +117,6 @@ public class RecordMetadataTests {
         assertEquals(exp, generatedExp);
     }
 
-    // TODO: Is -1 (negative integers) supported out of the box?
     @Test
     void testVoidTime() {
         // Expression to find records where the void-time is set to 'never expire'
