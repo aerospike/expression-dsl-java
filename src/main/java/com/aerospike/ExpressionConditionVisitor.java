@@ -28,18 +28,18 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
 
     @Override
     public Expression visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {
-        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, should there be support for byte[]?
-        Exp expr = getSimpleComparisonExpr(ctx.getChild(0).getText(), rightOperand, Exp::gt);
+        Exp left = Exp.expr(visit(ctx.getChild(0)));
+        Exp right = Exp.expr(visit(ctx.getChild(2)));
 
-        return Exp.build(expr);
+        return Exp.build(Exp.gt(left, right));
     }
 
     @Override
     public Expression visitGreaterThanOrEqualExpression(ConditionParser.GreaterThanOrEqualExpressionContext ctx) {
-        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, should there be support for byte[]?
-        Exp expr = getSimpleComparisonExpr(ctx.getChild(0).getText(), rightOperand, Exp::ge);
+        Exp left = Exp.expr(visit(ctx.getChild(0)));
+        Exp right = Exp.expr(visit(ctx.getChild(2)));
 
-        return Exp.build(expr);
+        return Exp.build(Exp.ge(left, right));
     }
 
     private Exp getSimpleComparisonExpr(String leftOperandText, Object rightOperand, BinaryOperator<Exp> operator) {
@@ -86,36 +86,43 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
 
     @Override
     public Expression visitLessThanExpression(ConditionParser.LessThanExpressionContext ctx) {
-        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, should there be support for byte[]?
-        Exp expr = getSimpleComparisonExpr(ctx.getChild(0).getText(), rightOperand, Exp::lt);
+        Exp left = Exp.expr(visit(ctx.getChild(0)));
+        Exp right = Exp.expr(visit(ctx.getChild(2)));
 
-        return Exp.build(expr);
+        return Exp.build(Exp.lt(left, right));
     }
 
     @Override
     public Expression visitLessThanOrEqualExpression(ConditionParser.LessThanOrEqualExpressionContext ctx) {
-        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, should there be support for byte[]?
-        Exp expr = getSimpleComparisonExpr(ctx.getChild(0).getText(), rightOperand, Exp::le);
+        Exp left = Exp.expr(visit(ctx.getChild(0)));
+        Exp right = Exp.expr(visit(ctx.getChild(2)));
 
-        return Exp.build(expr);
+        return Exp.build(Exp.le(left, right));
     }
 
     @Override
     public Expression visitEqualityExpression(ConditionParser.EqualityExpressionContext ctx) {
-        Object rightOperand = ctx.getChild(2).getText(); // TODO: temp, should there be support for byte[]?
-        Exp expr = getSimpleComparisonExpr(ctx.getChild(0).getText(), rightOperand, Exp::eq);
+        Exp left = Exp.expr(visit(ctx.getChild(0)));
+        Exp right = Exp.expr(visit(ctx.getChild(2)));
 
-        return Exp.build(expr);
+        return Exp.build(Exp.eq(left, right));
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation returns the result of calling
-     * {@link #visitChildren} on {@code ctx}.</p>
-     */
     @Override
-    public Expression visitFunctionName(ConditionParser.FunctionNameContext ctx) {
+    public Expression visitMetadata(ConditionParser.MetadataContext ctx) {
+        String functionName;
+        Integer optionalParam = null;
+        if (ctx.metadataFunction() == null) {
+            functionName = ctx.digestModulo().getText();
+            optionalParam = Integer.valueOf(ctx.NUMBER().getText());
+        } else {
+            functionName = ctx.metadataFunction().getText();
+        }
+        return Exp.build(visitFunctionName(functionName, optionalParam));
+    }
+
+    @Override
+    public Expression visitMetadataFunction(ConditionParser.MetadataFunctionContext ctx) {
         String functionName = ctx.getChild(0).getText();
         return Exp.build(visitFunctionName(functionName, null));
     }
@@ -144,24 +151,28 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
         return visit(ctx.operand());
     }
 
-    /**
-     * Aggregates the results of visiting multiple children of a node. After
-     * either all children are visited or {@link #shouldVisitNextChild} returns
-     * {@code false}, the aggregate value is returned as the result of
-     * {@link #visitChildren}.
-     *
-     * <p>The default implementation returns {@code nextResult}, meaning
-     * {@link #visitChildren} will return the result of the last child visited
-     * (or return the initial value if the node has no children).</p>
-     *
-     * @param aggregate  The previous aggregate value. In the default
-     *                   implementation, the aggregate value is initialized to
-     *                   {@link #defaultResult}, which is passed as the {@code aggregate} argument
-     *                   to this method after the first child node is visited.
-     * @param nextResult The result of the immediately preceeding call to visit
-     *                   a child node.
-     * @return The updated aggregate result.
-     */
+    @Override
+    public Expression visitPath(ConditionParser.PathContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Expression visitQuotedString(ConditionParser.QuotedStringContext ctx) {
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public Expression visitNumber(ConditionParser.NumberContext ctx) {
+        String text = ctx.getText();
+        Exp val;
+        if (isInQuotes(text)) {
+            val = Exp.val(getWithoutQuotes(text));
+        } else {
+            val = Exp.val(Long.parseLong(text));
+        }
+        return Exp.build(val);
+    }
+
     @Override
     protected Expression aggregateResult(Expression aggregate, Expression nextResult) {
         return nextResult == null ? aggregate : nextResult;

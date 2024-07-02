@@ -18,22 +18,24 @@ expression
     | operand                        # OperandExpression
     ;
 
-operand: NUMBER | quotedString | path | functionCall | '(' expression ')';
+operand: number | quotedString | path | metadata | '(' expression ')';
+
+number : NUMBER;
 
 NUMBER  : '-'?[0-9]+;
 
 quotedString : ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
-path : '$.' NAME_IDENTIFIER ('.' NAME_IDENTIFIER)*? ('.' functionName)?;
+path : '$.' NAME_IDENTIFIER ('.' NAME_IDENTIFIER)*? ('.' pathFunction)?;
 
 NAME_IDENTIFIER : [a-zA-Z0-9_]+;
 
-functionCall
-    : '$.' functionName '(' ')'
-    | '$.' 'digestModulo' '(' NUMBER ')'
+metadata
+    : '$.' metadataFunction '(' ')'
+    | '$.' digestModulo '(' NUMBER ')'
     ;
 
-functionName
+metadataFunction
     : 'deviceSize'
     | 'memorySize'
     | 'recordSize'
@@ -44,7 +46,10 @@ functionName
     | 'setName'
     | 'ttl'
     | 'voidTime'
-    | 'exists'
     ;
+
+pathFunction: 'exists';
+
+digestModulo: 'digestModulo';
 
 WS  : [ \t\r\n]+ -> skip;
