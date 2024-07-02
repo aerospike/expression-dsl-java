@@ -6,6 +6,10 @@ import com.aerospike.client.exp.Expression;
 import java.util.Objects;
 import java.util.function.BinaryOperator;
 
+import static com.aerospike.util.MetadataParsingUtils.*;
+import static com.aerospike.util.ParsingUtils.getWithoutQuotes;
+import static com.aerospike.util.ParsingUtils.isInQuotes;
+
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression> {
 
     @Override
@@ -57,22 +61,27 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
 
         // Handle Record Metadata expressions
         if (isMetadataExpression(leftOperandText)) {
-            return operator.apply(visitFunctionName(extractMetadataExpression(leftOperandText)), right);
+            // For cases like digestModulo(<int>) when a metadata expression accepts a parameter
+            if (metadataContainsParameter(leftOperandText)) {
+                return operator.apply(
+                        visitFunctionName(
+                                extractMetadataExpression(leftOperandText),
+                                Integer.parseInt(Objects.requireNonNull(extractParameterMetadataExpression(leftOperandText)))
+                        ), right
+                );
+            }
+            return operator.apply(
+                    visitFunctionName(
+                            extractMetadataExpression(leftOperandText), null
+                    ), right
+            );
         }
         // Handle Bin expressions
-        return operator.apply(Exp.bin(leftOperandText.replace("$.", ""), binType), right);
-    }
-
-    private boolean isInQuotes(String str) {
-        return (str.startsWith("\"") && str.endsWith("\"")) || (str.startsWith("'") && str.endsWith("'"));
-    }
-
-    private String getWithoutQuotes(String str) {
-        if (str.length() > 2) {
-            return str.substring(1, str.length() - 1);
-        } else {
-            throw new IllegalArgumentException(String.format("String %s must contain more than 2 characters", str));
-        }
+        return operator.apply(
+                Exp.bin(
+                        leftOperandText.replace("$.", ""), binType
+                ), right
+        );
     }
 
     @Override
@@ -108,15 +117,15 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
     @Override
     public Expression visitFunctionName(ConditionParser.FunctionNameContext ctx) {
         String functionName = ctx.getChild(0).getText();
-        return Exp.build(visitFunctionName(functionName));
+        return Exp.build(visitFunctionName(functionName, null));
     }
 
-    private Exp visitFunctionName(String functionName) {
+    private Exp visitFunctionName(String functionName, Integer optionalParam) {
         return switch (functionName) {
             case "deviceSize" -> Exp.deviceSize();
             case "memorySize" -> Exp.memorySize();
             case "recordSize" -> Exp.recordSize();
-            //case "digestModulo" -> Exp.digestModulo(); // TODO: Support param
+            case "digestModulo" -> Exp.digestModulo(optionalParam);
             case "isTombstone" -> Exp.isTombstone();
             case "keyExists" -> Exp.keyExists();
             case "lastUpdate" -> Exp.lastUpdate();
@@ -157,36 +166,4 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
     protected Expression aggregateResult(Expression aggregate, Expression nextResult) {
         return nextResult == null ? aggregate : nextResult;
     }
-
-    private boolean isMetadataExpression(String operand) {
-        if (isInQuotes(operand)) {
-            return false;
-        }
-        return operand.contains("(") && operand.contains(")");
-    }
-
-    private String extractMetadataExpression(String operand) {
-        int indexOfParenthesis = operand.indexOf("(");
-        if (indexOfParenthesis != -1) {
-            operand = operand.substring(0, indexOfParenthesis);
-        }
-        return operand.replace("$.", "");
-    }
-
-//
-//    @Override
-//    public Expression visitFunctionCall(ConditionParser.FunctionCallContext ctx) {
-//        String functionName = ctx.functionName().getText();
-//        return switch (functionName) {
-//            case "deviceSize" -> Exp.build(Exp.deviceSize());
-//            case "ttl" -> Exp.build(Exp.ttl());
-//            default -> throw new IllegalArgumentException("Unknown function: " + functionName);
-//        };
-//    }
-
-    // visitNUMBER and NUMBERContext doesn't exists?
-    //@Override
-    //public Expression visitNUMBER(ConditionParser.NUMBERContext ctx) {
-    //    return Exp.val(Integer.parseInt(ctx.getText()));
-    //}
 }

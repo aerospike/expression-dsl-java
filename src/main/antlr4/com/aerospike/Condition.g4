@@ -28,8 +28,23 @@ path : '$.' NAME_IDENTIFIER ('.' NAME_IDENTIFIER)*? ('.' functionName)?;
 
 NAME_IDENTIFIER : [a-zA-Z0-9_]+;
 
-functionCall : '$.' functionName;
+functionCall
+    : '$.' functionName '(' ')'
+    | '$.' 'digestModulo' '(' NUMBER ')'
+    ;
 
-functionName : ('deviceSize' | 'memorySize' | 'recordSize' | 'isTombstone' | 'keyExists' | 'lastUpdate' | 'sinceUpdate' | 'setName' | 'ttl' | 'voidTime' | 'exists')  '()';
+functionName
+    : 'deviceSize'
+    | 'memorySize'
+    | 'recordSize'
+    | 'isTombstone'
+    | 'keyExists'
+    | 'lastUpdate'
+    | 'sinceUpdate'
+    | 'setName'
+    | 'ttl'
+    | 'voidTime'
+    | 'exists'
+    ;
 
 WS  : [ \t\r\n]+ -> skip;

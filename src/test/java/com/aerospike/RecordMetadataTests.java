@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MetadataTests {
+public class RecordMetadataTests {
 
     @Test
     void testDeviceSize() {
@@ -41,8 +41,7 @@ public class MetadataTests {
         assertEquals(exp, generatedExp);
     }
 
-    // TODO: Support optional param in functionCall(<param>)
-    //@Test
+    @Test
     void testDigestModulo() {
         // Expression to find records where digest mod 3 equals 0
         Expression exp = Exp.build(
