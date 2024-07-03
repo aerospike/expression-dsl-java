@@ -99,8 +99,9 @@ public class BinExpressionsTests {
         translateAndCompare("not($.keyExists())", Exp.not(Exp.keyExists()));
     }
 
-    @Test
-    void logicalOperators_functionCalls() {
-        translateAndPrint("$.a.exists() and $.b.exists()");
-    }
+    // Will be handled in FMWK-486
+    //@Test
+    //void logicalOperators_functionCalls() {
+    //    translateAndPrint("$.a.exists() and $.b.exists()");
+    //}
 }

@@ -1,7 +1,11 @@
 package com.aerospike;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.expSource.*;
+import com.aerospike.expSource.BinOperand;
+import com.aerospike.expSource.ExpSource;
+import com.aerospike.expSource.Expr;
+import com.aerospike.expSource.NumberOperand;
+import com.aerospike.expSource.StringOperand;
 
 import java.util.function.BinaryOperator;
 
@@ -38,6 +42,51 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
         ExpSource right = visit(ctx.operand(1));
 
         Exp exp = getExpOrFail(left, right, Exp::gt);
+        return new Expr(exp);
+    }
+
+    @Override
+    public ExpSource visitGreaterThanOrEqualExpression(ConditionParser.GreaterThanOrEqualExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::ge);
+        return new Expr(exp);
+    }
+
+    @Override
+    public ExpSource visitLessThanExpression(ConditionParser.LessThanExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::lt);
+        return new Expr(exp);
+    }
+
+    @Override
+    public ExpSource visitLessThanOrEqualExpression(ConditionParser.LessThanOrEqualExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::le);
+        return new Expr(exp);
+    }
+
+    @Override
+    public ExpSource visitEqualityExpression(ConditionParser.EqualityExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::eq);
+        return new Expr(exp);
+    }
+
+    @Override
+    public ExpSource visitInequalityExpression(ConditionParser.InequalityExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::ne);
         return new Expr(exp);
     }
 
@@ -85,51 +134,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
             case EXPR -> expSource.getExp();
             default -> throw new IllegalStateException("Error: expecting non-bin operand, got " + expSource.getType());
         };
-    }
-
-    @Override
-    public ExpSource visitGreaterThanOrEqualExpression(ConditionParser.GreaterThanOrEqualExpressionContext ctx) {
-        ExpSource left = visit(ctx.operand(0));
-        ExpSource right = visit(ctx.operand(1));
-
-        Exp exp = getExpOrFail(left, right, Exp::ge);
-        return new Expr(exp);
-    }
-
-    @Override
-    public ExpSource visitLessThanExpression(ConditionParser.LessThanExpressionContext ctx) {
-        ExpSource left = visit(ctx.operand(0));
-        ExpSource right = visit(ctx.operand(1));
-
-        Exp exp = getExpOrFail(left, right, Exp::lt);
-        return new Expr(exp);
-    }
-
-    @Override
-    public ExpSource visitLessThanOrEqualExpression(ConditionParser.LessThanOrEqualExpressionContext ctx) {
-        ExpSource left = visit(ctx.operand(0));
-        ExpSource right = visit(ctx.operand(1));
-
-        Exp exp = getExpOrFail(left, right, Exp::le);
-        return new Expr(exp);
-    }
-
-    @Override
-    public ExpSource visitEqualityExpression(ConditionParser.EqualityExpressionContext ctx) {
-        ExpSource left = visit(ctx.operand(0));
-        ExpSource right = visit(ctx.operand(1));
-
-        Exp exp = getExpOrFail(left, right, Exp::eq);
-        return new Expr(exp);
-    }
-
-    @Override
-    public ExpSource visitInequalityExpression(ConditionParser.InequalityExpressionContext ctx) {
-        ExpSource left = visit(ctx.operand(0));
-        ExpSource right = visit(ctx.operand(1));
-
-        Exp exp = getExpOrFail(left, right, Exp::ne);
-        return new Expr(exp);
     }
 
     @Override
