@@ -9,6 +9,7 @@ parse   : expression;
 expression
     : expression 'and' expression    # AndExpression
     | expression 'or' expression     # OrExpression
+    | 'not' (expression)             # NotExpression
     | operand '>' operand            # GreaterThanExpression
     | operand '>=' operand           # GreaterThanOrEqualExpression
     | operand '<' operand            # LessThanExpression

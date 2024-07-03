@@ -27,6 +27,12 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
     }
 
     @Override
+    public Expression visitNotExpression(ConditionParser.NotExpressionContext ctx) {
+        Exp exp = Exp.expr(visit(ctx.expression()));
+        return Exp.build(Exp.not(exp));
+    }
+
+    @Override
     public Expression visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {
         Exp left = Exp.expr(visit(ctx.getChild(0)));
         Exp right = Exp.expr(visit(ctx.getChild(2)));

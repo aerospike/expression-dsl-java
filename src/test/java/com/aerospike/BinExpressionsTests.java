@@ -60,7 +60,7 @@ public class BinExpressionsTests {
     }
 
     @Test
-    void logicalOperators_SimpleBinComparison() {
+    void binLogicalAndOrCombinations() {
         Exp testExp1 = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
         translateAndCompare("$.intBin1 > 100 and $.intBin2 > 100", testExp1);
@@ -87,6 +87,11 @@ public class BinExpressionsTests {
         // check that parentheses make difference
         assertThatThrownBy(() -> translateAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", testExp2))
                 .isInstanceOf(AssertionFailedError.class);
+    }
+
+    @Test
+    void binLogicalNot() {
+        translateAndCompare("not($.keyExists())", Exp.not(Exp.keyExists()));
     }
 
     @Test
