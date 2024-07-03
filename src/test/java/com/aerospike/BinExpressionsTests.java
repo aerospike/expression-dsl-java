@@ -46,6 +46,13 @@ public class BinExpressionsTests {
     }
 
     @Test
+    void binNotEquals() {
+        translateAndCompare("$.intBin1 != 100", Exp.ne(Exp.intBin("intBin1"), Exp.val(100)));
+        translateAndCompare("$.strBin != \"yes\"", Exp.ne(Exp.stringBin("strBin"), Exp.val("yes")));
+        translateAndCompare("$.strBin != 'yes'", Exp.ne(Exp.stringBin("strBin"), Exp.val("yes")));
+    }
+
+    @Test
     void stringBinEqualsNegativeTest() {
         assertThatThrownBy(() -> translateAndPrint("$.strBin == yes"))
                 .isInstanceOf(NumberFormatException.class)
