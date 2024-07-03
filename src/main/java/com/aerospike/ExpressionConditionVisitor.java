@@ -109,6 +109,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
     }
 
     @Override
+    public Expression visitInequalityExpression(ConditionParser.InequalityExpressionContext ctx) {
+        Exp left = Exp.expr(visit(ctx.getChild(0)));
+        Exp right = Exp.expr(visit(ctx.getChild(2)));
+
+        return Exp.build(Exp.ne(left, right));
+    }
+
+    @Override
     public Expression visitMetadata(ConditionParser.MetadataContext ctx) {
         String functionName;
         Integer optionalParam = null;

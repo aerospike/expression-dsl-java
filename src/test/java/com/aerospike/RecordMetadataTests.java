@@ -102,12 +102,21 @@ public class RecordMetadataTests {
     }
 
     @Test
-    void testTwoMetadataExpressions() {
+    void testMetadataWithLogicalOperatorsExpressions() {
+        // test AND
         String input = "$.deviceSize() > 1024 and $.ttl() < 300";
         Exp testExp = Exp.and(
                 Exp.gt(Exp.deviceSize(), Exp.val(1024)),
                 Exp.lt(Exp.ttl(), Exp.val(300))
         );
         translateAndCompare(input, testExp);
+
+        // test OR
+        String input2 = "$.deviceSize() > 1024 or $.ttl() < 300";
+        Exp testExp2 = Exp.or(
+                Exp.gt(Exp.deviceSize(), Exp.val(1024)),
+                Exp.lt(Exp.ttl(), Exp.val(300))
+        );
+        translateAndCompare(input2, testExp2);
     }
 }
