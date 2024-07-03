@@ -1,5 +1,6 @@
 package com.aerospike;
 
+import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -14,6 +15,6 @@ public class ConditionTranslator {
         ParseTree tree = parser.parse();
 
         ExpressionConditionVisitor visitor = new ExpressionConditionVisitor();
-        return visitor.visit(tree);
+        return Exp.build(visitor.visit(tree).getExp());
     }
 }

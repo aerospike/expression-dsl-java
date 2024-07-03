@@ -15,6 +15,10 @@ public class BinExpressionsTests {
         translateAndCompare("$.intBin1 > 100", Exp.gt(Exp.intBin("intBin1"), Exp.val(100)));
         translateAndCompare("$.stringBin1 > 'text'", Exp.gt(Exp.stringBin("stringBin1"), Exp.val("text")));
         translateAndCompare("$.stringBin1 > \"text\"", Exp.gt(Exp.stringBin("stringBin1"), Exp.val("text")));
+
+        translateAndCompare("100 < $.intBin1", Exp.lt(Exp.val(100), Exp.intBin("intBin1")));
+        translateAndCompare("'text' < $.stringBin1", Exp.lt(Exp.val("text"), Exp.stringBin("stringBin1")));
+        translateAndCompare("\"text\" < $.stringBin1", Exp.lt(Exp.val("text"), Exp.stringBin("stringBin1")));
     }
 
     @Test
@@ -55,8 +59,8 @@ public class BinExpressionsTests {
     @Test
     void stringBinEqualsNegativeTest() {
         assertThatThrownBy(() -> translateAndPrint("$.strBin == yes"))
-                .isInstanceOf(NumberFormatException.class)
-                .hasMessage("For input string: \"yes\"");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Cannot parse right operand");
     }
 
     @Test
@@ -72,7 +76,8 @@ public class BinExpressionsTests {
                 ),
                 Exp.lt(Exp.intBin("intBin3"), Exp.val(100))
         );
-        translateAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 < 100", testExp2); // TODO: what should be the default behaviour with no parentheses?
+        // TODO: what should be the default behaviour with no parentheses?
+        translateAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 < 100", testExp2);
         translateAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 < 100", testExp2);
 
         Exp testExp3 = Exp.and(

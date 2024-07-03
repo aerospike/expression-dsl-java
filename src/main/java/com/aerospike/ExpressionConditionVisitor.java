@@ -1,129 +1,140 @@
 package com.aerospike;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.Expression;
+import com.aerospike.expSource.*;
 
-import java.util.Objects;
 import java.util.function.BinaryOperator;
 
-import static com.aerospike.util.MetadataParsingUtils.*;
 import static com.aerospike.util.ParsingUtils.getWithoutQuotes;
-import static com.aerospike.util.ParsingUtils.isInQuotes;
 
-public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression> {
+public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> {
 
     @Override
-    public Expression visitAndExpression(ConditionParser.AndExpressionContext ctx) {
-        Exp left = Exp.expr(visit(ctx.expression(0)));
-        Exp right = Exp.expr(visit(ctx.expression(1)));
-        return Exp.build(Exp.and(left, right));
+    public ExpSource visitAndExpression(ConditionParser.AndExpressionContext ctx) {
+        ExpSource left = visit(ctx.expression(0));
+        ExpSource right = visit(ctx.expression(1));
+
+        return new Expr(Exp.and(left.getExp(), right.getExp()));
     }
 
     @Override
-    public Expression visitOrExpression(ConditionParser.OrExpressionContext ctx) {
-        Exp left = Exp.expr(visit(ctx.expression(0)));
-        Exp right = Exp.expr(visit(ctx.expression(1)));
-        return Exp.build(Exp.or(left, right));
+    public ExpSource visitOrExpression(ConditionParser.OrExpressionContext ctx) {
+        ExpSource left = visit(ctx.expression(0));
+        ExpSource right = visit(ctx.expression(1));
+
+        return new Expr(Exp.or(left.getExp(), right.getExp()));
     }
 
     @Override
-    public Expression visitNotExpression(ConditionParser.NotExpressionContext ctx) {
-        Exp exp = Exp.expr(visit(ctx.expression()));
-        return Exp.build(Exp.not(exp));
+    public ExpSource visitNotExpression(ConditionParser.NotExpressionContext ctx) {
+        Exp exp = visit(ctx.expression()).getExp();
+
+        return new Expr(Exp.not(exp));
     }
 
     @Override
-    public Expression visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {
-        Exp left = Exp.expr(visit(ctx.getChild(0)));
-        Exp right = Exp.expr(visit(ctx.getChild(2)));
+    public ExpSource visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
 
-        return Exp.build(Exp.gt(left, right));
+        Exp exp = getExp(left, right, Exp::gt);
+        return new Expr(exp);
     }
 
-    @Override
-    public Expression visitGreaterThanOrEqualExpression(ConditionParser.GreaterThanOrEqualExpressionContext ctx) {
-        Exp left = Exp.expr(visit(ctx.getChild(0)));
-        Exp right = Exp.expr(visit(ctx.getChild(2)));
+    private Exp getExp(ExpSource left, ExpSource right, BinaryOperator<Exp> operator) {
+        String binName;
+        Exp exp = null;
 
-        return Exp.build(Exp.ge(left, right));
-    }
-
-    private Exp getSimpleComparisonExpr(String leftOperandText, Object rightOperand, BinaryOperator<Exp> operator) {
-        Exp right;
-        Exp.Type binType;
-
-        // set Exp value type and bin type based on right operand
-        if (Objects.requireNonNull(rightOperand) instanceof String str) {
-            if (isInQuotes(str)) {
-                right = Exp.val(getWithoutQuotes(str));
-                binType = Exp.Type.STRING;
-            } else {
-                right = Exp.val(Long.parseLong(str));
-                binType = Exp.Type.INT;
-            }
-        } else {
-            throw new UnsupportedOperationException("Unexpected right operand type: " + rightOperand);
+        if (left == null) {
+            throw new IllegalArgumentException("Cannot parse left operand");
+        }
+        if (right == null) {
+            throw new IllegalArgumentException("Cannot parse right operand");
         }
 
-        // Handle Record Metadata expressions
-        if (isMetadataExpression(leftOperandText)) {
-            // For cases like digestModulo(<int>) when a metadata expression accepts a parameter
-            if (metadataContainsParameter(leftOperandText)) {
-                return operator.apply(
-                        visitFunctionName(
-                                extractMetadataExpression(leftOperandText),
-                                Integer.parseInt(Objects.requireNonNull(extractParameterMetadataExpression(leftOperandText)))
-                        ), right
-                );
+        if (left.getType() == ExpSource.Type.BIN_OPERAND) {
+            binName = left.getBinName();
+            if (right.getType() == ExpSource.Type.NUMBER_OPERAND) {
+                exp = operator.apply(Exp.bin(binName, Exp.Type.INT), Exp.val(right.getNumber()));
             }
-            return operator.apply(
-                    visitFunctionName(
-                            extractMetadataExpression(leftOperandText), null
-                    ), right
-            );
+            if (right.getType() == ExpSource.Type.STRING_OPERAND) {
+                exp = operator.apply(Exp.bin(binName, Exp.Type.STRING), Exp.val(right.getString()));
+            }
+        } else if (right.getType() == ExpSource.Type.BIN_OPERAND) {
+            binName = right.getBinName();
+            if (left.getType() == ExpSource.Type.NUMBER_OPERAND) {
+                exp = operator.apply(Exp.val(left.getNumber()), Exp.bin(binName, Exp.Type.INT));
+            }
+            if (left.getType() == ExpSource.Type.STRING_OPERAND) {
+                exp = operator.apply(Exp.val(left.getString()), Exp.bin(binName, Exp.Type.STRING));
+            }
         }
-        // Handle Bin expressions
-        return operator.apply(
-                Exp.bin(
-                        leftOperandText.replace("$.", ""), binType
-                ), right
-        );
+
+        return exp;
     }
 
     @Override
-    public Expression visitLessThanExpression(ConditionParser.LessThanExpressionContext ctx) {
-        Exp left = Exp.expr(visit(ctx.getChild(0)));
-        Exp right = Exp.expr(visit(ctx.getChild(2)));
+    public ExpSource visitGreaterThanOrEqualExpression(ConditionParser.GreaterThanOrEqualExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
 
-        return Exp.build(Exp.lt(left, right));
+        Exp exp = getExp(left, right, Exp::ge);
+        return new Expr(exp);
     }
 
     @Override
-    public Expression visitLessThanOrEqualExpression(ConditionParser.LessThanOrEqualExpressionContext ctx) {
-        Exp left = Exp.expr(visit(ctx.getChild(0)));
-        Exp right = Exp.expr(visit(ctx.getChild(2)));
+    public ExpSource visitLessThanExpression(ConditionParser.LessThanExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
 
-        return Exp.build(Exp.le(left, right));
+        Exp exp = getExp(left, right, Exp::lt);
+        return new Expr(exp);
     }
 
     @Override
-    public Expression visitEqualityExpression(ConditionParser.EqualityExpressionContext ctx) {
-        Exp left = Exp.expr(visit(ctx.getChild(0)));
-        Exp right = Exp.expr(visit(ctx.getChild(2)));
+    public ExpSource visitLessThanOrEqualExpression(ConditionParser.LessThanOrEqualExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
 
-        return Exp.build(Exp.eq(left, right));
+        Exp exp = getExp(left, right, Exp::le);
+        return new Expr(exp);
     }
 
     @Override
-    public Expression visitInequalityExpression(ConditionParser.InequalityExpressionContext ctx) {
-        Exp left = Exp.expr(visit(ctx.getChild(0)));
-        Exp right = Exp.expr(visit(ctx.getChild(2)));
+    public ExpSource visitEqualityExpression(ConditionParser.EqualityExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
 
-        return Exp.build(Exp.ne(left, right));
+        Exp exp = getExp(left, right, Exp::eq);
+        return new Expr(exp);
     }
 
     @Override
-    public Expression visitMetadata(ConditionParser.MetadataContext ctx) {
+    public ExpSource visitInequalityExpression(ConditionParser.InequalityExpressionContext ctx) {
+        ExpSource left = visit(ctx.operand(0));
+        ExpSource right = visit(ctx.operand(1));
+
+        Exp exp = getExp(left, right, Exp::ne);
+        return new Expr(exp);
+    }
+
+    @Override
+    public ExpSource visitPathFunction(ConditionParser.PathFunctionContext ctx) {
+        String functionName = ctx.getText();
+        return visitPathFunctionName(functionName);
+    }
+
+    private ExpSource visitPathFunctionName(String functionName) {
+        Exp exp = switch (functionName) {
+            case "exists" -> Exp.binExists("test"); // TODO: get the preceding path
+            default -> throw new IllegalArgumentException("Unknown path function: " + functionName);
+        };
+
+        return new Expr(exp);
+    }
+
+    @Override
+    public ExpSource visitMetadata(ConditionParser.MetadataContext ctx) {
         String functionName;
         Integer optionalParam = null;
         if (ctx.metadataFunction() == null) {
@@ -132,17 +143,17 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
         } else {
             functionName = ctx.metadataFunction().getText();
         }
-        return Exp.build(visitFunctionName(functionName, optionalParam));
+        return visitMetadataFunctionName(functionName, optionalParam);
     }
 
     @Override
-    public Expression visitMetadataFunction(ConditionParser.MetadataFunctionContext ctx) {
-        String functionName = ctx.getChild(0).getText();
-        return Exp.build(visitFunctionName(functionName, null));
+    public ExpSource visitMetadataFunction(ConditionParser.MetadataFunctionContext ctx) {
+        String functionName = ctx.getText();
+        return visitMetadataFunctionName(functionName, null);
     }
 
-    private Exp visitFunctionName(String functionName, Integer optionalParam) {
-        return switch (functionName) {
+    private ExpSource visitMetadataFunctionName(String functionName, Integer optionalParam) {
+        Exp exp = switch (functionName) {
             case "deviceSize" -> Exp.deviceSize();
             case "memorySize" -> Exp.memorySize();
             case "recordSize" -> Exp.recordSize();
@@ -154,41 +165,36 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<Expression>
             case "setName" -> Exp.setName();
             case "ttl" -> Exp.ttl();
             case "voidTime" -> Exp.voidTime();
-            // TODO: exists doesn't belong here, this is metadata function name?
-            case "exists" -> Exp.binExists("test"); // TODO: get the preceding path
-            default -> throw new IllegalArgumentException("Unknown function: " + functionName);
+            default -> throw new IllegalArgumentException("Unknown metadata function: " + functionName);
         };
+
+        return new Expr(exp);
     }
 
     @Override
-    public Expression visitOperandExpression(ConditionParser.OperandExpressionContext ctx) {
+    public ExpSource visitOperandExpression(ConditionParser.OperandExpressionContext ctx) {
         return visit(ctx.operand());
     }
 
     @Override
-    public Expression visitPath(ConditionParser.PathContext ctx) {
-        return visitChildren(ctx);
+    public ExpSource visitPathPart(ConditionParser.PathPartContext ctx) {
+        return new BinOperand(ctx.NAME_IDENTIFIER().getText());
     }
 
     @Override
-    public Expression visitQuotedString(ConditionParser.QuotedStringContext ctx) {
-        return visitChildren(ctx);
+    public ExpSource visitQuotedString(ConditionParser.QuotedStringContext ctx) {
+        String text = getWithoutQuotes(ctx.getText());
+        return new StringOperand(text);
     }
 
     @Override
-    public Expression visitNumber(ConditionParser.NumberContext ctx) {
+    public ExpSource visitNumber(ConditionParser.NumberContext ctx) {
         String text = ctx.getText();
-        Exp val;
-        if (isInQuotes(text)) {
-            val = Exp.val(getWithoutQuotes(text));
-        } else {
-            val = Exp.val(Long.parseLong(text));
-        }
-        return Exp.build(val);
+        return new NumberOperand(Long.parseLong(text));
     }
 
     @Override
-    protected Expression aggregateResult(Expression aggregate, Expression nextResult) {
+    protected ExpSource aggregateResult(ExpSource aggregate, ExpSource nextResult) {
         return nextResult == null ? aggregate : nextResult;
     }
 }

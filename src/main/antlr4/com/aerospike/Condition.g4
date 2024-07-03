@@ -9,7 +9,7 @@ parse   : expression;
 expression
     : expression 'and' expression    # AndExpression
     | expression 'or' expression     # OrExpression
-    | 'not' (expression)             # NotExpression
+    | 'not' '('expression')'         # NotExpression
     | operand '>' operand            # GreaterThanExpression
     | operand '>=' operand           # GreaterThanOrEqualExpression
     | operand '<' operand            # LessThanExpression
@@ -34,7 +34,7 @@ pathPart : NAME_IDENTIFIER;
 NAME_IDENTIFIER : [a-zA-Z0-9_]+;
 
 metadata
-    : '$.' metadataFunction '( )'
+    : '$.' metadataFunction '(' ')'
     | '$.' digestModulo '(' NUMBER ')'
     ;
 
