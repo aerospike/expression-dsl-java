@@ -4,18 +4,38 @@ import com.aerospike.client.exp.Exp;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
-import static com.aerospike.TestUtils.translateAndPrint;
 import static com.aerospike.TestUtils.translateAndCompare;
+import static com.aerospike.TestUtils.translateAndPrint;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class RecordAndBinExpressionsTests {
+public class BinExpressionsTests {
 
     @Test
     void binGT() {
         translateAndCompare("$.intBin1 > 100", Exp.gt(Exp.intBin("intBin1"), Exp.val(100)));
         translateAndCompare("$.stringBin1 > 'text'", Exp.gt(Exp.stringBin("stringBin1"), Exp.val("text")));
         translateAndCompare("$.stringBin1 > \"text\"", Exp.gt(Exp.stringBin("stringBin1"), Exp.val("text")));
+    }
 
+    @Test
+    void binGE() {
+        translateAndCompare("$.intBin1 >= 100", Exp.ge(Exp.intBin("intBin1"), Exp.val(100)));
+        translateAndCompare("$.stringBin1 >= 'text'", Exp.ge(Exp.stringBin("stringBin1"), Exp.val("text")));
+        translateAndCompare("$.stringBin1 >= \"text\"", Exp.ge(Exp.stringBin("stringBin1"), Exp.val("text")));
+    }
+
+    @Test
+    void binLT() {
+        translateAndCompare("$.intBin1 < 100", Exp.lt(Exp.intBin("intBin1"), Exp.val(100)));
+        translateAndCompare("$.stringBin1 < 'text'", Exp.lt(Exp.stringBin("stringBin1"), Exp.val("text")));
+        translateAndCompare("$.stringBin1 < \"text\"", Exp.lt(Exp.stringBin("stringBin1"), Exp.val("text")));
+    }
+
+    @Test
+    void binLE() {
+        translateAndCompare("$.intBin1 <= 100", Exp.le(Exp.intBin("intBin1"), Exp.val(100)));
+        translateAndCompare("$.stringBin1 <= 'text'", Exp.le(Exp.stringBin("stringBin1"), Exp.val("text")));
+        translateAndCompare("$.stringBin1 <= \"text\"", Exp.le(Exp.stringBin("stringBin1"), Exp.val("text")));
     }
 
     @Test
