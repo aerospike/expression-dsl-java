@@ -26,12 +26,14 @@ NUMBER  : '-'?[0-9]+;
 
 quotedString : ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
-path : '$.' NAME_IDENTIFIER ('.' NAME_IDENTIFIER)*? ('.' pathFunction)?;
+path : '$.' pathPart ('.' pathPart)*? ('.' pathFunction)?;
+
+pathPart : NAME_IDENTIFIER;
 
 NAME_IDENTIFIER : [a-zA-Z0-9_]+;
 
 metadata
-    : '$.' metadataFunction '(' ')'
+    : '$.' metadataFunction '( )'
     | '$.' digestModulo '(' NUMBER ')'
     ;
 
@@ -48,7 +50,7 @@ metadataFunction
     | 'voidTime'
     ;
 
-pathFunction: 'exists';
+pathFunction: 'exists' '( )';
 
 digestModulo: 'digestModulo';
 
