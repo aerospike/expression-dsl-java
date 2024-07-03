@@ -37,11 +37,11 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
         ExpSource left = visit(ctx.operand(0));
         ExpSource right = visit(ctx.operand(1));
 
-        Exp exp = getExp(left, right, Exp::gt);
+        Exp exp = getExpOrFail(left, right, Exp::gt);
         return new Expr(exp);
     }
 
-    private Exp getExp(ExpSource left, ExpSource right, BinaryOperator<Exp> operator) {
+    private Exp getExpOrFail(ExpSource left, ExpSource right, BinaryOperator<Exp> operator) {
         String binName;
         Exp exp = null;
 
@@ -54,23 +54,37 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
 
         if (left.getType() == ExpSource.Type.BIN_OPERAND) {
             binName = left.getBinName();
-            if (right.getType() == ExpSource.Type.NUMBER_OPERAND) {
-                exp = operator.apply(Exp.bin(binName, Exp.Type.INT), Exp.val(right.getNumber()));
-            }
-            if (right.getType() == ExpSource.Type.STRING_OPERAND) {
-                exp = operator.apply(Exp.bin(binName, Exp.Type.STRING), Exp.val(right.getString()));
-            }
-        } else if (right.getType() == ExpSource.Type.BIN_OPERAND) {
+            exp = switch (right.getType()) {
+                case NUMBER_OPERAND -> operator.apply(Exp.bin(binName, Exp.Type.INT), Exp.val(right.getNumber()));
+                case STRING_OPERAND -> operator.apply(Exp.bin(binName, Exp.Type.STRING), Exp.val(right.getString()));
+                case EXPR -> operator.apply(Exp.bin(binName, Exp.Type.STRING), right.getExp());
+                default -> exp;
+            };
+            return exp;
+        }
+        if (right.getType() == ExpSource.Type.BIN_OPERAND) {
             binName = right.getBinName();
-            if (left.getType() == ExpSource.Type.NUMBER_OPERAND) {
-                exp = operator.apply(Exp.val(left.getNumber()), Exp.bin(binName, Exp.Type.INT));
-            }
-            if (left.getType() == ExpSource.Type.STRING_OPERAND) {
-                exp = operator.apply(Exp.val(left.getString()), Exp.bin(binName, Exp.Type.STRING));
-            }
+            exp = switch (left.getType()) {
+                case NUMBER_OPERAND -> operator.apply(Exp.val(left.getNumber()), Exp.bin(binName, Exp.Type.INT));
+                case STRING_OPERAND -> operator.apply(Exp.val(left.getString()), Exp.bin(binName, Exp.Type.STRING));
+                case EXPR -> operator.apply(left.getExp(), Exp.bin(binName, Exp.Type.STRING));
+                default -> exp;
+            };
+            return exp;
         }
 
-        return exp;
+        Exp leftExp = getExpForNonBinOperand(left);
+        Exp rightExp = getExpForNonBinOperand(right);
+        return operator.apply(leftExp, rightExp);
+    }
+
+    private Exp getExpForNonBinOperand(ExpSource expSource) {
+        return switch (expSource.getType()) {
+            case NUMBER_OPERAND -> Exp.val(expSource.getNumber());
+            case STRING_OPERAND -> Exp.val(expSource.getString());
+            case EXPR -> expSource.getExp();
+            default -> throw new IllegalStateException("Error: expecting non-bin operand, got " + expSource.getType());
+        };
     }
 
     @Override
@@ -78,7 +92,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
         ExpSource left = visit(ctx.operand(0));
         ExpSource right = visit(ctx.operand(1));
 
-        Exp exp = getExp(left, right, Exp::ge);
+        Exp exp = getExpOrFail(left, right, Exp::ge);
         return new Expr(exp);
     }
 
@@ -87,7 +101,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
         ExpSource left = visit(ctx.operand(0));
         ExpSource right = visit(ctx.operand(1));
 
-        Exp exp = getExp(left, right, Exp::lt);
+        Exp exp = getExpOrFail(left, right, Exp::lt);
         return new Expr(exp);
     }
 
@@ -96,7 +110,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
         ExpSource left = visit(ctx.operand(0));
         ExpSource right = visit(ctx.operand(1));
 
-        Exp exp = getExp(left, right, Exp::le);
+        Exp exp = getExpOrFail(left, right, Exp::le);
         return new Expr(exp);
     }
 
@@ -105,7 +119,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
         ExpSource left = visit(ctx.operand(0));
         ExpSource right = visit(ctx.operand(1));
 
-        Exp exp = getExp(left, right, Exp::eq);
+        Exp exp = getExpOrFail(left, right, Exp::eq);
         return new Expr(exp);
     }
 
@@ -114,7 +128,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
         ExpSource left = visit(ctx.operand(0));
         ExpSource right = visit(ctx.operand(1));
 
-        Exp exp = getExp(left, right, Exp::ne);
+        Exp exp = getExpOrFail(left, right, Exp::ne);
         return new Expr(exp);
     }
 
