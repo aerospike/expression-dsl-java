@@ -55,12 +55,18 @@ public class RecordMetadataTests {
         translateAndCompare(input, testExp);
     }
 
+    // Comparing Metadata to a Bin
     @Test
     void lastUpdate() {
         // Expression to find records where the last-update-time is less than bin 'updateBy'
-        String input = "$.lastUpdate() < $.updateBy";
-        Exp testExp = Exp.lt(Exp.lastUpdate(), Exp.intBin("updateBy"));
-        translateAndCompare(input, testExp);
+        String inputMetadataLeft = "$.lastUpdate() < $.updateBy";
+        Exp testExpLeft = Exp.lt(Exp.lastUpdate(), Exp.intBin("updateBy"));
+        translateAndCompare(inputMetadataLeft, testExpLeft);
+
+        // Expression to find records where the last-update-time is less than bin 'updateBy'
+        String inputMetadataRight = "$.updateBy > $.lastUpdate()";
+        Exp testExpRight = Exp.gt(Exp.intBin("updateBy"), Exp.lastUpdate());
+        translateAndCompare(inputMetadataRight, testExpRight);
     }
 
     @Test
