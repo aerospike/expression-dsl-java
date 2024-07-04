@@ -21,6 +21,7 @@ public abstract class ExpSource {
         NUMBER_OPERAND,
         STRING_OPERAND,
         BIN_OPERAND,
+        METADATA_OPERAND,
         EXPR
     }
 }

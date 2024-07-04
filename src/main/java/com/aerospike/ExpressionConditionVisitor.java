@@ -4,6 +4,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.expSource.BinOperand;
 import com.aerospike.expSource.ExpSource;
 import com.aerospike.expSource.Expr;
+import com.aerospike.expSource.MetadataOperand;
 import com.aerospike.expSource.NumberOperand;
 import com.aerospike.expSource.StringOperand;
 
@@ -106,6 +107,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
             exp = switch (right.getType()) {
                 case NUMBER_OPERAND -> operator.apply(Exp.bin(binName, Exp.Type.INT), Exp.val(right.getNumber()));
                 case STRING_OPERAND -> operator.apply(Exp.bin(binName, Exp.Type.STRING), Exp.val(right.getString()));
+                case METADATA_OPERAND -> operator.apply(
+                        Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString())), right.getExp());
                 case EXPR -> operator.apply(Exp.bin(binName, Exp.Type.STRING), right.getExp());
                 default -> exp;
             };
@@ -116,6 +119,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
             exp = switch (left.getType()) {
                 case NUMBER_OPERAND -> operator.apply(Exp.val(left.getNumber()), Exp.bin(binName, Exp.Type.INT));
                 case STRING_OPERAND -> operator.apply(Exp.val(left.getString()), Exp.bin(binName, Exp.Type.STRING));
+                case METADATA_OPERAND -> operator.apply(
+                        Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString())), left.getExp());
                 case EXPR -> operator.apply(left.getExp(), Exp.bin(binName, Exp.Type.STRING));
                 default -> exp;
             };
@@ -131,7 +136,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
         return switch (expSource.getType()) {
             case NUMBER_OPERAND -> Exp.val(expSource.getNumber());
             case STRING_OPERAND -> Exp.val(expSource.getString());
-            case EXPR -> expSource.getExp();
+            case EXPR, METADATA_OPERAND -> expSource.getExp();
             default -> throw new IllegalStateException("Error: expecting non-bin operand, got " + expSource.getType());
         };
     }
@@ -186,7 +191,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
             default -> throw new IllegalArgumentException("Unknown metadata function: " + functionName);
         };
 
-        return new Expr(exp);
+        return new MetadataOperand(exp, functionName);
     }
 
     @Override
