@@ -96,10 +96,10 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
         Exp exp = null;
 
         if (left == null) {
-            throw new IllegalArgumentException("Cannot parse left operand");
+            throw new IllegalArgumentException("Unable to parse left operand");
         }
         if (right == null) {
-            throw new IllegalArgumentException("Cannot parse right operand");
+            throw new IllegalArgumentException("Unable to parse right operand");
         }
 
         if (left.getType() == ExpSource.Type.BIN_OPERAND) {
@@ -120,7 +120,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
                 case NUMBER_OPERAND -> operator.apply(Exp.val(left.getNumber()), Exp.bin(binName, Exp.Type.INT));
                 case STRING_OPERAND -> operator.apply(Exp.val(left.getString()), Exp.bin(binName, Exp.Type.STRING));
                 case METADATA_OPERAND -> operator.apply(
-                        Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString())), left.getExp());
+                        left.getExp(), Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString())));
                 case EXPR -> operator.apply(left.getExp(), Exp.bin(binName, Exp.Type.STRING));
                 default -> exp;
             };
