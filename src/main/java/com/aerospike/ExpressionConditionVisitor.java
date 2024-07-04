@@ -108,7 +108,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
                 case NUMBER_OPERAND -> operator.apply(Exp.bin(binName, Exp.Type.INT), Exp.val(right.getNumber()));
                 case STRING_OPERAND -> operator.apply(Exp.bin(binName, Exp.Type.STRING), Exp.val(right.getString()));
                 case METADATA_OPERAND -> operator.apply(
-                        Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString())), right.getExp());
+                        Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString())),
+                        right.getExp()
+                );
                 case EXPR -> operator.apply(Exp.bin(binName, Exp.Type.STRING), right.getExp());
                 default -> exp;
             };
@@ -120,7 +122,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
                 case NUMBER_OPERAND -> operator.apply(Exp.val(left.getNumber()), Exp.bin(binName, Exp.Type.INT));
                 case STRING_OPERAND -> operator.apply(Exp.val(left.getString()), Exp.bin(binName, Exp.Type.STRING));
                 case METADATA_OPERAND -> operator.apply(
-                        left.getExp(), Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString())));
+                        left.getExp(),
+                        Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString()))
+                );
                 case EXPR -> operator.apply(left.getExp(), Exp.bin(binName, Exp.Type.STRING));
                 default -> exp;
             };
