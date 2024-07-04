@@ -60,7 +60,7 @@ public class BinExpressionsTests {
     void stringBinEqualsNegativeTest() {
         assertThatThrownBy(() -> translateAndPrint("$.strBin == yes"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Cannot parse right operand");
+                .hasMessage("Unable to parse right operand");
     }
 
     @Test
