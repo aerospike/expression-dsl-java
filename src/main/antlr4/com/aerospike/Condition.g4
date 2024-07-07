@@ -29,6 +29,19 @@ quotedString : ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
 path : '$.' pathPart ('.' pathPart)*? ('.' pathFunction)?;
 
+METADATA_FUNCTION
+    : 'deviceSize'
+    | 'memorySize'
+    | 'recordSize'
+    | 'isTombstone'
+    | 'keyExists'
+    | 'lastUpdate'
+    | 'sinceUpdate' { _input.LA(1) == '(' }?
+    | 'setName'
+    | 'ttl'
+    | 'voidTime'
+    ;
+
 pathPart : NAME_IDENTIFIER;
 
 NAME_IDENTIFIER : [a-zA-Z0-9_]+;
@@ -39,17 +52,7 @@ metadata
     ;
 
 metadataFunction
-    : 'deviceSize'
-    | 'memorySize'
-    | 'recordSize'
-    | 'isTombstone'
-    | 'keyExists'
-    | 'lastUpdate'
-    | 'sinceUpdate'
-    | 'setName'
-    | 'ttl'
-    | 'voidTime'
-    ;
+    : METADATA_FUNCTION;
 
 pathFunction: 'exists' '( )';
 

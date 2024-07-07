@@ -75,6 +75,18 @@ public class RecordMetadataTests {
         String input = "$.sinceUpdate() < 7200000";
         Exp testExp = Exp.lt(Exp.sinceUpdate(), Exp.val(2 * 60 * 60 * 1000));
         translateAndCompare(input, testExp);
+
+        String input2 = "$.sinceUpdate() < $.intBin";
+        Exp testExp2 = Exp.lt(Exp.sinceUpdate(), Exp.intBin("intBin"));
+        translateAndCompare(input2, testExp2);
+
+        String input3 = "$.sinceUpdate() < $.sinceUpdate";
+        Exp testExp3 = Exp.lt(Exp.sinceUpdate(), Exp.intBin("sinceUpdate"));
+        translateAndCompare(input3, testExp3);
+
+        String input4 = "$.sinceUpdate < $.sinceUpdate()";
+        Exp testExp4 = Exp.lt(Exp.intBin("sinceUpdate"), Exp.sinceUpdate());
+        translateAndCompare(input4, testExp4);
     }
 
     @Test
