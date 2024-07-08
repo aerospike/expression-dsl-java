@@ -1,9 +1,14 @@
 package com.aerospike.expSource;
 
-public class BinOperand extends ExpSource {
+import lombok.Getter;
+
+@Getter
+public class BinOperand extends AbstractPart {
+
+    private final String binName;
 
     public BinOperand(String binName) {
-        super(Type.BIN_OPERAND);
-        super.binName = binName;
+        super(Type.BIN_OPERAND, null);
+        this.binName = binName;
     }
 }

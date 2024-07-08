@@ -1,11 +1,12 @@
 package com.aerospike.expSource;
 
 import com.aerospike.client.exp.Exp;
+import lombok.Getter;
 
-public class Expr extends ExpSource {
+@Getter
+public class Expr extends AbstractPart {
 
     public Expr(Exp exp) {
-        super(Type.EXPR);
-        super.exp = exp;
+        super(Type.EXPR, exp);
     }
 }

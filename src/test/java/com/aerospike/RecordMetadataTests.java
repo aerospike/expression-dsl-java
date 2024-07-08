@@ -76,16 +76,19 @@ public class RecordMetadataTests {
         Exp testExp = Exp.lt(Exp.sinceUpdate(), Exp.val(2 * 60 * 60 * 1000));
         translateAndCompare(input, testExp);
 
+        // Expression to find records that were update within the value stored in the bin called "intBin"
         String input2 = "$.sinceUpdate() < $.intBin";
         Exp testExp2 = Exp.lt(Exp.sinceUpdate(), Exp.intBin("intBin"));
         translateAndCompare(input2, testExp2);
 
+        // Expression to find records that were updated within the value stored in the bin called "sinceUpdate"
         String input3 = "$.sinceUpdate() < $.sinceUpdate";
         Exp testExp3 = Exp.lt(Exp.sinceUpdate(), Exp.intBin("sinceUpdate"));
         translateAndCompare(input3, testExp3);
 
-        String input4 = "$.sinceUpdate < $.sinceUpdate()";
-        Exp testExp4 = Exp.lt(Exp.intBin("sinceUpdate"), Exp.sinceUpdate());
+        // Expression to find records that were updated within the value stored in the bin called "sinceUpdate"
+        String input4 = "$.sinceUpdate > $.sinceUpdate()";
+        Exp testExp4 = Exp.gt(Exp.intBin("sinceUpdate"), Exp.sinceUpdate());
         translateAndCompare(input4, testExp4);
     }
 

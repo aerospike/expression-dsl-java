@@ -1,14 +1,15 @@
 package com.aerospike.expSource;
 
 import com.aerospike.client.exp.Exp;
+import lombok.Getter;
 
-public class MetadataOperand extends ExpSource {
+@Getter
+public class MetadataOperand extends AbstractPart {
 
-    final String metadataFunction;
+    private final String metadataFunction;
 
     public MetadataOperand(Exp exp, String metadataFunction) {
-        super(Type.METADATA_OPERAND);
-        super.exp = exp;
+        super(Type.METADATA_OPERAND, exp);
         this.metadataFunction = metadataFunction;
     }
 

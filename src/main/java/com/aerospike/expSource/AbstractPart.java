@@ -4,17 +4,14 @@ import com.aerospike.client.exp.Exp;
 import lombok.Getter;
 
 @Getter
-public abstract class ExpSource {
+public abstract class AbstractPart {
 
     private final Type type;
-    String binName;
-    Long number;
-    String string;
-    Exp exp;
-    private String context;
+    private final Exp exp;
 
-    public ExpSource(Type type) {
+    public AbstractPart(Type type, Exp exp) {
         this.type = type;
+        this.exp = exp;
     }
 
     public enum Type {

@@ -4,7 +4,7 @@ grammar Condition;
     package com.aerospike;
 }
 
-parse   : expression;
+parse: expression;
 
 expression
     : expression 'and' expression                  # AndExpression
@@ -20,43 +20,41 @@ expression
     | operand                                      # OperandExpression
     ;
 
-operand: number | quotedString | path | metadata | '(' expression ')';
+operand: number | quotedString | '$.' pathOrMetadata | '(' expression ')';
 
-number : NUMBER;
+number: NUMBER;
 
-NUMBER  : '-'?[0-9]+;
+NUMBER: '-'?[0-9]+;
 
-quotedString : ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
+quotedString: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
-path : '$.' pathPart ('.' pathPart)*? ('.' pathFunction)?;
+pathOrMetadata: path | metadata;
+
+path: pathPart ('.' pathPart)*? ('.' pathFunction)?;
 
 METADATA_FUNCTION
-    : 'deviceSize'
-    | 'memorySize'
-    | 'recordSize'
-    | 'isTombstone'
-    | 'keyExists'
-    | 'lastUpdate'
+    : 'deviceSize' { _input.LA(1) == '(' }?
+    | 'memorySize' { _input.LA(1) == '(' }?
+    | 'recordSize' { _input.LA(1) == '(' }?
+    | 'isTombstone' { _input.LA(1) == '(' }?
+    | 'keyExists' { _input.LA(1) == '(' }?
+    | 'lastUpdate' { _input.LA(1) == '(' }?
     | 'sinceUpdate' { _input.LA(1) == '(' }?
-    | 'setName'
-    | 'ttl'
-    | 'voidTime'
+    | 'setName' { _input.LA(1) == '(' }?
+    | 'ttl' { _input.LA(1) == '(' }?
+    | 'voidTime' { _input.LA(1) == '(' }?
     ;
 
-pathPart : NAME_IDENTIFIER;
+pathPart: NAME_IDENTIFIER;
 
 NAME_IDENTIFIER : [a-zA-Z0-9_]+;
 
-metadata
-    : '$.' metadataFunction '(' ')'
-    | '$.' digestModulo '(' NUMBER ')'
-    ;
+metadata: metadataFunction '(' ')' | digestModulo '(' NUMBER ')';
 
-metadataFunction
-    : METADATA_FUNCTION;
+metadataFunction: METADATA_FUNCTION;
 
 pathFunction: 'exists' '( )';
 
-digestModulo: 'digestModulo';
+digestModulo: 'digestModulo' { _input.LA(1) == '(' }?;
 
-WS  : [ \t\r\n]+ -> skip;
+WS: [ \t\r\n]+ -> skip;

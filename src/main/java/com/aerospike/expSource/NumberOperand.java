@@ -1,9 +1,14 @@
 package com.aerospike.expSource;
 
-public class NumberOperand extends ExpSource {
+import lombok.Getter;
+
+@Getter
+public class NumberOperand extends AbstractPart {
+
+    private final Long number;
 
     public NumberOperand(Long number) {
-        super(Type.NUMBER_OPERAND);
-        super.number = number;
+        super(Type.NUMBER_OPERAND, null);
+        this.number = number;
     }
 }
