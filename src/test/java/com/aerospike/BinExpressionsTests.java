@@ -99,6 +99,14 @@ public class BinExpressionsTests {
         translateAndCompare("not($.keyExists())", Exp.not(Exp.keyExists()));
     }
 
+    @Test
+    void binLogicalExclusive() {
+        translateAndCompare("exclusive($.hand == \"hook\", $.leg == \"peg\")",
+                Exp.exclusive(
+                        Exp.eq(Exp.stringBin("hand"), Exp.val("hook")),
+                        Exp.eq(Exp.stringBin("leg"), Exp.val("peg"))));
+    }
+
     // Will be handled in FMWK-486
     //@Test
     //void logicalOperators_functionCalls() {

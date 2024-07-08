@@ -38,6 +38,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<ExpSource> 
     }
 
     @Override
+    public ExpSource visitExclusiveExpression(ConditionParser.ExclusiveExpressionContext ctx) {
+        ExpSource left = visit(ctx.expression(0));
+        ExpSource right = visit(ctx.expression(1));
+
+        return new Expr(Exp.exclusive(left.getExp(), right.getExp()));
+    }
+
+    @Override
     public ExpSource visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {
         ExpSource left = visit(ctx.operand(0));
         ExpSource right = visit(ctx.operand(1));

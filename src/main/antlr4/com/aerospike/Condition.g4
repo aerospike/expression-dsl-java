@@ -7,16 +7,17 @@ grammar Condition;
 parse   : expression;
 
 expression
-    : expression 'and' expression    # AndExpression
-    | expression 'or' expression     # OrExpression
-    | 'not' '('expression')'         # NotExpression
-    | operand '>' operand            # GreaterThanExpression
-    | operand '>=' operand           # GreaterThanOrEqualExpression
-    | operand '<' operand            # LessThanExpression
-    | operand '<=' operand           # LessThanOrEqualExpression
-    | operand '==' operand           # EqualityExpression
-    | operand '!=' operand           # InequalityExpression
-    | operand                        # OperandExpression
+    : expression 'and' expression                  # AndExpression
+    | expression 'or' expression                   # OrExpression
+    | 'not' '('expression')'                       # NotExpression
+    | 'exclusive' '('expression',' expression')'   # ExclusiveExpression
+    | operand '>' operand                          # GreaterThanExpression
+    | operand '>=' operand                         # GreaterThanOrEqualExpression
+    | operand '<' operand                          # LessThanExpression
+    | operand '<=' operand                         # LessThanOrEqualExpression
+    | operand '==' operand                         # EqualityExpression
+    | operand '!=' operand                         # InequalityExpression
+    | operand                                      # OperandExpression
     ;
 
 operand: number | quotedString | path | metadata | '(' expression ')';
