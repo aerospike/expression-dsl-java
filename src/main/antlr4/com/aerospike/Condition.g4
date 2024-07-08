@@ -49,7 +49,7 @@ METADATA_FUNCTION
     | 'voidTime()'
     ;
 
-DIGEST_MODULO: 'digestModulo' { _input.LA(1) == '(' }?;
+DIGEST_MODULO: 'digestModulo' { _input.LA(1) == '(' }?; // next character is a '('
 
 pathPart: NAME_IDENTIFIER;
 
