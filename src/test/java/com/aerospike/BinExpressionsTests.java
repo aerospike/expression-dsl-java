@@ -107,6 +107,14 @@ public class BinExpressionsTests {
                         Exp.eq(Exp.stringBin("leg"), Exp.val("peg"))));
     }
 
+    @Test
+    void negativeBinLogicalExclusiveWithOneParam() {
+        assertThatThrownBy(() -> translateAndCompare("exclusive($.hand == \"hook\")",
+                Exp.exclusive(
+                        Exp.eq(Exp.stringBin("hand"), Exp.val("hook")))))
+                .isInstanceOf(NullPointerException.class);
+    }
+
     // Will be handled in FMWK-486
     //@Test
     //void logicalOperators_functionCalls() {
