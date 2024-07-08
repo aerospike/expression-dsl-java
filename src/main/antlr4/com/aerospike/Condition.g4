@@ -4,30 +4,59 @@ grammar Condition;
     package com.aerospike;
 }
 
-parse   : expression EOF ;
+parse: expression;
 
 expression
-    : expression 'and' expression    # AndExpression
-    | expression 'or' expression     # OrExpression
-    | operand '>' operand            # GreaterThanExpression
-    | operand '<' operand            # LessThanExpression
-    | operand                        # OperandExpression
+    : expression 'and' expression                  # AndExpression
+    | expression 'or' expression                   # OrExpression
+    | 'not' '('expression')'                       # NotExpression
+    | 'exclusive' '('expression',' expression')'   # ExclusiveExpression
+    | operand '>' operand                          # GreaterThanExpression
+    | operand '>=' operand                         # GreaterThanOrEqualExpression
+    | operand '<' operand                          # LessThanExpression
+    | operand '<=' operand                         # LessThanOrEqualExpression
+    | operand '==' operand                         # EqualityExpression
+    | operand '!=' operand                         # InequalityExpression
+    | operand                                      # OperandExpression
     ;
 
-operand
-    : functionCall
-    | NUMBER
+operand: number | quotedString | '$.' pathOrMetadata | '(' expression ')';
+
+number: NUMBER;
+
+NUMBER: '-'?[0-9]+;
+
+quotedString: QUOTED_STRING;
+
+QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
+
+pathOrMetadata: path | metadata;
+
+path: pathPart ('.' pathPart)*? ('.' pathFunction)?;
+
+metadata: METADATA_FUNCTION | digestModulo;
+
+METADATA_FUNCTION
+    : 'deviceSize()'
+    | 'memorySize()'
+    | 'recordSize()'
+    | 'isTombstone()'
+    | 'keyExists()'
+    | 'lastUpdate()'
+    | 'sinceUpdate()'
+    | 'setName()'
+    | 'ttl()'
+    | 'voidTime()'
     ;
 
-functionCall
-    : '$.' functionName '()'
-    ;
+digestModulo: DIGEST_MODULO '(' NUMBER ')';
 
-functionName
-    : 'deviceSize'
-    | 'ttl'
-    ;
+DIGEST_MODULO: 'digestModulo' { _input.LA(1) == '(' }?; // next character is a '('
 
-NUMBER  : [0-9]+ ;
+pathPart: NAME_IDENTIFIER;
 
-WS  : [ \t\r\n]+ -> skip ;
+NAME_IDENTIFIER : [a-zA-Z0-9_]+;
+
+pathFunction: 'exists' '( )';
+
+WS: [ \t\r\n]+ -> skip;
