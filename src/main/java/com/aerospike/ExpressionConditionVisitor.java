@@ -117,9 +117,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 case STRING_OPERAND -> operator.apply(Exp.bin(binName, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
                 case METADATA_OPERAND -> operator.apply(
                         Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString())),
-                        ((MetadataOperand) right).getExp()
+                        right.getExp()
                 );
-                case EXPR -> operator.apply(Exp.bin(binName, Exp.Type.STRING), ((Expr) right).getExp());
+                case EXPR -> operator.apply(Exp.bin(binName, Exp.Type.STRING), right.getExp());
                 default -> exp;
             };
             return exp;
@@ -130,10 +130,10 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 case NUMBER_OPERAND -> operator.apply(Exp.val(((NumberOperand) left).getNumber()), Exp.bin(binName, Exp.Type.INT));
                 case STRING_OPERAND -> operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binName, Exp.Type.STRING));
                 case METADATA_OPERAND -> operator.apply(
-                        ((MetadataOperand) left).getExp(),
+                        left.getExp(),
                         Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString()))
                 );
-                case EXPR -> operator.apply(((Expr) left).getExp(), Exp.bin(binName, Exp.Type.STRING));
+                case EXPR -> operator.apply(left.getExp(), Exp.bin(binName, Exp.Type.STRING));
                 default -> exp;
             };
             return exp;
@@ -148,8 +148,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return switch (expSource.getType()) {
             case NUMBER_OPERAND -> Exp.val(((NumberOperand) expSource).getNumber());
             case STRING_OPERAND -> Exp.val(((StringOperand) expSource).getString());
-            case EXPR -> ((Expr) expSource).getExp();
-            case METADATA_OPERAND -> ((MetadataOperand) expSource).getExp();
+            case EXPR, METADATA_OPERAND -> expSource.getExp();
             default -> throw new IllegalStateException("Error: expecting non-bin operand, got " + expSource.getType());
         };
     }
@@ -174,10 +173,11 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         String functionName;
         Integer optionalParam = null;
         if (ctx.metadataFunction() == null) {
-            functionName = ctx.digestModulo().getText();
+            functionName = ctx.DIGEST_MODULO().getText();
             optionalParam = Integer.valueOf(ctx.NUMBER().getText());
         } else {
             functionName = ctx.metadataFunction().getText();
+            functionName = functionName.substring(0, functionName.length() - 2); // remove parentheses
         }
         return visitMetadataFunctionName(functionName, optionalParam);
     }
@@ -185,6 +185,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitMetadataFunction(ConditionParser.MetadataFunctionContext ctx) {
         String functionName = ctx.getText();
+        functionName = functionName.substring(0, functionName.length() - 2); // remove parentheses
         return visitMetadataFunctionName(functionName, null);
     }
 

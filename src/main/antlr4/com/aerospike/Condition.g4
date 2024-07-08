@@ -32,29 +32,29 @@ pathOrMetadata: path | metadata;
 
 path: pathPart ('.' pathPart)*? ('.' pathFunction)?;
 
+metadata: metadataFunction | DIGEST_MODULO '(' NUMBER ')';
+
+metadataFunction: METADATA_FUNCTION;
+
 METADATA_FUNCTION
-    : 'deviceSize' { _input.LA(1) == '(' }?
-    | 'memorySize' { _input.LA(1) == '(' }?
-    | 'recordSize' { _input.LA(1) == '(' }?
-    | 'isTombstone' { _input.LA(1) == '(' }?
-    | 'keyExists' { _input.LA(1) == '(' }?
-    | 'lastUpdate' { _input.LA(1) == '(' }?
-    | 'sinceUpdate' { _input.LA(1) == '(' }?
-    | 'setName' { _input.LA(1) == '(' }?
-    | 'ttl' { _input.LA(1) == '(' }?
-    | 'voidTime' { _input.LA(1) == '(' }?
+    : 'deviceSize()'
+    | 'memorySize()'
+    | 'recordSize()'
+    | 'isTombstone()'
+    | 'keyExists()'
+    | 'lastUpdate()'
+    | 'sinceUpdate()'
+    | 'setName()'
+    | 'ttl()'
+    | 'voidTime()'
     ;
+
+DIGEST_MODULO: 'digestModulo' { _input.LA(1) == '(' }?;
 
 pathPart: NAME_IDENTIFIER;
 
 NAME_IDENTIFIER : [a-zA-Z0-9_]+;
 
-metadata: metadataFunction '(' ')' | digestModulo '(' NUMBER ')';
-
-metadataFunction: METADATA_FUNCTION;
-
 pathFunction: 'exists' '( )';
-
-digestModulo: 'digestModulo' { _input.LA(1) == '(' }?;
 
 WS: [ \t\r\n]+ -> skip;

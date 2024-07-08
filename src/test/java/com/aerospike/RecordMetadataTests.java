@@ -37,6 +37,11 @@ public class RecordMetadataTests {
         String input = "$.digestModulo(3) == 0";
         Exp testExp = Exp.eq(Exp.digestModulo(3), Exp.val(0));
         translateAndCompare(input, testExp);
+
+        // Expression to find records where digest mod 3 equals the value stored in the bin called "digestModulo"
+        String input2 = "$.digestModulo(3) == $.digestModulo";
+        Exp testExp2 = Exp.eq(Exp.digestModulo(3), Exp.intBin("digestModulo"));
+        translateAndCompare(input2, testExp2);
     }
 
     @Test
