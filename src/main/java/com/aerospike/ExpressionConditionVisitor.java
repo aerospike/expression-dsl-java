@@ -172,21 +172,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public AbstractPart visitMetadata(ConditionParser.MetadataContext ctx) {
         String functionName;
         Integer optionalParam = null;
-        if (ctx.metadataFunction() == null) {
-            functionName = ctx.DIGEST_MODULO().getText();
-            optionalParam = Integer.valueOf(ctx.NUMBER().getText());
+        if (ctx.METADATA_FUNCTION() == null) {
+            functionName = ctx.digestModulo().DIGEST_MODULO().getText();
+            optionalParam = Integer.valueOf(ctx.digestModulo().NUMBER().getText());
         } else {
-            functionName = ctx.metadataFunction().getText();
+            functionName = ctx.METADATA_FUNCTION().getText();
             functionName = functionName.substring(0, functionName.length() - 2); // remove parentheses
         }
         return visitMetadataFunctionName(functionName, optionalParam);
-    }
-
-    @Override
-    public AbstractPart visitMetadataFunction(ConditionParser.MetadataFunctionContext ctx) {
-        String functionName = ctx.getText();
-        functionName = functionName.substring(0, functionName.length() - 2); // remove parentheses
-        return visitMetadataFunctionName(functionName, null);
     }
 
     private AbstractPart visitMetadataFunctionName(String functionName, Integer optionalParam) {

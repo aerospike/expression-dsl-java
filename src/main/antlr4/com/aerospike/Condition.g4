@@ -26,15 +26,15 @@ number: NUMBER;
 
 NUMBER: '-'?[0-9]+;
 
-quotedString: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
+quotedString: QUOTED_STRING;
+
+QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
 pathOrMetadata: path | metadata;
 
 path: pathPart ('.' pathPart)*? ('.' pathFunction)?;
 
-metadata: metadataFunction | DIGEST_MODULO '(' NUMBER ')';
-
-metadataFunction: METADATA_FUNCTION;
+metadata: METADATA_FUNCTION | digestModulo;
 
 METADATA_FUNCTION
     : 'deviceSize()'
@@ -48,6 +48,8 @@ METADATA_FUNCTION
     | 'ttl()'
     | 'voidTime()'
     ;
+
+digestModulo: DIGEST_MODULO '(' NUMBER ')';
 
 DIGEST_MODULO: 'digestModulo' { _input.LA(1) == '(' }?; // next character is a '('
 
