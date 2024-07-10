@@ -1,14 +1,16 @@
 package com.aerospike;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.expSource.BinOperand;
 import com.aerospike.expSource.AbstractPart;
+import com.aerospike.expSource.BinOperand;
 import com.aerospike.expSource.Expr;
+import com.aerospike.expSource.FloatOperand;
+import com.aerospike.expSource.IntOperand;
 import com.aerospike.expSource.MetadataOperand;
-import com.aerospike.expSource.NumberOperand;
 import com.aerospike.expSource.StringOperand;
 
 import java.util.function.BinaryOperator;
+import java.util.function.UnaryOperator;
 
 import static com.aerospike.util.ParsingUtils.getWithoutQuotes;
 
@@ -99,8 +101,106 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new Expr(exp);
     }
 
+    @Override
+    public AbstractPart visitAddExpression(ConditionParser.AddExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::add);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitSubExpression(ConditionParser.SubExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::sub);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitMulExpression(ConditionParser.MulExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::mul);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitDivExpression(ConditionParser.DivExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::div);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitModExpression(ConditionParser.ModExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::mod);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitIntAndExpression(ConditionParser.IntAndExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::intAnd);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitIntOrExpression(ConditionParser.IntOrExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::intOr);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitIntXorExpression(ConditionParser.IntXorExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::intXor);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitIntNotExpression(ConditionParser.IntNotExpressionContext ctx) {
+        AbstractPart operand = visit(ctx.operand());
+
+        Exp exp = getExpOrFail(operand, Exp::intNot);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitIntLShiftExpression(ConditionParser.IntLShiftExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::lshift);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitIntRShiftExpression(ConditionParser.IntRShiftExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::rshift);
+        return new Expr(exp);
+    }
+
     private Exp getExpOrFail(AbstractPart left, AbstractPart right, BinaryOperator<Exp> operator) {
-        String binName;
+        String binNameRight;
         Exp exp = null;
 
         if (left == null) {
@@ -111,42 +211,71 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         if (left.getType() == AbstractPart.Type.BIN_OPERAND) {
-            binName = ((BinOperand) left).getBinName();
+            String binNameLeft = ((BinOperand) left).getBinName();
             exp = switch (right.getType()) {
-                case NUMBER_OPERAND -> operator.apply(Exp.bin(binName, Exp.Type.INT), Exp.val(((NumberOperand) right).getNumber()));
-                case STRING_OPERAND -> operator.apply(Exp.bin(binName, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
+                case INT_OPERAND ->
+                        operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.val(((IntOperand) right).getValue()));
+                case FLOAT_OPERAND ->
+                        operator.apply(Exp.bin(binNameLeft, Exp.Type.FLOAT), Exp.val(((FloatOperand) right).getValue()));
+                case STRING_OPERAND ->
+                        operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
                 case METADATA_OPERAND -> operator.apply(
-                        Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString())),
+                        Exp.bin(binNameLeft, Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString())),
                         right.getExp()
                 );
-                case EXPR -> operator.apply(Exp.bin(binName, Exp.Type.STRING), right.getExp());
-                default -> exp;
+                case EXPR -> operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), right.getExp());
+                // By default, compare bins as integers unless provided an explicit type to compare
+                case BIN_OPERAND -> {
+                    binNameRight = ((BinOperand) right).getBinName();
+                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.bin(binNameRight, Exp.Type.INT));
+                }
             };
             return exp;
         }
         if (right.getType() == AbstractPart.Type.BIN_OPERAND) {
-            binName = ((BinOperand) right).getBinName();
+            binNameRight = ((BinOperand) right).getBinName();
             exp = switch (left.getType()) {
-                case NUMBER_OPERAND -> operator.apply(Exp.val(((NumberOperand) left).getNumber()), Exp.bin(binName, Exp.Type.INT));
-                case STRING_OPERAND -> operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binName, Exp.Type.STRING));
+                case INT_OPERAND ->
+                        operator.apply(Exp.val(((IntOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.INT));
+                case FLOAT_OPERAND ->
+                        operator.apply(Exp.val(((FloatOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.FLOAT));
+                case STRING_OPERAND ->
+                        operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binNameRight, Exp.Type.STRING));
                 case METADATA_OPERAND -> operator.apply(
                         left.getExp(),
-                        Exp.bin(binName, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString()))
+                        Exp.bin(binNameRight, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString()))
                 );
-                case EXPR -> operator.apply(left.getExp(), Exp.bin(binName, Exp.Type.STRING));
+                case EXPR -> operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.STRING));
+                // No need for 2 BIN_OPERAND handling since its covered in the left condition
                 default -> exp;
             };
             return exp;
         }
 
+        // Handle non Bin operands cases
         Exp leftExp = getExpForNonBinOperand(left);
         Exp rightExp = getExpForNonBinOperand(right);
         return operator.apply(leftExp, rightExp);
     }
 
+    /*
+        For 1 operand Expressions
+     */
+    private Exp getExpOrFail(AbstractPart operand, UnaryOperator<Exp> operator) {
+        if (operand == null) {
+            throw new IllegalArgumentException("Unable to parse operand");
+        }
+
+        // 1 Operand Expression is always a BIN Operand
+        String binName = ((BinOperand) operand).getBinName();
+
+        return operator.apply(Exp.bin(binName, Exp.Type.INT));
+    }
+
     private Exp getExpForNonBinOperand(AbstractPart expSource) {
         return switch (expSource.getType()) {
-            case NUMBER_OPERAND -> Exp.val(((NumberOperand) expSource).getNumber());
+            case INT_OPERAND -> Exp.val(((IntOperand) expSource).getValue());
+            case FLOAT_OPERAND -> Exp.val(((FloatOperand) expSource).getValue());
             case STRING_OPERAND -> Exp.val(((StringOperand) expSource).getString());
             case EXPR, METADATA_OPERAND -> expSource.getExp();
             default -> throw new IllegalStateException("Error: expecting non-bin operand, got " + expSource.getType());
@@ -174,7 +303,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Integer optionalParam = null;
         if (ctx.METADATA_FUNCTION() == null) {
             functionName = ctx.digestModulo().DIGEST_MODULO().getText();
-            optionalParam = Integer.valueOf(ctx.digestModulo().NUMBER().getText());
+            optionalParam = Integer.valueOf(ctx.digestModulo().INT().getText());
         } else {
             functionName = ctx.METADATA_FUNCTION().getText();
             functionName = functionName.substring(0, functionName.length() - 2); // remove parentheses
@@ -218,9 +347,21 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
-    public AbstractPart visitNumber(ConditionParser.NumberContext ctx) {
-        String text = ctx.getText();
-        return new NumberOperand(Long.parseLong(text));
+    public AbstractPart visitNumberOperand(ConditionParser.NumberOperandContext ctx) {
+        // Delegates to specific visit methods
+        return visitChildren(ctx);
+    }
+
+    @Override
+    public AbstractPart visitIntOperand(ConditionParser.IntOperandContext ctx) {
+        String text = ctx.INT().getText();
+        return new IntOperand(Long.parseLong(text));
+    }
+
+    @Override
+    public AbstractPart visitFloatOperand(ConditionParser.FloatOperandContext ctx) {
+        String text = ctx.FLOAT().getText();
+        return new FloatOperand(Double.parseDouble(text));
     }
 
     @Override
