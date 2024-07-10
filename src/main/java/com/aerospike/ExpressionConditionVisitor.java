@@ -1,13 +1,13 @@
 package com.aerospike;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.expSource.AbstractPart;
-import com.aerospike.expSource.BinOperand;
-import com.aerospike.expSource.Expr;
-import com.aerospike.expSource.FloatOperand;
-import com.aerospike.expSource.IntOperand;
-import com.aerospike.expSource.MetadataOperand;
-import com.aerospike.expSource.StringOperand;
+import com.aerospike.model.AbstractPart;
+import com.aerospike.model.BinOperand;
+import com.aerospike.model.Expr;
+import com.aerospike.model.FloatOperand;
+import com.aerospike.model.IntOperand;
+import com.aerospike.model.MetadataOperand;
+import com.aerospike.model.StringOperand;
 
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;

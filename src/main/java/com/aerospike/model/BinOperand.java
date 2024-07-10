@@ -1,4 +1,4 @@
-package com.aerospike.expSource;
+package com.aerospike.model;
 
 import lombok.Getter;
 
