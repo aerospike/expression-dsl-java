@@ -53,7 +53,7 @@ pathOrMetadata: path | metadata;
 
 path: pathPart ('.' pathPart)*? ('.' pathFunction)?;
 
-metadata: METADATA_FUNCTION | digestModulo;
+metadata: METADATA_FUNCTION;
 
 METADATA_FUNCTION
     : 'deviceSize()'
@@ -66,11 +66,8 @@ METADATA_FUNCTION
     | 'setName()'
     | 'ttl()'
     | 'voidTime()'
+    | 'digestModulo(' INT ')'
     ;
-
-digestModulo: DIGEST_MODULO '(' INT ')';
-
-DIGEST_MODULO: 'digestModulo' { _input.LA(1) == '(' }?; // next character is a '('
 
 pathPart: NAME_IDENTIFIER;
 

@@ -9,6 +9,11 @@ public abstract class AbstractPart {
     private final Type type;
     private final Exp exp;
 
+    public AbstractPart(Type type) {
+        this.type = type;
+        this.exp = null;
+    }
+
     public AbstractPart(Type type, Exp exp) {
         this.type = type;
         this.exp = exp;

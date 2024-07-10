@@ -299,35 +299,31 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitMetadata(ConditionParser.MetadataContext ctx) {
-        String functionName;
-        Integer optionalParam = null;
-        if (ctx.METADATA_FUNCTION() == null) {
-            functionName = ctx.digestModulo().DIGEST_MODULO().getText();
-            optionalParam = Integer.valueOf(ctx.digestModulo().INT().getText());
+        String text = ctx.METADATA_FUNCTION().getText();
+        String functionName = extractFunctionName(text);
+        Integer parameter = extractParameter(text);
+
+        if (parameter != null) {
+            return new MetadataOperand(functionName, parameter);
         } else {
-            functionName = ctx.METADATA_FUNCTION().getText();
-            functionName = functionName.substring(0, functionName.length() - 2); // remove parentheses
+            return new MetadataOperand(functionName);
         }
-        return visitMetadataFunctionName(functionName, optionalParam);
     }
 
-    private AbstractPart visitMetadataFunctionName(String functionName, Integer optionalParam) {
-        Exp exp = switch (functionName) {
-            case "deviceSize" -> Exp.deviceSize();
-            case "memorySize" -> Exp.memorySize();
-            case "recordSize" -> Exp.recordSize();
-            case "digestModulo" -> Exp.digestModulo(optionalParam);
-            case "isTombstone" -> Exp.isTombstone();
-            case "keyExists" -> Exp.keyExists();
-            case "lastUpdate" -> Exp.lastUpdate();
-            case "sinceUpdate" -> Exp.sinceUpdate();
-            case "setName" -> Exp.setName();
-            case "ttl" -> Exp.ttl();
-            case "voidTime" -> Exp.voidTime();
-            default -> throw new IllegalArgumentException("Unknown metadata function: " + functionName);
-        };
+    private String extractFunctionName(String text) {
+        int startParen = text.indexOf('(');
+        return (startParen != -1) ? text.substring(0, startParen) : text;
+    }
 
-        return new MetadataOperand(exp, functionName);
+    private Integer extractParameter(String text) {
+        int startParen = text.indexOf('(');
+        int endParen = text.indexOf(')');
+
+        if (startParen != -1 && endParen != -1 && endParen > startParen + 1) {
+            String numberStr = text.substring(startParen + 1, endParen);
+            return Integer.parseInt(numberStr);
+        }
+        return null;
     }
 
     @Override
