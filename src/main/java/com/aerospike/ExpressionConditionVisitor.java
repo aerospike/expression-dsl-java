@@ -246,7 +246,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         Exp.bin(binNameRight, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString()))
                 );
                 case EXPR -> operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.STRING));
-                // No need for 2 BIN_OPERAND handling since its covered in the left condition
+                // No need for 2 BIN_OPERAND handling since it's covered in the left condition
                 default -> exp;
             };
             return exp;

@@ -1,16 +1,9 @@
 package com.aerospike.util;
 
-public class ParsingUtils {
+import lombok.experimental.UtilityClass;
 
-    /**
-     * Checks if the given string is inside quotes.
-     *
-     * @param str String input
-     * @return true if is in quotes, otherwise false
-     */
-    public static boolean isInQuotes(String str) {
-        return (str.startsWith("\"") && str.endsWith("\"")) || (str.startsWith("'") && str.endsWith("'"));
-    }
+@UtilityClass
+public class ParsingUtils {
 
     /**
      * Get the string inside the quotes.
