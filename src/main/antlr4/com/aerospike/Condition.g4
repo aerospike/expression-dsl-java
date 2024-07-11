@@ -35,7 +35,12 @@ expression
     | operand                                      # OperandExpression
     ;
 
-operand: numberOperand | quotedString | '$.' pathOrMetadata | '(' expression ')';
+operand
+    : numberOperand
+    | quotedString
+    | '$.' pathOrMetadata
+    | '(' expression ')'
+    ;
 
 numberOperand: intOperand | floatOperand;
 
