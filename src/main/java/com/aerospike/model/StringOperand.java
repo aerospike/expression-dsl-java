@@ -1,4 +1,4 @@
-package com.aerospike.expSource;
+package com.aerospike.model;
 
 import lombok.Getter;
 
@@ -8,7 +8,7 @@ public class StringOperand extends AbstractPart {
     private final String string;
 
     public StringOperand(String string) {
-        super(Type.STRING_OPERAND, null);
+        super(Type.STRING_OPERAND);
         this.string = string;
     }
 }

@@ -1,4 +1,4 @@
-package com.aerospike.expSource;
+package com.aerospike.model;
 
 import lombok.Getter;
 
@@ -8,7 +8,7 @@ public class BinOperand extends AbstractPart {
     private final String binName;
 
     public BinOperand(String binName) {
-        super(Type.BIN_OPERAND, null);
+        super(Type.BIN_OPERAND);
         this.binName = binName;
     }
 }
