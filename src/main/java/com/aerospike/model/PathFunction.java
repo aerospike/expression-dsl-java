@@ -1,4 +1,4 @@
-package com.aerospike.parts;
+package com.aerospike.model;
 
 import lombok.Getter;
 
@@ -10,7 +10,7 @@ public class PathFunction extends AbstractPart {
     private final TYPE_PARAM typeParam;
 
     public PathFunction(PATH_FUNCTION_TYPE type, RETURN_PARAM returnParam, TYPE_PARAM typeParam) {
-        super(Type.PATH_FUNCTION, null);
+        super(Type.PATH_FUNCTION);
         this.pathFunctionType = type;
         this.returnParam = returnParam;
         this.typeParam = typeParam;

@@ -1,4 +1,4 @@
-package com.aerospike.parts;
+package com.aerospike.model;
 
 import lombok.Getter;
 
@@ -12,7 +12,7 @@ public class ListPart extends AbstractPart {
     private final ListPathType listPathType;
 
     private ListPart(Builder builder) {
-        super(Type.LIST_PART, null);
+        super(Type.LIST_PART);
         this.listIndex = builder.listIndex;
         this.listValue = builder.listValue;
         this.listRank = builder.listRank;

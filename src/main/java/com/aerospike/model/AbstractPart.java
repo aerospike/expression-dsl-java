@@ -1,4 +1,4 @@
-package com.aerospike.parts;
+package com.aerospike.model;
 
 import com.aerospike.client.exp.Exp;
 import lombok.Getter;
@@ -9,18 +9,25 @@ public abstract class AbstractPart {
     private final Type type;
     private final Exp exp;
 
+    public AbstractPart(Type type) {
+        this.type = type;
+        this.exp = null;
+    }
+
     public AbstractPart(Type type, Exp exp) {
         this.type = type;
         this.exp = exp;
     }
 
     public enum Type {
-        NUMBER_OPERAND,
+        INT_OPERAND,
+        FLOAT_OPERAND,
+        BOOL_OPERAND,
         STRING_OPERAND,
-        BIN_PART,
-        PATH_OPERAND,
         BASE_PATH,
+        BIN_PART,
         LIST_PART,
+        PATH_OPERAND,
         PATH_FUNCTION,
         METADATA_OPERAND,
         EXPR

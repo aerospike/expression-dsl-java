@@ -12,13 +12,18 @@ public class BinExpressionsTests {
 
     @Test
     void binGT() {
+        // Bin as right
         translateAndCompare("$.intBin1 > 100", Exp.gt(Exp.intBin("intBin1"), Exp.val(100)));
         translateAndCompare("$.stringBin1 > 'text'", Exp.gt(Exp.stringBin("stringBin1"), Exp.val("text")));
         translateAndCompare("$.stringBin1 > \"text\"", Exp.gt(Exp.stringBin("stringBin1"), Exp.val("text")));
 
+        // Bin as left (considered as lt)
         translateAndCompare("100 < $.intBin1", Exp.lt(Exp.val(100), Exp.intBin("intBin1")));
         translateAndCompare("'text' < $.stringBin1", Exp.lt(Exp.val("text"), Exp.stringBin("stringBin1")));
         translateAndCompare("\"text\" < $.stringBin1", Exp.lt(Exp.val("text"), Exp.stringBin("stringBin1")));
+
+        // 2 Bins (Integer)
+        translateAndCompare("$.intBin1 < $.intBin2", Exp.lt(Exp.intBin("intBin1"), Exp.intBin("intBin2")));
     }
 
     @Test
@@ -26,6 +31,9 @@ public class BinExpressionsTests {
         translateAndCompare("$.intBin1 >= 100", Exp.ge(Exp.intBin("intBin1"), Exp.val(100)));
         translateAndCompare("$.stringBin1 >= 'text'", Exp.ge(Exp.stringBin("stringBin1"), Exp.val("text")));
         translateAndCompare("$.stringBin1 >= \"text\"", Exp.ge(Exp.stringBin("stringBin1"), Exp.val("text")));
+
+        // Float
+        translateAndCompare("$.floatBin1 >= 100.25", Exp.ge(Exp.floatBin("floatBin1"), Exp.val(100.25)));
     }
 
     @Test
@@ -47,6 +55,18 @@ public class BinExpressionsTests {
         translateAndCompare("$.intBin1 == 100", Exp.eq(Exp.intBin("intBin1"), Exp.val(100)));
         translateAndCompare("$.strBin == \"yes\"", Exp.eq(Exp.stringBin("strBin"), Exp.val("yes")));
         translateAndCompare("$.strBin == 'yes'", Exp.eq(Exp.stringBin("strBin"), Exp.val("yes")));
+
+        // Boolean
+        translateAndCompare("$.boolBin1 == true", Exp.eq(Exp.boolBin("boolBin1"), Exp.val(true)));
+        translateAndCompare("false == $.boolBin1", Exp.eq(Exp.val(false), Exp.boolBin("boolBin1")));
+
+        /*
+        TODO: This currently fails, will be supported on FMWK-475 Explicit Type Comparison
+
+        translateAndCompare("$.stringBin1 == $.stringBin2",
+                Exp.eq(Exp.stringBin("stringBin1"), Exp.stringBin("stringBin2")));
+
+         */
     }
 
     @Test
@@ -54,6 +74,9 @@ public class BinExpressionsTests {
         translateAndCompare("$.intBin1 != 100", Exp.ne(Exp.intBin("intBin1"), Exp.val(100)));
         translateAndCompare("$.strBin != \"yes\"", Exp.ne(Exp.stringBin("strBin"), Exp.val("yes")));
         translateAndCompare("$.strBin != 'yes'", Exp.ne(Exp.stringBin("strBin"), Exp.val("yes")));
+
+        // Boolean
+        translateAndCompare("$.boolBin1 != false", Exp.ne(Exp.boolBin("boolBin1"), Exp.val(false)));
     }
 
     @Test
@@ -115,7 +138,7 @@ public class BinExpressionsTests {
                 .isInstanceOf(NullPointerException.class);
     }
 
-    // Will be handled in FMWK-486
+    // TODO: Will be handled in FMWK-486
     //@Test
     //void logicalOperators_functionCalls() {
     //    translateAndPrint("$.a.exists() and $.b.exists()");

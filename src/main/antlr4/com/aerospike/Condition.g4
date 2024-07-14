@@ -7,26 +7,56 @@ grammar Condition;
 parse: expression;
 
 expression
+    // Logical Expressions
     : expression 'and' expression                  # AndExpression
     | expression 'or' expression                   # OrExpression
     | 'not' '('expression')'                       # NotExpression
     | 'exclusive' '('expression',' expression')'   # ExclusiveExpression
+    // Comparison Expressions
     | operand '>' operand                          # GreaterThanExpression
     | operand '>=' operand                         # GreaterThanOrEqualExpression
     | operand '<' operand                          # LessThanExpression
     | operand '<=' operand                         # LessThanOrEqualExpression
     | operand '==' operand                         # EqualityExpression
     | operand '!=' operand                         # InequalityExpression
+    // Arithmetic Expressions
+    | operand '+' operand                          # AddExpression
+    | operand '-' operand                          # SubExpression
+    | operand '*' operand                          # MulExpression
+    | operand '/' operand                          # DivExpression
+    | operand '%' operand                          # ModExpression
+    | operand '&' operand                          # IntAndExpression
+    | operand '|' operand                          # IntOrExpression
+    | operand '^' operand                          # IntXorExpression
+    | '~' operand                                  # IntNotExpression
+    | operand '<<' operand                         # IntLShiftExpression
+    | operand '>>' operand                         # IntRShiftExpression
+    // Base Operand
     | operand                                      # OperandExpression
     ;
 
-operand: number | quotedString | '$.' pathOrMetadata | '(' expression ')';
+operand
+    : numberOperand
+    | booleanOperand
+    | stringOperand
+    | '$.' pathOrMetadata
+    | '(' expression ')'
+    ;
 
-number: NUMBER;
+numberOperand: intOperand | floatOperand;
 
-NUMBER: '-'?[0-9]+;
+intOperand: INT;
+floatOperand: FLOAT;
 
-quotedString: QUOTED_STRING;
+INT: '-'?[0-9]+;
+FLOAT: '-'? [0-9]+ '.' [0-9]+;
+
+booleanOperand: TRUE | FALSE;
+
+TRUE: 'true';
+FALSE: 'false';
+
+stringOperand: QUOTED_STRING;
 
 QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
@@ -36,7 +66,7 @@ path: basePath ('.' pathFunction)?;
 
 basePath: pathPart ('.' (pathPart | listPath))*?;
 
-metadata: METADATA_FUNCTION | digestModulo;
+metadata: METADATA_FUNCTION;
 
 METADATA_FUNCTION
     : 'deviceSize()'
@@ -49,11 +79,8 @@ METADATA_FUNCTION
     | 'setName()'
     | 'ttl()'
     | 'voidTime()'
+    | 'digestModulo(' INT ')'
     ;
-
-digestModulo: DIGEST_MODULO '(' NUMBER ')';
-
-DIGEST_MODULO: 'digestModulo' { _input.LA(1) == '(' }?; // next character is a '('
 
 PATH_FUNCTION_GET: 'get';
 
@@ -61,7 +88,7 @@ pathFunctionParamName
     : PATH_FUNCTION_PARAM_TYPE
     | PATH_FUNCTION_PARAM_RETURN
     ;
-    
+
 PATH_FUNCTION_PARAM_TYPE: 'type';
 
 PATH_FUNCTION_PARAM_RETURN: 'return';
@@ -98,14 +125,14 @@ VALUE_IDENTIFIER: '=' NAME_IDENTIFIER;
 
 listRank: '[' RANK_IDENTIFIER ']';
 
-RANK_IDENTIFIER: '#' NUMBER;
+RANK_IDENTIFIER: '#' INT;
 
-listIndex: '[' NUMBER ']';
+listIndex: '[' INT ']';
 
 pathFunction
     : pathFunctionExists
     | pathFunctionGet
-    | PATH_FUNCTION_COUNT
+    | pathFunctionCount
     | 'remove' '()'
     | 'insert' '()'
     | 'set' '()'

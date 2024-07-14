@@ -2,14 +2,12 @@ package com.aerospike;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
+import lombok.experimental.UtilityClass;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@UtilityClass
 public class TestUtils {
-
-    static Expression translate(String input) {
-        return ConditionTranslator.translate(input);
-    }
 
     static void translateAndPrint(String input) {
         Expression expression = ConditionTranslator.translate(input);
