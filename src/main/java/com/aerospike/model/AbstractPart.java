@@ -22,6 +22,7 @@ public abstract class AbstractPart {
     public enum Type {
         INT_OPERAND,
         FLOAT_OPERAND,
+        BOOL_OPERAND,
         STRING_OPERAND,
         BIN_OPERAND,
         METADATA_OPERAND,
