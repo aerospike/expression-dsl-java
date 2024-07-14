@@ -92,11 +92,15 @@ listPath: LIST_BIN | listIndex | listValue | listRank;
 
 LIST_BIN: '[]';
 
+listValue: '[' VALUE_IDENTIFIER ']';
+
+VALUE_IDENTIFIER: '=' NAME_IDENTIFIER;
+
+listRank: '[' RANK_IDENTIFIER ']';
+
+RANK_IDENTIFIER: '#' NUMBER;
+
 listIndex: '[' NUMBER ']';
-
-listValue: '[' '=' NAME_IDENTIFIER ']';
-
-listRank: '[' '#' NUMBER ']';
 
 pathFunction
     : pathFunctionExists

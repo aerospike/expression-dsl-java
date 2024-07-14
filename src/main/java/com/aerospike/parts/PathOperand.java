@@ -39,12 +39,22 @@ public class PathOperand extends AbstractPart {
                     BinPart bin = basePath.getBinOperand();
                     return switch (list.getListPathType()) {
                         case BIN -> Exp.listBin(bin.getBinName());
-                        case INDEX ->
-                                ListExp.getByIndex(listReturnType, valueType, Exp.val(list.getListIndex()), Exp.bin(bin.getBinName(), getBinType(basePath)));
-                        case VALUE ->
-                                ListExp.getByValue(listReturnType, Exp.val(list.getListIndex()), Exp.bin(bin.getBinName(), getBinType(basePath)));
-                        case RANK ->
-                                ListExp.getByRank(listReturnType, valueType, Exp.val(list.getListIndex()), Exp.bin(bin.getBinName(), getBinType(basePath)));
+                        case INDEX -> ListExp.getByIndex(listReturnType, valueType, Exp.val(list.getListIndex()),
+                                Exp.bin(bin.getBinName(), getBinType(basePath)));
+                        case VALUE -> {
+                            Exp value = switch (valueType) {
+                                case BOOL -> Exp.val(Boolean.parseBoolean(list.getListValue()));
+                                case INT -> Exp.val(Integer.parseInt(list.getListValue()));
+                                case STRING -> Exp.val(list.getListValue());
+                                case FLOAT -> Exp.val(Float.parseFloat(list.getListValue()));
+                                default -> throw new IllegalStateException(
+                                        String.format("Get by value from a List: unexpected value '%s'", valueType));
+                            };
+                            yield ListExp.getByValue(listReturnType, value,
+                                    Exp.bin(bin.getBinName(), getBinType(basePath)));
+                        }
+                        case RANK -> ListExp.getByRank(listReturnType, valueType, Exp.val(list.getListRank()),
+                                Exp.bin(bin.getBinName(), getBinType(basePath)));
                     };
                 }
             }
@@ -54,7 +64,8 @@ public class PathOperand extends AbstractPart {
                     BinPart bin = basePath.getBinOperand();
                     return switch (list.getListPathType()) {
                         case BIN -> ListExp.size(Exp.bin(bin.getBinName(), getBinType(basePath)));
-                        default -> null;
+                        default -> throw new IllegalStateException(
+                                String.format("Get size from a List: unexpected value '%s'", valueType));
                     };
                 }
             }

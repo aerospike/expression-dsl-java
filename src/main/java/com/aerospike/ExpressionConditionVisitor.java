@@ -277,7 +277,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitPath(ConditionParser.PathContext ctx) {
         BasePath basePath = (BasePath) visit(ctx.basePath());
-        Exp exp = PathOperand.processPath(basePath, ctx.pathFunction() == null ? null : (PathFunction) visit(ctx.pathFunction()));
+        Exp exp = PathOperand.processPath(basePath, ctx.pathFunction() == null
+                ? null
+                : (PathFunction) visit(ctx.pathFunction()));
         return new PathOperand(exp);
     }
 
@@ -291,13 +293,19 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 .setListIndex(Integer.parseInt(ctx.listIndex().NUMBER().getText()))
                 .build();
 
-        if (ctx.listValue() != null) return ListPart.builder()
-                .setListValue(ctx.listValue().NAME_IDENTIFIER().getText())
-                .build();
+        if (ctx.listValue() != null) {
+            String listValue = ctx.listValue().VALUE_IDENTIFIER().getText();
+            return ListPart.builder()
+                    .setListValue(listValue.substring(1))
+                    .build();
+        }
 
-        if (ctx.listRank() != null) return ListPart.builder()
-                .setListRank(Integer.parseInt(ctx.listRank().NUMBER().getText()))
-                .build();
+        if (ctx.listRank() != null) {
+            String listRank = ctx.listRank().RANK_IDENTIFIER().getText();
+            return ListPart.builder()
+                    .setListRank(Integer.parseInt(listRank.substring(1)))
+                    .build();
+        }
 
         throw new IllegalStateException("Unexpected path type in a List: " + ctx.getText());
     }
