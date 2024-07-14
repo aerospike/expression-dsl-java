@@ -142,4 +142,21 @@ public class RecordMetadataTests {
         );
         translateAndCompare(input2, testExp2);
     }
+
+    @Test
+    void metadataAsExpressionWithLogicalOperator() {
+        String input = "$.isTombstone() and $.ttl() < 300";
+        Exp testExp = Exp.and(
+                Exp.isTombstone(),
+                Exp.lt(Exp.ttl(), Exp.val(300))
+        );
+        translateAndCompare(input, testExp);
+
+        input = "$.ttl() < 300 or $.keyExists()";
+        testExp = Exp.or(
+                Exp.lt(Exp.ttl(), Exp.val(300)),
+                Exp.keyExists()
+        );
+        translateAndCompare(input, testExp);
+    }
 }

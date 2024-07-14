@@ -118,6 +118,18 @@ public class BinExpressionsTests {
     }
 
     @Test
+    void binBooleanImplicitLogicalComparison() {
+        translateAndCompare("$.boolBin1 and $.boolBin2",
+                Exp.and(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
+        translateAndCompare("$.boolBin1 or $.boolBin2",
+                Exp.or(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
+        translateAndCompare("not($.boolBin1)",
+                Exp.not(Exp.boolBin("boolBin1")));
+        translateAndCompare("exclusive($.boolBin1, $.boolBin2)",
+                Exp.exclusive(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
+    }
+
+    @Test
     void binLogicalNot() {
         translateAndCompare("not($.keyExists())", Exp.not(Exp.keyExists()));
     }

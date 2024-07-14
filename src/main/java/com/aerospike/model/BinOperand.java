@@ -1,14 +1,21 @@
 package com.aerospike.model;
 
+import com.aerospike.client.exp.Exp;
 import lombok.Getter;
 
 @Getter
-public class BinOperand extends AbstractPart {
+public class BinOperand extends Expr {
 
     private final String binName;
 
     public BinOperand(String binName) {
-        super(Type.BIN_OPERAND);
+        super(constructExp(binName));
         this.binName = binName;
+        this.setType(Type.BIN_OPERAND);
+    }
+
+    // Bin is implicitly a boolean expression by itself
+    private static Exp constructExp(String binName) {
+        return Exp.boolBin(binName);
     }
 }

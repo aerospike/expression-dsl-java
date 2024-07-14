@@ -4,17 +4,19 @@ import com.aerospike.client.exp.Exp;
 import lombok.Getter;
 
 @Getter
-public class MetadataOperand extends AbstractPart {
+public class MetadataOperand extends Expr {
 
     private final String functionName;
 
     public MetadataOperand(String functionName) {
-        super(Type.METADATA_OPERAND, constructExp(functionName, null));
+        super(constructExp(functionName, null));
+        this.setType(Type.METADATA_OPERAND);
         this.functionName = functionName;
     }
 
     public MetadataOperand(String functionName, int parameter) {
-        super(Type.METADATA_OPERAND, constructExp(functionName, parameter));
+        super(constructExp(functionName, parameter));
+        this.setType(Type.METADATA_OPERAND);
         this.functionName = functionName;
     }
 
