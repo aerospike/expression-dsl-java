@@ -56,6 +56,10 @@ public class BinExpressionsTests {
         translateAndCompare("$.strBin == \"yes\"", Exp.eq(Exp.stringBin("strBin"), Exp.val("yes")));
         translateAndCompare("$.strBin == 'yes'", Exp.eq(Exp.stringBin("strBin"), Exp.val("yes")));
 
+        // Boolean
+        translateAndCompare("$.boolBin1 == true", Exp.eq(Exp.boolBin("boolBin1"), Exp.val(true)));
+        translateAndCompare("false == $.boolBin1", Exp.eq(Exp.val(false), Exp.boolBin("boolBin1")));
+
         /*
         TODO: This currently fails, will be supported on FMWK-475 Explicit Type Comparison
 
@@ -70,6 +74,9 @@ public class BinExpressionsTests {
         translateAndCompare("$.intBin1 != 100", Exp.ne(Exp.intBin("intBin1"), Exp.val(100)));
         translateAndCompare("$.strBin != \"yes\"", Exp.ne(Exp.stringBin("strBin"), Exp.val("yes")));
         translateAndCompare("$.strBin != 'yes'", Exp.ne(Exp.stringBin("strBin"), Exp.val("yes")));
+
+        // Boolean
+        translateAndCompare("$.boolBin1 != false", Exp.ne(Exp.boolBin("boolBin1"), Exp.val(false)));
     }
 
     @Test

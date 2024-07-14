@@ -37,6 +37,7 @@ expression
 
 operand
     : numberOperand
+    | booleanOperand
     | quotedString
     | '$.' pathOrMetadata
     | '(' expression ')'
@@ -49,6 +50,11 @@ floatOperand: FLOAT;
 
 INT: '-'?[0-9]+;
 FLOAT: '-'? [0-9]+ '.' [0-9]+;
+
+booleanOperand: TRUE | FALSE;
+
+TRUE: 'true';
+FALSE: 'false';
 
 quotedString: QUOTED_STRING;
 

@@ -1,13 +1,7 @@
 package com.aerospike;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.model.AbstractPart;
-import com.aerospike.model.BinOperand;
-import com.aerospike.model.Expr;
-import com.aerospike.model.FloatOperand;
-import com.aerospike.model.IntOperand;
-import com.aerospike.model.MetadataOperand;
-import com.aerospike.model.StringOperand;
+import com.aerospike.model.*;
 
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
@@ -217,6 +211,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.val(((IntOperand) right).getValue()));
                 case FLOAT_OPERAND ->
                         operator.apply(Exp.bin(binNameLeft, Exp.Type.FLOAT), Exp.val(((FloatOperand) right).getValue()));
+                case BOOL_OPERAND ->
+                        operator.apply(Exp.bin(binNameLeft, Exp.Type.BOOL), Exp.val(((BooleanOperand) right).getValue()));
                 case STRING_OPERAND ->
                         operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
                 case METADATA_OPERAND -> operator.apply(
@@ -239,6 +235,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         operator.apply(Exp.val(((IntOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.INT));
                 case FLOAT_OPERAND ->
                         operator.apply(Exp.val(((FloatOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.FLOAT));
+                case BOOL_OPERAND ->
+                        operator.apply(Exp.val(((BooleanOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.BOOL));
                 case STRING_OPERAND ->
                         operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binNameRight, Exp.Type.STRING));
                 case METADATA_OPERAND -> operator.apply(
@@ -358,6 +356,12 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public AbstractPart visitFloatOperand(ConditionParser.FloatOperandContext ctx) {
         String text = ctx.FLOAT().getText();
         return new FloatOperand(Double.parseDouble(text));
+    }
+
+    @Override
+    public AbstractPart visitBooleanOperand(ConditionParser.BooleanOperandContext ctx) {
+        String text = ctx.getText();
+        return new BooleanOperand(Boolean.parseBoolean(text));
     }
 
     @Override
