@@ -3,12 +3,12 @@ package com.aerospike.model;
 import lombok.Getter;
 
 @Getter
-public class BinOperand extends AbstractPart {
+public class BinPart extends AbstractPart {
 
     private final String binName;
 
-    public BinOperand(String binName) {
-        super(Type.BIN_OPERAND);
+    public BinPart(String binName) {
+        super(Type.BIN_PART);
         this.binName = binName;
     }
 }
