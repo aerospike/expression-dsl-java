@@ -11,7 +11,7 @@ public class BasePath extends AbstractPart {
     private final List<AbstractPart> parts;
 
     public BasePath(BinPart binOperand, List<AbstractPart> parts) {
-        super(Type.BASE_PATH, null);
+        super(Type.BASE_PATH);
         this.binPart = binOperand;
         this.parts = parts;
     }
