@@ -1,4 +1,4 @@
-package com.aerospike.util;
+package com.aerospike.dsl.util;
 
 import lombok.experimental.UtilityClass;
 

@@ -1,7 +1,7 @@
 grammar Condition;
 
 @header {
-    package com.aerospike;
+    package com.aerospike.dsl;
 }
 
 parse: expression;

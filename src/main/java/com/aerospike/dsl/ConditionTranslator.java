@@ -1,12 +1,13 @@
-package com.aerospike;
+package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
+import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-
+@UtilityClass
 public class ConditionTranslator {
 
     public static Expression translate(String input) {

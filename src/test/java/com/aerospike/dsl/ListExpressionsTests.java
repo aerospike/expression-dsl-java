@@ -1,11 +1,11 @@
-package com.aerospike;
+package com.aerospike.dsl;
 
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import org.junit.jupiter.api.Test;
 
-import static com.aerospike.TestUtils.translateAndCompare;
+import static com.aerospike.dsl.TestUtils.translateAndCompare;
 
 public class ListExpressionsTests {
 
