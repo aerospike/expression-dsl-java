@@ -4,14 +4,14 @@ import com.aerospike.client.exp.Exp;
 import lombok.Getter;
 
 @Getter
-public class BinOperand extends Expr {
+public class BinPart extends Expr {
 
     private final String binName;
 
-    public BinOperand(String binName) {
+    public BinPart(String binName) {
         super(constructExp(binName));
         this.binName = binName;
-        this.setType(Type.BIN_OPERAND);
+        this.setType(Type.BIN_PART);
     }
 
     // Bin is implicitly a boolean expression by itself

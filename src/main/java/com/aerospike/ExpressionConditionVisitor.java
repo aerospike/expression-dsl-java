@@ -2,7 +2,10 @@ package com.aerospike;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.model.*;
+import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
@@ -204,8 +207,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             throw new IllegalArgumentException("Unable to parse right operand");
         }
 
-        if (left.getType() == AbstractPart.Type.BIN_OPERAND) {
-            String binNameLeft = ((BinOperand) left).getBinName();
+        if (left.getType() == AbstractPart.Type.BIN_PART) {
+            String binNameLeft = ((BinPart) left).getBinName();
             exp = switch (right.getType()) {
                 case INT_OPERAND ->
                         operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.val(((IntOperand) right).getValue()));
@@ -220,16 +223,20 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         right.getExp()
                 );
                 case EXPR -> operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), right.getExp());
+                case PATH_OPERAND ->
+                        operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), right.getExp()); // TODO: bin type?
                 // By default, compare bins as integers unless provided an explicit type to compare
-                case BIN_OPERAND -> {
-                    binNameRight = ((BinOperand) right).getBinName();
+                case BIN_PART -> {
+                    binNameRight = ((BinPart) right).getBinName();
                     yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.bin(binNameRight, Exp.Type.INT));
                 }
+                default ->
+                        throw new IllegalStateException(String.format("Operand type not supported: %s", right.getType()));
             };
             return exp;
         }
-        if (right.getType() == AbstractPart.Type.BIN_OPERAND) {
-            binNameRight = ((BinOperand) right).getBinName();
+        if (right.getType() == AbstractPart.Type.BIN_PART) {
+            binNameRight = ((BinPart) right).getBinName();
             exp = switch (left.getType()) {
                 case INT_OPERAND ->
                         operator.apply(Exp.val(((IntOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.INT));
@@ -245,7 +252,10 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 );
                 case EXPR -> operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.STRING));
                 // No need for 2 BIN_OPERAND handling since it's covered in the left condition
-                default -> exp;
+                case PATH_OPERAND ->
+                        operator.apply(Exp.bin(binNameRight, Exp.Type.STRING), left.getExp()); // TODO: bin type
+                default ->
+                        throw new IllegalStateException(String.format("Operand type not supported: %s", left.getType()));
             };
             return exp;
         }
@@ -265,34 +275,58 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         // 1 Operand Expression is always a BIN Operand
-        String binName = ((BinOperand) operand).getBinName();
+        String binName = ((BinPart) operand).getBinName();
 
         return operator.apply(Exp.bin(binName, Exp.Type.INT));
     }
 
-    private Exp getExpForNonBinOperand(AbstractPart expSource) {
-        return switch (expSource.getType()) {
-            case INT_OPERAND -> Exp.val(((IntOperand) expSource).getValue());
-            case FLOAT_OPERAND -> Exp.val(((FloatOperand) expSource).getValue());
-            case STRING_OPERAND -> Exp.val(((StringOperand) expSource).getString());
-            case EXPR, METADATA_OPERAND -> expSource.getExp();
-            default -> throw new IllegalStateException("Error: expecting non-bin operand, got " + expSource.getType());
+    private Exp getExpForNonBinOperand(AbstractPart part) {
+        return switch (part.getType()) {
+            case INT_OPERAND -> Exp.val(((IntOperand) part).getValue());
+            case FLOAT_OPERAND -> Exp.val(((FloatOperand) part).getValue());
+            case STRING_OPERAND -> Exp.val(((StringOperand) part).getString());
+            case EXPR, METADATA_OPERAND, PATH_OPERAND -> part.getExp();
+            default -> throw new IllegalStateException("Error: expecting non-bin operand, got " + part.getType());
         };
     }
 
     @Override
-    public AbstractPart visitPathFunction(ConditionParser.PathFunctionContext ctx) {
-        String functionName = ctx.getText();
-        return visitPathFunctionName(functionName);
+    public AbstractPart visitPathFunctionSize(ConditionParser.PathFunctionSizeContext ctx) {
+        return new PathFunction(PathFunction.PATH_FUNCTION_TYPE.SIZE, null, null);
     }
 
-    private AbstractPart visitPathFunctionName(String functionName) {
-        Exp exp = switch (functionName) {
-            case "exists" -> Exp.binExists("test"); // TODO: get the preceding path
-            default -> throw new IllegalArgumentException("Unknown path function: " + functionName);
-        };
+    @Override
+    public AbstractPart visitPathFunctionGet(ConditionParser.PathFunctionGetContext ctx) {
+        PathFunction.RETURN_PARAM returnParam = null;
+        PathFunction.TYPE_PARAM typeParam = null;
+        for (ConditionParser.PathFunctionParamContext paramCtx : ctx.pathFunctionParams().pathFunctionParam()) {
+            if (paramCtx != null) {
+                String typeVal = getPathFunctionParam(paramCtx, "type");
+                if (typeVal != null) typeParam = PathFunction.TYPE_PARAM.valueOf(typeVal);
+                String returnVal = getPathFunctionParam(paramCtx, "return");
+                if (returnVal != null) returnParam = PathFunction.RETURN_PARAM.valueOf(returnVal);
+            }
+        }
+        return new PathFunction(PathFunction.PATH_FUNCTION_TYPE.GET, returnParam, typeParam);
+    }
 
-        return new Expr(exp);
+    @Override
+    public AbstractPart visitPathFunctionCount(ConditionParser.PathFunctionCountContext ctx) {
+        return new PathFunction(PathFunction.PATH_FUNCTION_TYPE.COUNT, PathFunction.RETURN_PARAM.COUNT, null); // todo: TYPE_PARAM?
+    }
+
+    private String getPathFunctionParam(ConditionParser.PathFunctionParamContext paramCtx, String paramName) {
+        String paramNameText;
+        String paramNameValue;
+        String paramValue = null;
+        if (paramCtx.pathFunctionParamName() != null) {
+            paramNameText = paramCtx.pathFunctionParamName().getText();
+            paramNameValue = paramCtx.pathFunctionParamValue().getText();
+            if (paramNameText.equalsIgnoreCase(paramName)) {
+                paramValue = paramNameValue;
+            }
+        }
+        return paramValue;
     }
 
     @Override
@@ -331,11 +365,11 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitPathPart(ConditionParser.PathPartContext ctx) {
-        return new BinOperand(ctx.NAME_IDENTIFIER().getText());
+        return new BinPart(ctx.NAME_IDENTIFIER().getText());
     }
 
     @Override
-    public AbstractPart visitQuotedString(ConditionParser.QuotedStringContext ctx) {
+    public AbstractPart visitStringOperand(ConditionParser.StringOperandContext ctx) {
         String text = getWithoutQuotes(ctx.getText());
         return new StringOperand(text);
     }
@@ -362,6 +396,76 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public AbstractPart visitBooleanOperand(ConditionParser.BooleanOperandContext ctx) {
         String text = ctx.getText();
         return new BooleanOperand(Boolean.parseBoolean(text));
+    }
+
+    @Override
+    public AbstractPart visitBasePath(ConditionParser.BasePathContext ctx) {
+        BinPart binPart = null;
+        List<AbstractPart> parts = new ArrayList<>();
+        List<ParseTree> ctxChildrenExclDots = ctx.children.stream()
+                .filter(tree -> !tree.getText().equals("."))
+                .toList();
+
+        for (ParseTree child : ctxChildrenExclDots) {
+            AbstractPart part = visit(child);
+            switch (part.getType()) {
+                case BIN_PART -> {
+                    binPart = (BinPart) part;
+                }
+                case LIST_PART -> {
+                    parts.add(part);
+                }
+                default -> throw new IllegalStateException("Unexpected path part: " + part.getType());
+            }
+        }
+
+        if (binPart == null) {
+            throw new IllegalArgumentException("Expecting bin to be the first path part from the left");
+        }
+
+        return new BasePath(binPart, parts);
+    }
+
+    @Override
+    public AbstractPart visitPath(ConditionParser.PathContext ctx) {
+        BasePath basePath = (BasePath) visit(ctx.basePath());
+        List<AbstractPart> parts = basePath.getParts();
+
+        // if there are other parts except bin, get a corresponding Exp
+        if (!parts.isEmpty()) {
+            Exp exp = PathOperand.processPath(basePath, ctx.pathFunction() == null
+                    ? null
+                    : (PathFunction) visit(ctx.pathFunction()));
+            return new PathOperand(exp);
+        }
+        return basePath.getBinPart();
+    }
+
+    @Override
+    public AbstractPart visitListPath(ConditionParser.ListPathContext ctx) {
+        if (ctx.LIST_BIN() != null) return ListPart.builder()
+                .setListBin(true)
+                .build();
+
+        if (ctx.listIndex() != null) return ListPart.builder()
+                .setListIndex(Integer.parseInt(ctx.listIndex().INT().getText()))
+                .build();
+
+        if (ctx.listValue() != null) {
+            String listValue = ctx.listValue().VALUE_IDENTIFIER().getText();
+            return ListPart.builder()
+                    .setListValue(listValue.substring(1))
+                    .build();
+        }
+
+        if (ctx.listRank() != null) {
+            String listRank = ctx.listRank().RANK_IDENTIFIER().getText();
+            return ListPart.builder()
+                    .setListRank(Integer.parseInt(listRank.substring(1)))
+                    .build();
+        }
+
+        throw new IllegalStateException("Unexpected path type in a List: " + ctx.getText());
     }
 
     @Override
