@@ -1,7 +1,9 @@
-package com.aerospike;
+package com.aerospike.dsl;
 
+import com.aerospike.ConditionBaseVisitor;
+import com.aerospike.ConditionParser;
 import com.aerospike.client.exp.Exp;
-import com.aerospike.model.*;
+import com.aerospike.dsl.model.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.ArrayList;
@@ -9,7 +11,7 @@ import java.util.List;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
-import static com.aerospike.util.ParsingUtils.getWithoutQuotes;
+import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 

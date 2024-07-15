@@ -9,40 +9,46 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <aerospike-client-jdk8>8.1.1</aerospike-client-jdk8>
-        <antlr>4.13.1</antlr>
-        <junit-jupiter>5.8.1</junit-jupiter>
+        <skipTests>false</skipTests>
+
+        <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
+        <maven-surefire-plugin.version>3.3.0</maven-surefire-plugin.version>
+
+        <aerospike-client-jdk8.version>8.1.1</aerospike-client-jdk8.version>
+        <antlr.version>4.13.1</antlr.version>
+        <lombok.version>1.18.32</lombok.version>
+        <junit-jupiter.version>5.8.1</junit-jupiter.version>
+        <assertj-core.version>3.4.1</assertj-core.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.aerospike</groupId>
             <artifactId>aerospike-client-jdk8</artifactId>
-            <version>${aerospike-client-jdk8}</version>
+            <version>${aerospike-client-jdk8.version}</version>
         </dependency>
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
-            <version>${antlr}</version>
+            <version>${antlr.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.32</version>
+            <version>${lombok.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>${junit-jupiter}</version>
+            <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.4.1</version>
+            <version>${assertj-core.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -58,7 +64,7 @@
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
-                <version>${antlr}</version>
+                <version>${antlr.version}</version>
                 <executions>
                     <execution>
                         <id>antlr</id>
@@ -67,8 +73,8 @@
                             <goal>antlr4</goal>
                         </goals>
                         <configuration>
-                            <sourceDirectory>src/main/antlr4/com/aerospike</sourceDirectory>
-                            <outputDirectory>${project.build.directory}/generated-sources/antlr4/com/aerospike</outputDirectory>
+                            <sourceDirectory>src/main/antlr4/com/aerospike/dsl</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-sources/antlr4/com/aerospike/dsl</outputDirectory>
                             <listener>false</listener>
                             <arguments>
                                 <argument>-visitor</argument>
@@ -81,7 +87,36 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>${build-helper-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>add-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/antlr4/</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <skipTests>${skipTests}</skipTests>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-    
+
 </project>

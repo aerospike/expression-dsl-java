@@ -1,7 +1,8 @@
-package com.aerospike;
+package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
+import com.aerospike.dsl.ConditionTranslator;
 import lombok.experimental.UtilityClass;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

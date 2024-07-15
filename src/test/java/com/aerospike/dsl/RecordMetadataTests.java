@@ -1,9 +1,9 @@
-package com.aerospike;
+package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
 import org.junit.jupiter.api.Test;
 
-import static com.aerospike.TestUtils.translateAndCompare;
+import static com.aerospike.dsl.TestUtils.translateAndCompare;
 
 public class RecordMetadataTests {
 
