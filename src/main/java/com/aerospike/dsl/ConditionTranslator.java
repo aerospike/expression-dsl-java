@@ -1,7 +1,5 @@
 package com.aerospike.dsl;
 
-import com.aerospike.ConditionLexer;
-import com.aerospike.ConditionParser;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
 import lombok.experimental.UtilityClass;
