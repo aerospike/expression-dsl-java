@@ -2,11 +2,13 @@ package com.aerospike.model;
 
 import com.aerospike.client.exp.Exp;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public abstract class AbstractPart {
 
-    private final Type type;
+    @Setter
+    private Type type;
     private final Exp exp;
 
     public AbstractPart(Type type) {

@@ -41,7 +41,7 @@ public class PathOperand extends AbstractPart {
                 case SIZE -> processSize(basePath, lastPathPart, valueType);
             };
         }
-        throw new IllegalStateException("Expecting other parts of path exept bin");
+        throw new IllegalStateException("Expecting other parts of path except bin");
     }
 
     private static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int listReturnType) {
