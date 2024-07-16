@@ -1,4 +1,4 @@
-package com.aerospike.dsl;
+package com.aerospike.dsl.util;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
@@ -10,12 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @UtilityClass
 public class TestUtils {
 
-    static void translateAndPrint(String input) {
+    public static void translateAndPrint(String input) {
         Expression expression = ConditionTranslator.translate(input);
         System.out.println(expression);
     }
 
-    static void translateAndCompare(String input, Exp testExp) {
+    public static void translateAndCompare(String input, Exp testExp) {
         Expression expression = ConditionTranslator.translate(input);
         Expression testExpr = Exp.build(testExp);
         assertEquals(expression, testExpr);
