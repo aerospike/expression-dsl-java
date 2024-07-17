@@ -4,11 +4,11 @@ import com.aerospike.client.exp.Exp;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
-import static com.aerospike.dsl.TestUtils.translateAndCompare;
-import static com.aerospike.dsl.TestUtils.translateAndPrint;
+import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
+import static com.aerospike.dsl.util.TestUtils.translateAndPrint;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class BinExpressionsTests {
+class BinExpressionsTests {
 
     @Test
     void binGT() {

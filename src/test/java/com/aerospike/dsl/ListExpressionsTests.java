@@ -5,9 +5,9 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import org.junit.jupiter.api.Test;
 
-import static com.aerospike.dsl.TestUtils.translateAndCompare;
+import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
 
-public class ListExpressionsTests {
+class ListExpressionsTests {
 
     @Test
     void listBinElementEquals_ByIndex() {
