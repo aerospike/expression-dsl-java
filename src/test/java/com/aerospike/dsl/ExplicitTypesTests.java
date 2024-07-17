@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
-import static com.aerospike.dsl.TestUtils.translateAndCompare;
+import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
 
 // Explicit types tests, list and map explicit types are tested in their own test classes
 public class ExplicitTypesTests {

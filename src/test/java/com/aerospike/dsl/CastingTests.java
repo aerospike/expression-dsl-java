@@ -3,7 +3,7 @@ package com.aerospike.dsl;
 import com.aerospike.client.exp.Exp;
 import org.junit.jupiter.api.Test;
 
-import static com.aerospike.dsl.TestUtils.translateAndCompare;
+import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
 
 public class CastingTests {
 
