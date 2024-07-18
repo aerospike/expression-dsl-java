@@ -437,7 +437,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         for (ParseTree child : ctxChildrenExclDots) {
             AbstractPart part = visit(child);
             switch (part.getType()) {
-                case BIN_PART -> binPart = overrideType(part, ctx);
+                case BIN_PART -> binPart = overrideBinType(part, ctx);
                 case LIST_PART -> parts.add(part);
                 default -> throw new IllegalStateException("Unexpected path part: " + part.getType());
             }
@@ -450,7 +450,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new BasePath(binPart, parts);
     }
 
-    private BinPart overrideType(AbstractPart part, ConditionParser.BasePathContext ctx) {
+    private BinPart overrideBinType(AbstractPart part, ConditionParser.BasePathContext ctx) {
         BinPart binPart = (BinPart) part;
 
         ConditionParser.PathFunctionContext pathFunctionContext = ((ConditionParser.PathContext) ctx.getParent()).pathFunction();
