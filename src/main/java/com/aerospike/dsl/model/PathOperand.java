@@ -15,18 +15,17 @@ public class PathOperand extends AbstractPart {
     }
 
     public static Exp processPath(BasePath basePath, PathFunction pathFunction) {
-        PathFunction.TYPE_PARAM typeParam = PathFunction.TYPE_PARAM.INT;
-        PathFunction.RETURN_PARAM returnParam = PathFunction.RETURN_PARAM.VALUE;
-        PathFunction.PATH_FUNCTION_TYPE pathFunctionType = PathFunction.PATH_FUNCTION_TYPE.GET;
+        Exp.Type binType = Exp.Type.INT;
+        PathFunction.ReturnParam returnParam = PathFunction.ReturnParam.VALUE;
+        PathFunction.PathFunctionType pathFunctionType = PathFunction.PathFunctionType.GET;
 
         if (pathFunction != null) {
             if (pathFunction.getReturnParam() != null) returnParam = pathFunction.getReturnParam();
-            if (pathFunction.getTypeParam() != null) typeParam = pathFunction.getTypeParam();
+            if (pathFunction.getBinType() != null) binType = pathFunction.getBinType();
             if (pathFunction.getPathFunctionType() != null) pathFunctionType = pathFunction.getPathFunctionType();
-
         }
 
-        Exp.Type valueType = Exp.Type.valueOf(typeParam.toString());
+        Exp.Type valueType = Exp.Type.valueOf(binType.toString());
 
         int listReturnType = switch (returnParam) {
             case VALUE -> ListReturnType.VALUE;
@@ -37,7 +36,8 @@ public class PathOperand extends AbstractPart {
         if (!parts.isEmpty()) { // if there is a path inside bin given
             AbstractPart lastPathPart = parts.get(parts.size() - 1);
             return switch (pathFunctionType) {
-                case GET, COUNT -> processGet(basePath, lastPathPart, valueType, listReturnType);
+                // CAST is the same as get with a different type
+                case GET, COUNT, CAST -> processGet(basePath, lastPathPart, valueType, listReturnType);
                 case SIZE -> processSize(basePath, lastPathPart, valueType);
             };
         }

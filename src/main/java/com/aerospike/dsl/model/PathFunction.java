@@ -1,42 +1,45 @@
 package com.aerospike.dsl.model;
 
+import com.aerospike.client.exp.Exp;
 import lombok.Getter;
 
 @Getter
 public class PathFunction extends AbstractPart {
 
-    private final PATH_FUNCTION_TYPE pathFunctionType;
-    private final RETURN_PARAM returnParam;
-    private final TYPE_PARAM typeParam;
+    private final PathFunctionType pathFunctionType;
+    private final ReturnParam returnParam;
+    private final Exp.Type binType;
 
-    public PathFunction(PATH_FUNCTION_TYPE type, RETURN_PARAM returnParam, TYPE_PARAM typeParam) {
+    public PathFunction(PathFunctionType pathFunctionType, ReturnParam returnParam, Exp.Type binType) {
         super(Type.PATH_FUNCTION);
-        this.pathFunctionType = type;
+        this.pathFunctionType = pathFunctionType;
         this.returnParam = returnParam;
-        this.typeParam = typeParam;
+        this.binType = binType;
     }
 
-    public enum TYPE_PARAM {
-        INT,
-        STR,
-        HLL,
-        BLOB,
-        FLOAT,
-        BOOL,
-        LIST,
-        MAP,
-        GEO
-    }
-
-    public enum RETURN_PARAM {
+    public enum ReturnParam {
         VALUE,
         COUNT,
         NONE
     }
 
-    public enum PATH_FUNCTION_TYPE {
+    public enum PathFunctionType {
         GET,
         COUNT,
-        SIZE
+        SIZE,
+        CAST
+    }
+
+    public enum CastType {
+        INT,
+        FLOAT
+    }
+
+    public static Exp.Type castTypeToExpType(CastType castType) {
+        return switch (castType) {
+            case INT -> Exp.Type.INT;
+            case FLOAT -> Exp.Type.FLOAT;
+            default -> throw new IllegalArgumentException("Unknown cast type: " + castType);
+        };
     }
 }

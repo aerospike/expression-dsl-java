@@ -198,7 +198,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     private Exp getExpOrFail(AbstractPart left, AbstractPart right, BinaryOperator<Exp> operator) {
         String binNameRight;
-        Exp exp = null;
+        Exp exp;
 
         if (left == null) {
             throw new IllegalArgumentException("Unable to parse left operand");
@@ -228,7 +228,18 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 // By default, compare bins as integers unless provided an explicit type to compare
                 case BIN_PART -> {
                     binNameRight = ((BinPart) right).getBinName();
-                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.bin(binNameRight, Exp.Type.INT));
+                    Exp.Type leftExplicitType = ((BinPart) left).getUseType();
+                    Exp.Type rightExplicitType = ((BinPart) right).getUseType();
+
+                    if (leftExplicitType != null && rightExplicitType != null) {
+                        yield operator.apply(
+                                Exp.bin(binNameLeft, ((BinPart) left).getUseType()),
+                                Exp.bin(binNameRight, ((BinPart) right).getUseType()));
+                    } else {
+                        yield operator.apply(
+                                Exp.bin(binNameLeft, Exp.Type.INT),
+                                Exp.bin(binNameRight, Exp.Type.INT));
+                    }
                 }
                 default ->
                         throw new IllegalStateException(String.format("Operand type not supported: %s", right.getType()));
@@ -292,27 +303,27 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitPathFunctionSize(ConditionParser.PathFunctionSizeContext ctx) {
-        return new PathFunction(PathFunction.PATH_FUNCTION_TYPE.SIZE, null, null);
+        return new PathFunction(PathFunction.PathFunctionType.SIZE, null, null);
     }
 
     @Override
     public AbstractPart visitPathFunctionGet(ConditionParser.PathFunctionGetContext ctx) {
-        PathFunction.RETURN_PARAM returnParam = null;
-        PathFunction.TYPE_PARAM typeParam = null;
+        PathFunction.ReturnParam returnParam = null;
+        Exp.Type binType = null;
         for (ConditionParser.PathFunctionParamContext paramCtx : ctx.pathFunctionParams().pathFunctionParam()) {
             if (paramCtx != null) {
                 String typeVal = getPathFunctionParam(paramCtx, "type");
-                if (typeVal != null) typeParam = PathFunction.TYPE_PARAM.valueOf(typeVal);
+                if (typeVal != null) binType = Exp.Type.valueOf(typeVal);
                 String returnVal = getPathFunctionParam(paramCtx, "return");
-                if (returnVal != null) returnParam = PathFunction.RETURN_PARAM.valueOf(returnVal);
+                if (returnVal != null) returnParam = PathFunction.ReturnParam.valueOf(returnVal);
             }
         }
-        return new PathFunction(PathFunction.PATH_FUNCTION_TYPE.GET, returnParam, typeParam);
+        return new PathFunction(PathFunction.PathFunctionType.GET, returnParam, binType);
     }
 
     @Override
     public AbstractPart visitPathFunctionCount(ConditionParser.PathFunctionCountContext ctx) {
-        return new PathFunction(PathFunction.PATH_FUNCTION_TYPE.COUNT, PathFunction.RETURN_PARAM.COUNT, null); // todo: TYPE_PARAM?
+        return new PathFunction(PathFunction.PathFunctionType.COUNT, PathFunction.ReturnParam.COUNT, null); // todo: TYPE_PARAM?
     }
 
     private String getPathFunctionParam(ConditionParser.PathFunctionParamContext paramCtx, String paramName) {
@@ -327,6 +338,23 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             }
         }
         return paramValue;
+    }
+
+    @Override
+    public AbstractPart visitPathFunctionCast(ConditionParser.PathFunctionCastContext ctx) {
+        String typeVal = extractTypeFromMethod(ctx.PATH_FUNCTION_CAST().getText());
+        PathFunction.CastType castType = PathFunction.CastType.valueOf(typeVal.toUpperCase());
+        Exp.Type binType = PathFunction.castTypeToExpType(castType);
+
+        return new PathFunction(PathFunction.PathFunctionType.CAST, null, binType);
+    }
+
+    private static String extractTypeFromMethod(String methodName) {
+        if (methodName.startsWith("as") && methodName.endsWith("()")) {
+            return methodName.substring(2, methodName.length() - 2);
+        } else {
+            throw new IllegalArgumentException("Invalid method name: " + methodName);
+        }
     }
 
     @Override
@@ -409,12 +437,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         for (ParseTree child : ctxChildrenExclDots) {
             AbstractPart part = visit(child);
             switch (part.getType()) {
-                case BIN_PART -> {
-                    binPart = (BinPart) part;
-                }
-                case LIST_PART -> {
-                    parts.add(part);
-                }
+                case BIN_PART -> binPart = overrideBinType(part, ctx);
+                case LIST_PART -> parts.add(part);
                 default -> throw new IllegalStateException("Unexpected path part: " + part.getType());
             }
         }
@@ -424,6 +448,25 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         return new BasePath(binPart, parts);
+    }
+
+    private BinPart overrideBinType(AbstractPart part, ConditionParser.BasePathContext ctx) {
+        BinPart binPart = (BinPart) part;
+
+        ConditionParser.PathFunctionContext pathFunctionContext = ((ConditionParser.PathContext) ctx.getParent()).pathFunction();
+
+        // In case we have a path function (explicit get or cast) override the type
+        if (pathFunctionContext != null) {
+            PathFunction pathFunction = (PathFunction) visit(pathFunctionContext);
+
+            if (pathFunction != null) {
+                Exp.Type type = pathFunction.getBinType();
+                if (type != null) {
+                    binPart.setUseType(type);
+                }
+            }
+        }
+        return binPart;
     }
 
     @Override

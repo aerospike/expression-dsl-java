@@ -97,7 +97,7 @@ pathFunctionParamValue: PATH_FUNCTION_PARAM_TYPE_VALUE | PATH_FUNCTION_PARAM_RET
 
 PATH_FUNCTION_PARAM_TYPE_VALUE
     : 'INT'
-    | 'STR'
+    | 'STRING'
     | 'HLL'
     | 'BLOB'
     | 'FLOAT'
@@ -130,7 +130,8 @@ RANK_IDENTIFIER: '#' INT;
 listIndex: '[' INT ']';
 
 pathFunction
-    : pathFunctionExists
+    : pathFunctionCast
+    | pathFunctionExists
     | pathFunctionGet
     | pathFunctionCount
     | 'remove' '()'
@@ -141,6 +142,13 @@ pathFunction
     | 'clear' '()'
     | 'sort' '()'
     | pathFunctionSize
+    ;
+
+pathFunctionCast: PATH_FUNCTION_CAST;
+
+PATH_FUNCTION_CAST
+    : 'asInt()'
+    | 'asFloat()'
     ;
 
 pathFunctionExists: PATH_FUNCTION_EXISTS;

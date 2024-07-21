@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
 
-class MathExpressionTests {
+public class ArithmeticExpressionsTests {
 
     @Test
     void add() {
