@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
@@ -217,8 +218,18 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         operator.apply(Exp.bin(binNameLeft, Exp.Type.FLOAT), Exp.val(((FloatOperand) right).getValue()));
                 case BOOL_OPERAND ->
                         operator.apply(Exp.bin(binNameLeft, Exp.Type.BOOL), Exp.val(((BooleanOperand) right).getValue()));
-                case STRING_OPERAND ->
-                        operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
+                case STRING_OPERAND -> {
+                    if (((BinPart) left).getUseType() != null &&
+                            ((BinPart) left).getUseType().equals(Exp.Type.BLOB)) {
+                        // Base64 Blob
+                        String base64String = ((StringOperand) right).getString();
+                        byte[] value = Base64.getDecoder().decode(base64String);
+                        yield operator.apply(Exp.bin(binNameLeft, Exp.Type.BLOB), Exp.val(value));
+                    } else {
+                        // String
+                        yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
+                    }
+                }
                 case METADATA_OPERAND -> operator.apply(
                         Exp.bin(binNameLeft, Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString())),
                         right.getExp()
@@ -269,8 +280,18 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         operator.apply(Exp.val(((FloatOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.FLOAT));
                 case BOOL_OPERAND ->
                         operator.apply(Exp.val(((BooleanOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.BOOL));
-                case STRING_OPERAND ->
-                        operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binNameRight, Exp.Type.STRING));
+                case STRING_OPERAND -> {
+                    if (((BinPart) right).getUseType() != null &&
+                            ((BinPart) right).getUseType().equals(Exp.Type.BLOB)) {
+                        // Base64 Blob
+                        String base64String = ((StringOperand) left).getString();
+                        byte[] value = Base64.getDecoder().decode(base64String);
+                        yield operator.apply(Exp.val(value), Exp.bin(binNameRight, Exp.Type.BLOB));
+                    } else {
+                        // String
+                        yield operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binNameRight, Exp.Type.STRING));
+                    }
+                }
                 case METADATA_OPERAND -> operator.apply(
                         left.getExp(),
                         Exp.bin(binNameRight, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString()))
