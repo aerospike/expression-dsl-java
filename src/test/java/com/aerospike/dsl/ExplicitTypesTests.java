@@ -22,13 +22,16 @@ public class ExplicitTypesTests {
                 Exp.eq(Exp.stringBin("stringBin1"), Exp.val("yes")));
     }
 
-    // TODO: Blob is not supported yet (requires encoding/decoding of Base64 strings)
-    //@Test
+    @Test
     void blobComparison() {
         byte[] data = new byte[]{1, 2, 3};
         String encodedString = Base64.getEncoder().encodeToString(data);
         translateAndCompare("$.blobBin1.get(type: BLOB) == \"" + encodedString + "\"",
-                Exp.eq(Exp.blobBin("a"), Exp.val(data)));
+                Exp.eq(Exp.blobBin("blobBin1"), Exp.val(data)));
+
+        // Reverse
+        translateAndCompare("\"" + encodedString + "\"" + " == $.blobBin1.get(type: BLOB)",
+                Exp.eq(Exp.val(data), Exp.blobBin("blobBin1")));
     }
 
     @Test
