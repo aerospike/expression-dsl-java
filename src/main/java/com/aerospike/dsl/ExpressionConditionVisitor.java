@@ -2,6 +2,7 @@ package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.model.*;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.ArrayList;
@@ -233,9 +234,22 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         Exp.bin(binNameLeft, Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString())),
                         right.getExp()
                 );
-                case EXPR -> operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), right.getExp());
-                case PATH_OPERAND ->
-                        operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), right.getExp()); // TODO: bin type?
+                case EXPR -> {
+                    Exp.Type leftExplicitType = ((BinPart) left).getUseType();
+                    if (leftExplicitType != null) {
+                        yield operator.apply(Exp.bin(binNameLeft, leftExplicitType), right.getExp());
+                    } else {
+                        yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), right.getExp());
+                    }
+                }
+                case PATH_OPERAND -> {
+                    Exp.Type leftExplicitType = ((BinPart) left).getUseType();
+                    if (leftExplicitType != null) {
+                        yield operator.apply(Exp.bin(binNameLeft, leftExplicitType), right.getExp());
+                    } else {
+                        yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), right.getExp());
+                    }
+                }
                 // By default, compare bins as integers unless provided an explicit type to compare
                 case BIN_PART -> {
                     binNameRight = ((BinPart) right).getBinName();
@@ -282,10 +296,23 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         left.getExp(),
                         Exp.bin(binNameRight, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString()))
                 );
-                case EXPR -> operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.STRING));
+                case EXPR -> {
+                    Exp.Type rightExplicitType = ((BinPart) right).getUseType();
+                    if (rightExplicitType != null) {
+                        yield operator.apply(left.getExp(), Exp.bin(binNameRight, rightExplicitType));
+                    } else {
+                        yield operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.INT));
+                    }
+                }
+                case PATH_OPERAND -> {
+                    Exp.Type rightExplicitType = ((BinPart) right).getUseType();
+                    if (rightExplicitType != null) {
+                        yield operator.apply(left.getExp(), Exp.bin(binNameRight, rightExplicitType));
+                    } else {
+                        yield operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.STRING));
+                    }
+                }
                 // No need for 2 BIN_OPERAND handling since it's covered in the left condition
-                case PATH_OPERAND ->
-                        operator.apply(Exp.bin(binNameRight, Exp.Type.STRING), left.getExp()); // TODO: bin type
                 default ->
                         throw new IllegalStateException(String.format("Operand type not supported: %s", left.getType()));
             };
@@ -486,8 +513,38 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     binPart.setUseType(type);
                 }
             }
+        } else { // Implicit detect for Float type
+            if (implicitDetectFloatFromUpperTree(ctx)) {
+                binPart.setUseType(Exp.Type.FLOAT);
+            }
         }
         return binPart;
+    }
+
+    /*
+        Return true if implicitly required to compare current expression branch as floats.
+        Implicit casting of a complicated expression should only detect floats:
+        1. Arithmetic expressions only works on numbers, so by default int unless we detect a float operand
+        2. Logical expressions always operate on booleans
+        3. Metadata expressions we know the type to compare, and it's never a float
+        4. Comparison expressions can be everything, but they do not alter and always return a boolean
+     */
+    private boolean implicitDetectFloatFromUpperTree(ConditionParser.BasePathContext ctx) {
+        ParserRuleContext obj = ctx;
+
+        // Search for a float operand child in the above levels of the current path in the expression tree
+        while (obj.getParent() != null) {
+            obj = obj.getParent();
+
+            for (ParseTree child : obj.children) {
+                if (child instanceof ConditionParser.OperandContext operandContext &&
+                        operandContext.numberOperand() != null &&
+                        operandContext.numberOperand().floatOperand() != null) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override

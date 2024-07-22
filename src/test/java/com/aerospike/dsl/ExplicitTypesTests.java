@@ -64,6 +64,12 @@ public class ExplicitTypesTests {
                 Exp.eq(Exp.floatBin("floatBin1"), Exp.floatBin("floatBin2")));
     }
 
+    @Test
+    void twoBlobBinsComparison() {
+        translateAndCompare("$.blobBin1.get(type: BLOB) == $.blobBin2.get(type: BLOB)",
+                Exp.eq(Exp.blobBin("blobBin1"), Exp.blobBin("blobBin2")));
+    }
+
     // This test passes because creating an invalid Aerospike Exp is legal, executing it will result in exception
     // From Aerospike database. To avoid it we need to add validation at the DSL level.
     @Test
@@ -73,8 +79,20 @@ public class ExplicitTypesTests {
     }
 
     @Test
-    void secondDegreeExplicitCasting() {
+    void secondDegreeExplicitFloat() {
         translateAndCompare("($.apples.get(type: FLOAT) + $.bananas.get(type: FLOAT)) > 10.5",
                 Exp.gt(Exp.add(Exp.floatBin("apples"), Exp.floatBin("bananas")), Exp.val(10.5)));
+    }
+
+    @Test
+    void forthDegreeComplicatedExplicitFloat() {
+        translateAndCompare("(($.apples.get(type: FLOAT) + $.bananas.get(type: FLOAT))" +
+                        " + ($.oranges.get(type: FLOAT) + $.acai.get(type: FLOAT))) > 10.5",
+                Exp.gt(
+                        Exp.add(
+                                Exp.add(Exp.floatBin("apples"), Exp.floatBin("bananas")),
+                                Exp.add(Exp.floatBin("oranges"), Exp.floatBin("acai"))),
+                        Exp.val(10.5))
+        );
     }
 }
