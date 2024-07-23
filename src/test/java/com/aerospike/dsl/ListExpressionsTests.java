@@ -5,7 +5,9 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import org.junit.jupiter.api.Test;
 
+import static com.aerospike.dsl.util.TestUtils.translate;
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ListExpressionsTests {
 
@@ -107,4 +109,22 @@ class ListExpressionsTests {
 //        translateAndCompare("$.listBin1.[0].get(return: COUNT) == 1", testExp);
 //        translateAndCompare("$.listBin1.[0].get(type: INT, return: COUNT) == 1", testExp);
 //    }
+
+    //@Test
+    void negativeSyntaxList() {
+        // TODO: should throw an exception (by ANTLR?)
+        assertThatThrownBy(() -> translate("$.listBin1.size() == 1"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Get size from a List: unexpected value 'INT'");
+
+        // TODO: throw meaningful exception (by ANTLR?)
+        assertThatThrownBy(() -> translate("$.listBin1.[stringValue] == 100"))
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void negativeTypeComparisonList() {
+        // TODO: should fail? Exp is successfully created
+        translate("$.listBin1.[#-1].get(type: INT) == \"stringValue\"");
+    }
 }

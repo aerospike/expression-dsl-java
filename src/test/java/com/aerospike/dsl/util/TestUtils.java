@@ -10,9 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @UtilityClass
 public class TestUtils {
 
-    public static void translateAndPrint(String input) {
-        Expression expression = ConditionTranslator.translate(input);
-        System.out.println(expression);
+    public static void translate(String input) {
+        ConditionTranslator.translate(input);
     }
 
     public static void translateAndCompare(String input, Exp testExp) {

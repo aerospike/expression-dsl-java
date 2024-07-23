@@ -2,6 +2,7 @@ package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.model.*;
+import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -212,29 +213,42 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         if (left.getType() == AbstractPart.Type.BIN_PART) {
             String binNameLeft = ((BinPart) left).getBinName();
             exp = switch (right.getType()) {
-                case INT_OPERAND ->
-                        operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.val(((IntOperand) right).getValue()));
-                case FLOAT_OPERAND ->
-                        operator.apply(Exp.bin(binNameLeft, Exp.Type.FLOAT), Exp.val(((FloatOperand) right).getValue()));
-                case BOOL_OPERAND ->
-                        operator.apply(Exp.bin(binNameLeft, Exp.Type.BOOL), Exp.val(((BooleanOperand) right).getValue()));
+                case INT_OPERAND -> {
+                    ValidationUtils.validateComparableTypes(((BinPart) left).getUseType(), Exp.Type.INT);
+                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.val(((IntOperand) right).getValue()));
+                }
+                case FLOAT_OPERAND -> {
+                    ValidationUtils.validateComparableTypes(((BinPart) left).getUseType(), Exp.Type.FLOAT);
+                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.FLOAT), Exp.val(((FloatOperand) right).getValue()));
+                }
+                case BOOL_OPERAND -> {
+                    ValidationUtils.validateComparableTypes(((BinPart) left).getUseType(), Exp.Type.BOOL);
+                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.BOOL), Exp.val(((BooleanOperand) right).getValue()));
+                }
                 case STRING_OPERAND -> {
                     if (((BinPart) left).getUseType() != null &&
                             ((BinPart) left).getUseType().equals(Exp.Type.BLOB)) {
                         // Base64 Blob
+                        ValidationUtils.validateComparableTypes(((BinPart) left).getUseType(), Exp.Type.BLOB);
                         String base64String = ((StringOperand) right).getString();
                         byte[] value = Base64.getDecoder().decode(base64String);
                         yield operator.apply(Exp.bin(binNameLeft, Exp.Type.BLOB), Exp.val(value));
                     } else {
                         // String
+                        ValidationUtils.validateComparableTypes(((BinPart) left).getUseType(), Exp.Type.STRING);
                         yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
                     }
                 }
-                case METADATA_OPERAND -> operator.apply(
-                        Exp.bin(binNameLeft, Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString())),
-                        right.getExp()
-                );
+                case METADATA_OPERAND -> {
+                    // No need to validate, types are determined by metadata function
+                    Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString());
+                    yield operator.apply(
+                            Exp.bin(binNameLeft, binType),
+                            right.getExp()
+                    );
+                }
                 case EXPR -> {
+                    // Can't validate with Expr on one side
                     Exp.Type leftExplicitType = ((BinPart) left).getUseType();
                     if (leftExplicitType != null) {
                         yield operator.apply(Exp.bin(binNameLeft, leftExplicitType), right.getExp());
@@ -244,6 +258,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 }
                 case PATH_OPERAND -> {
                     Exp.Type leftExplicitType = ((BinPart) left).getUseType();
+                    // Can't validate with Path on one side
                     if (leftExplicitType != null) {
                         yield operator.apply(Exp.bin(binNameLeft, leftExplicitType), right.getExp());
                     } else {
@@ -257,6 +272,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     Exp.Type rightExplicitType = ((BinPart) right).getUseType();
 
                     if (leftExplicitType != null && rightExplicitType != null) {
+                        ValidationUtils.validateComparableTypes(leftExplicitType, rightExplicitType);
                         yield operator.apply(
                                 Exp.bin(binNameLeft, ((BinPart) left).getUseType()),
                                 Exp.bin(binNameRight, ((BinPart) right).getUseType()));
@@ -274,29 +290,42 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         if (right.getType() == AbstractPart.Type.BIN_PART) {
             binNameRight = ((BinPart) right).getBinName();
             exp = switch (left.getType()) {
-                case INT_OPERAND ->
-                        operator.apply(Exp.val(((IntOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.INT));
-                case FLOAT_OPERAND ->
-                        operator.apply(Exp.val(((FloatOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.FLOAT));
-                case BOOL_OPERAND ->
-                        operator.apply(Exp.val(((BooleanOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.BOOL));
+                case INT_OPERAND -> {
+                    ValidationUtils.validateComparableTypes(Exp.Type.INT, ((BinPart) right).getUseType());
+                    yield operator.apply(Exp.val(((IntOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.INT));
+                }
+                case FLOAT_OPERAND -> {
+                    ValidationUtils.validateComparableTypes(Exp.Type.FLOAT, ((BinPart) right).getUseType());
+                    yield operator.apply(Exp.val(((FloatOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.FLOAT));
+                }
+                case BOOL_OPERAND -> {
+                    ValidationUtils.validateComparableTypes(Exp.Type.BOOL, ((BinPart) right).getUseType());
+                    yield operator.apply(Exp.val(((BooleanOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.BOOL));
+                }
                 case STRING_OPERAND -> {
                     if (((BinPart) right).getUseType() != null &&
                             ((BinPart) right).getUseType().equals(Exp.Type.BLOB)) {
                         // Base64 Blob
+                        ValidationUtils.validateComparableTypes(Exp.Type.BLOB, ((BinPart) right).getUseType());
                         String base64String = ((StringOperand) left).getString();
                         byte[] value = Base64.getDecoder().decode(base64String);
                         yield operator.apply(Exp.val(value), Exp.bin(binNameRight, Exp.Type.BLOB));
                     } else {
                         // String
+                        ValidationUtils.validateComparableTypes(Exp.Type.STRING, ((BinPart) right).getUseType());
                         yield operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binNameRight, Exp.Type.STRING));
                     }
                 }
-                case METADATA_OPERAND -> operator.apply(
-                        left.getExp(),
-                        Exp.bin(binNameRight, Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString()))
-                );
+                case METADATA_OPERAND -> {
+                    // No need to validate, types are determined by metadata function
+                    Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString());
+                    yield operator.apply(
+                            left.getExp(),
+                            Exp.bin(binNameRight, binType)
+                    );
+                }
                 case EXPR -> {
+                    // Can't validate with Expr on one side
                     Exp.Type rightExplicitType = ((BinPart) right).getUseType();
                     if (rightExplicitType != null) {
                         yield operator.apply(left.getExp(), Exp.bin(binNameRight, rightExplicitType));
@@ -305,6 +334,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     }
                 }
                 case PATH_OPERAND -> {
+                    // Can't validate with Path on one side
                     Exp.Type rightExplicitType = ((BinPart) right).getUseType();
                     if (rightExplicitType != null) {
                         yield operator.apply(left.getExp(), Exp.bin(binNameRight, rightExplicitType));

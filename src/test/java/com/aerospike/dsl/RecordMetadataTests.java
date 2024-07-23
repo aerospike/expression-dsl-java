@@ -3,7 +3,9 @@ package com.aerospike.dsl;
 import com.aerospike.client.exp.Exp;
 import org.junit.jupiter.api.Test;
 
+import static com.aerospike.dsl.util.TestUtils.translate;
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RecordMetadataTests {
 
@@ -114,6 +116,13 @@ class RecordMetadataTests {
         String input = "$.ttl() <= 86400";
         Exp testExp = Exp.le(Exp.ttl(), Exp.val(24 * 60 * 60));
         translateAndCompare(input, testExp);
+    }
+
+    @Test
+    void negativeTtlAsDifferentType() {
+        assertThatThrownBy(() -> translate("$.ttl() == true"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("expecting non-bin operand, got BOOL_OPERAND");
     }
 
     @Test

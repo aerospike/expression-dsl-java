@@ -1,11 +1,14 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
+import static com.aerospike.dsl.util.TestUtils.translate;
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // Explicit types tests, list and map explicit types are tested in their own test classes
 public class ExplicitTypesTests {
@@ -47,6 +50,13 @@ public class ExplicitTypesTests {
     }
 
     @Test
+    void negativeBooleanComparison() {
+        assertThatThrownBy(() -> translate("$.boolBin1.get(type: BOOL) == 5"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Cannot compare BOOL to INT");
+    }
+
+    @Test
     void twoStringBinsComparison() {
         translateAndCompare("$.stringBin1.get(type: STRING) == $.stringBin2.get(type: STRING)",
                 Exp.eq(Exp.stringBin("stringBin1"), Exp.stringBin("stringBin2")));
@@ -70,12 +80,11 @@ public class ExplicitTypesTests {
                 Exp.eq(Exp.blobBin("blobBin1"), Exp.blobBin("blobBin2")));
     }
 
-    // This test passes because creating an invalid Aerospike Exp is legal, executing it will result in exception
-    // From Aerospike database. To avoid it we need to add validation at the DSL level.
     @Test
-    void twoDifferentBinsComparison() {
-        translateAndCompare("$.stringBin1.get(type: STRING) == $.floatBin2.get(type: FLOAT)",
-                Exp.eq(Exp.stringBin("stringBin1"), Exp.floatBin("floatBin2")));
+    void negativeTwoDifferentBinTypesComparison() {
+        assertThatThrownBy(() -> translate("$.stringBin1.get(type: STRING) == $.floatBin2.get(type: FLOAT)"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Cannot compare STRING to FLOAT");
     }
 
     @Test
