@@ -7,6 +7,6 @@ import lombok.Getter;
 public class Expr extends AbstractPart {
 
     public Expr(Exp exp) {
-        super(Type.EXPR, exp);
+        super(PartType.EXPR, exp);
     }
 }

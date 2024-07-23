@@ -11,7 +11,7 @@ public class PathFunction extends AbstractPart {
     private final Exp.Type binType;
 
     public PathFunction(PathFunctionType pathFunctionType, ReturnParam returnParam, Exp.Type binType) {
-        super(Type.PATH_FUNCTION);
+        super(PartType.PATH_FUNCTION);
         this.pathFunctionType = pathFunctionType;
         this.returnParam = returnParam;
         this.binType = binType;

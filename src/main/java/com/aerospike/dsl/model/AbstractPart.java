@@ -8,20 +8,20 @@ import lombok.Setter;
 public abstract class AbstractPart {
 
     @Setter
-    private Type type;
+    private PartType partType;
     private final Exp exp;
 
-    public AbstractPart(Type type) {
-        this.type = type;
+    public AbstractPart(PartType partType) {
+        this.partType = partType;
         this.exp = null;
     }
 
-    public AbstractPart(Type type, Exp exp) {
-        this.type = type;
+    public AbstractPart(PartType partType, Exp exp) {
+        this.partType = partType;
         this.exp = exp;
     }
 
-    public enum Type {
+    public enum PartType {
         INT_OPERAND,
         FLOAT_OPERAND,
         BOOL_OPERAND,

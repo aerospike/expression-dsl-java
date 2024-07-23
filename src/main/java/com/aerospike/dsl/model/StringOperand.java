@@ -8,7 +8,7 @@ public class StringOperand extends AbstractPart {
     private final String string;
 
     public StringOperand(String string) {
-        super(Type.STRING_OPERAND);
+        super(PartType.STRING_OPERAND);
         this.string = string;
     }
 }

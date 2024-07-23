@@ -8,7 +8,7 @@ public class BooleanOperand extends AbstractPart {
     private final Boolean value;
 
     public BooleanOperand(Boolean value) {
-        super(Type.BOOL_OPERAND);
+        super(PartType.BOOL_OPERAND);
         this.value = value;
     }
 }

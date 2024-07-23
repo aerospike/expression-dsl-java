@@ -11,7 +11,7 @@ import java.util.List;
 public class PathOperand extends AbstractPart {
 
     public PathOperand(Exp exp) {
-        super(Type.PATH_OPERAND, exp);
+        super(PartType.PATH_OPERAND, exp);
     }
 
     public static Exp processPath(BasePath basePath, PathFunction pathFunction) {
@@ -45,7 +45,7 @@ public class PathOperand extends AbstractPart {
     }
 
     private static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int listReturnType) {
-        if (lastPathPart.getType() == Type.LIST_PART) {
+        if (lastPathPart.getPartType() == PartType.LIST_PART) {
             ListPart list = (ListPart) lastPathPart;
             BinPart bin = basePath.getBinPart();
             return switch (list.getListPathType()) {
@@ -76,7 +76,7 @@ public class PathOperand extends AbstractPart {
     }
 
     private static Exp processSize(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType) {
-        if (lastPathPart.getType() == Type.LIST_PART) {
+        if (lastPathPart.getPartType() == PartType.LIST_PART) {
             ListPart list = (ListPart) lastPathPart;
             BinPart bin = basePath.getBinPart();
             return switch (list.getListPathType()) {
@@ -91,7 +91,7 @@ public class PathOperand extends AbstractPart {
 
     private static Exp.Type getBinType(BasePath basePath) {
         List<AbstractPart> parts = basePath.getParts();
-        if (parts.get(parts.size() - 1).getType() == Type.LIST_PART) {
+        if (parts.get(parts.size() - 1).getPartType() == PartType.LIST_PART) {
             return Exp.Type.LIST;
         }
         return null; // TODO

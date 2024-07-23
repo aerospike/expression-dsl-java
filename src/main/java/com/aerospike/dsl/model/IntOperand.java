@@ -8,7 +8,7 @@ public class IntOperand extends AbstractPart {
     private final Long value;
 
     public IntOperand(Long value) {
-        super(AbstractPart.Type.INT_OPERAND);
+        super(AbstractPart.PartType.INT_OPERAND);
         this.value = value;
     }
 }
