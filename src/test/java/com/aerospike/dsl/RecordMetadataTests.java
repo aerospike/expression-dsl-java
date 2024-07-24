@@ -1,9 +1,12 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 
+import static com.aerospike.dsl.util.TestUtils.translate;
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RecordMetadataTests {
 
@@ -114,6 +117,14 @@ class RecordMetadataTests {
         String input = "$.ttl() <= 86400";
         Exp testExp = Exp.le(Exp.ttl(), Exp.val(24 * 60 * 60));
         translateAndCompare(input, testExp);
+    }
+
+    //@Test
+    void negativeTtlAsDifferentType() {
+        // TODO: should be supported when adding operator + metadata validations (requires a refactor)
+        assertThatThrownBy(() -> translate("$.ttl() == true"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Expecting non-bin operand, got BOOL_OPERAND");
     }
 
     @Test

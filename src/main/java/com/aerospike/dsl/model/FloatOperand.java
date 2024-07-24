@@ -9,7 +9,7 @@ public class FloatOperand extends AbstractPart {
     private final Double value;
 
     public FloatOperand(Double value) {
-        super(Type.FLOAT_OPERAND, Exp.val(value));
+        super(PartType.FLOAT_OPERAND, Exp.val(value));
         this.value = value;
     }
 }

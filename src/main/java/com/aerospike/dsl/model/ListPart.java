@@ -12,7 +12,7 @@ public class ListPart extends AbstractPart {
     private final ListPathType listPathType;
 
     private ListPart(Builder builder) {
-        super(Type.LIST_PART);
+        super(PartType.LIST_PART);
         this.listIndex = builder.listIndex;
         this.listValue = builder.listValue;
         this.listRank = builder.listRank;

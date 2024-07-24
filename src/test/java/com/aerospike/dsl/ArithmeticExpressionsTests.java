@@ -1,9 +1,12 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 
+import static com.aerospike.dsl.util.TestUtils.translate;
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ArithmeticExpressionsTests {
 
@@ -110,5 +113,22 @@ public class ArithmeticExpressionsTests {
     void intRShift() {
         translateAndCompare("(($.flags >> 6) & 1) == 1",
                 Exp.eq(Exp.intAnd(Exp.rshift(Exp.intBin("flags"), Exp.val(6)), Exp.val(1)), Exp.val(1)));
+    }
+
+    @Test
+    void negativeArithmetic() {
+        assertThatThrownBy(() -> translate("($.apples.get(type: STRING) + 5) > 10"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Cannot compare STRING to INT");
+
+        // TODO: should throw an exception (cannot use arithmetic operations on Strings)
+        //assertThatThrownBy(() -> translate("$.apples + \"stringVal\""))
+        //                .isInstanceOf(AerospikeDSLException.class)
+        //        .hasMessageContaining("Cannot compare STRING to INT");
+
+        // TODO: should throw an exception (result of an arithmetic operation is not a String)
+        //assertThatThrownBy(() -> translate("($.apples * $.bananas) != \"stringVal\""))
+        //        .isInstanceOf(AerospikeDSLException.class)
+        //        .hasMessageContaining("Cannot compare STRING to INT");
     }
 }

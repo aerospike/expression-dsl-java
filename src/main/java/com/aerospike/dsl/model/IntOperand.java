@@ -9,7 +9,7 @@ public class IntOperand extends AbstractPart {
     private final Long value;
 
     public IntOperand(Long value) {
-        super(AbstractPart.Type.INT_OPERAND, Exp.val(value));
+        super(AbstractPart.PartType.INT_OPERAND, Exp.val(value));
         this.value = value;
     }
 }

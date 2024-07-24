@@ -9,7 +9,7 @@ public class StringOperand extends AbstractPart {
     private final String string;
 
     public StringOperand(String string) {
-        super(Type.STRING_OPERAND, Exp.val(string));
+        super(PartType.STRING_OPERAND, Exp.val(string));
         this.string = string;
     }
 }
