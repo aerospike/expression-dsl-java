@@ -22,7 +22,6 @@ public class CastingTests {
                 Exp.gt(Exp.intBin("intBin1"), Exp.floatBin("intBin2")));
     }
 
-    // TODO: Should fail
     @Test
     void negativeInvalidTypesComparison() {
         assertThatThrownBy(() -> translate("$.stringBin1.get(type: STRING) > $.intBin2.asFloat()"))

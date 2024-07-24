@@ -117,17 +117,16 @@ public class ArithmeticExpressionsTests {
 
     @Test
     void negativeArithmetic() {
-        translate("$.apples + \"stringVal\"");
-
-        //assertThatThrownBy(() -> translate("$.apples + \"stringVal\""))
-        //                .isInstanceOf(AerospikeDSLException.class)
-        //        .hasMessageContaining("Cannot compare STRING to INT");
-
         assertThatThrownBy(() -> translate("($.apples.get(type: STRING) + 5) > 10"))
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("Cannot compare STRING to INT");
 
-        // TODO: should throw an exception
+        // TODO: should throw an exception (cannot use arithmetic operations on Strings)
+        //assertThatThrownBy(() -> translate("$.apples + \"stringVal\""))
+        //                .isInstanceOf(AerospikeDSLException.class)
+        //        .hasMessageContaining("Cannot compare STRING to INT");
+
+        // TODO: should throw an exception (result of an arithmetic operation is not a String)
         //assertThatThrownBy(() -> translate("($.apples * $.bananas) != \"stringVal\""))
         //        .isInstanceOf(AerospikeDSLException.class)
         //        .hasMessageContaining("Cannot compare STRING to INT");

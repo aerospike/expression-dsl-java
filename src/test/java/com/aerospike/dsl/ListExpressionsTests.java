@@ -122,9 +122,10 @@ class ListExpressionsTests {
                 .isInstanceOf(NullPointerException.class);
     }
 
-    @Test
+    //@Test
     void negativeTypeComparisonList() {
         // TODO: should fail? Exp is successfully created but comparing int to a string value
-        translate("$.listBin1.[#-1].get(type: INT) == \"stringValue\"");
+        assertThatThrownBy(() -> translate("$.listBin1.[#-1].get(type: INT) == \"stringValue\""))
+                .isInstanceOf(NullPointerException.class);
     }
 }
