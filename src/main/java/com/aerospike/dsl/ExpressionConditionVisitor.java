@@ -16,6 +16,23 @@ import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
     @Override
+    public AbstractPart visitWhenExpression(ConditionParser.WhenExpressionContext ctx) {
+        List<Exp> parts = new ArrayList<>();
+
+        // for each condition declaration
+        for (ConditionParser.ExpressionMappingContext emc : ctx.expressionMapping()) {
+            // visit condition
+            parts.add(visit(emc.expression(0)).getExp());
+            // visit action
+            parts.add(visit(emc.expression(1)).getExp());
+        }
+
+        // visit default
+        parts.add(visit(ctx.expression()).getExp());
+        return new Expr(Exp.cond(parts.toArray(new Exp[0])));
+    }
+
+    @Override
     public AbstractPart visitAndExpression(ConditionParser.AndExpressionContext ctx) {
         Expr left = (Expr) visit(ctx.expression(0));
         Expr right = (Expr) visit(ctx.expression(1));
@@ -212,12 +229,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         if (left.getType() == AbstractPart.Type.BIN_PART) {
             String binNameLeft = ((BinPart) left).getBinName();
             exp = switch (right.getType()) {
-                case INT_OPERAND ->
-                        operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.val(((IntOperand) right).getValue()));
-                case FLOAT_OPERAND ->
-                        operator.apply(Exp.bin(binNameLeft, Exp.Type.FLOAT), Exp.val(((FloatOperand) right).getValue()));
-                case BOOL_OPERAND ->
-                        operator.apply(Exp.bin(binNameLeft, Exp.Type.BOOL), Exp.val(((BooleanOperand) right).getValue()));
+                case INT_OPERAND -> operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), right.getExp());
+                case FLOAT_OPERAND -> operator.apply(Exp.bin(binNameLeft, Exp.Type.FLOAT), right.getExp());
+                case BOOL_OPERAND -> operator.apply(Exp.bin(binNameLeft, Exp.Type.BOOL), right.getExp());
                 case STRING_OPERAND -> {
                     if (((BinPart) left).getUseType() != null &&
                             ((BinPart) left).getUseType().equals(Exp.Type.BLOB)) {
@@ -227,7 +241,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         yield operator.apply(Exp.bin(binNameLeft, Exp.Type.BLOB), Exp.val(value));
                     } else {
                         // String
-                        yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
+                        yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), right.getExp());
                     }
                 }
                 case METADATA_OPERAND -> operator.apply(
@@ -274,12 +288,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         if (right.getType() == AbstractPart.Type.BIN_PART) {
             binNameRight = ((BinPart) right).getBinName();
             exp = switch (left.getType()) {
-                case INT_OPERAND ->
-                        operator.apply(Exp.val(((IntOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.INT));
-                case FLOAT_OPERAND ->
-                        operator.apply(Exp.val(((FloatOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.FLOAT));
-                case BOOL_OPERAND ->
-                        operator.apply(Exp.val(((BooleanOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.BOOL));
+                case INT_OPERAND -> operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.INT));
+                case FLOAT_OPERAND -> operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.FLOAT));
+                case BOOL_OPERAND -> operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.BOOL));
                 case STRING_OPERAND -> {
                     if (((BinPart) right).getUseType() != null &&
                             ((BinPart) right).getUseType().equals(Exp.Type.BLOB)) {
@@ -289,7 +300,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         yield operator.apply(Exp.val(value), Exp.bin(binNameRight, Exp.Type.BLOB));
                     } else {
                         // String
-                        yield operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binNameRight, Exp.Type.STRING));
+                        yield operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.STRING));
                     }
                 }
                 case METADATA_OPERAND -> operator.apply(
