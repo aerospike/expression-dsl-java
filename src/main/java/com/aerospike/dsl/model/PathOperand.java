@@ -3,6 +3,7 @@ package com.aerospike.dsl.model;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 import lombok.Getter;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
 public class PathOperand extends AbstractPart {
 
     public PathOperand(Exp exp) {
-        super(Type.PATH_OPERAND, exp);
+        super(PartType.PATH_OPERAND, exp);
     }
 
     public static Exp processPath(BasePath basePath, PathFunction pathFunction) {
@@ -41,11 +42,11 @@ public class PathOperand extends AbstractPart {
                 case SIZE -> processSize(basePath, lastPathPart, valueType);
             };
         }
-        throw new IllegalStateException("Expecting other parts of path except bin");
+        throw new AerospikeDSLException("Expecting other parts of path except bin");
     }
 
     private static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int listReturnType) {
-        if (lastPathPart.getType() == Type.LIST_PART) {
+        if (lastPathPart.getPartType() == PartType.LIST_PART) {
             ListPart list = (ListPart) lastPathPart;
             BinPart bin = basePath.getBinPart();
             return switch (list.getListPathType()) {
@@ -71,18 +72,18 @@ public class PathOperand extends AbstractPart {
             case STRING -> Exp.val(listValue);
             case FLOAT -> Exp.val(Float.parseFloat(listValue));
             default -> throw new IllegalStateException(
-                    String.format("Get by value from a List: unexpected value '%s'", valueType));
+                    "Get by value from a List: unexpected value '%s'".formatted(valueType));
         };
     }
 
     private static Exp processSize(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType) {
-        if (lastPathPart.getType() == Type.LIST_PART) {
+        if (lastPathPart.getPartType() == PartType.LIST_PART) {
             ListPart list = (ListPart) lastPathPart;
             BinPart bin = basePath.getBinPart();
             return switch (list.getListPathType()) {
                 case BIN -> ListExp.size(Exp.bin(bin.getBinName(), getBinType(basePath)));
                 default -> throw new IllegalStateException(
-                        String.format("Get size from a List: unexpected value '%s'", valueType));
+                        "Get size from a List: unexpected value '%s'".formatted(valueType));
             };
         } else {
             return null; // TODO
@@ -91,7 +92,7 @@ public class PathOperand extends AbstractPart {
 
     private static Exp.Type getBinType(BasePath basePath) {
         List<AbstractPart> parts = basePath.getParts();
-        if (parts.get(parts.size() - 1).getType() == Type.LIST_PART) {
+        if (parts.get(parts.size() - 1).getPartType() == PartType.LIST_PART) {
             return Exp.Type.LIST;
         }
         return null; // TODO

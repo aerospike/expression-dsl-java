@@ -15,7 +15,7 @@ public class ParsingUtils {
         if (str.length() > 2) {
             return str.substring(1, str.length() - 1);
         } else {
-            throw new IllegalArgumentException(String.format("String %s must contain more than 2 characters", str));
+            throw new IllegalArgumentException("String %s must contain more than 2 characters".formatted(str));
         }
     }
 }

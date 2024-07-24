@@ -1,11 +1,12 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
+import static com.aerospike.dsl.util.TestUtils.translate;
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
-import static com.aerospike.dsl.util.TestUtils.translateAndPrint;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class BinExpressionsTests {
@@ -59,9 +60,9 @@ class BinExpressionsTests {
     }
 
     @Test
-    void stringBinEqualsNegativeTest() {
-        assertThatThrownBy(() -> translateAndPrint("$.strBin == yes"))
-                .isInstanceOf(IllegalArgumentException.class)
+    void negativeStringBinEquals() {
+        assertThatThrownBy(() -> translate("$.strBin == yes"))
+                .isInstanceOf(AerospikeDSLException.class)
                 .hasMessage("Unable to parse right operand");
     }
 
@@ -94,6 +95,25 @@ class BinExpressionsTests {
         // check that parentheses make difference
         assertThatThrownBy(() -> translateAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", testExp2))
                 .isInstanceOf(AssertionFailedError.class);
+    }
+
+    @Test
+    void negativeSyntaxLogicalOperators() {
+        assertThatThrownBy(() -> translate("($.intBin1 > 100 and ($.intBin2 > 100) or"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Could not parse given input");
+
+        assertThatThrownBy(() -> translate("and ($.intBin1 > 100 and ($.intBin2 > 100)"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Could not parse given input");
+
+        assertThatThrownBy(() -> translate("($.intBin1 > 100 and ($.intBin2 > 100) not"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Could not parse given input");
+
+        assertThatThrownBy(() -> translate("($.intBin1 > 100 and ($.intBin2 > 100) exclusive"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Could not parse given input");
     }
 
     @Test

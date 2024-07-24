@@ -9,13 +9,13 @@ public class BinPart extends Expr {
 
     private final String binName;
     @Setter
-    private Exp.Type useType;
+    private Exp.Type expType;
 
     public BinPart(String binName) {
         super(constructExp(binName));
         this.binName = binName;
-        this.setType(Type.BIN_PART);
-        this.useType = null;
+        this.setPartType(PartType.BIN_PART);
+        this.expType = null;
     }
 
     // Bin is implicitly a boolean expression by itself
