@@ -375,6 +375,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             case INT_OPERAND -> Exp.val(((IntOperand) part).getValue());
             case FLOAT_OPERAND -> Exp.val(((FloatOperand) part).getValue());
             case STRING_OPERAND -> Exp.val(((StringOperand) part).getString());
+            case BOOL_OPERAND -> Exp.val(((BooleanOperand) part).getValue());
             case EXPR, METADATA_OPERAND, PATH_OPERAND -> part.getExp();
             default -> throw new AerospikeDSLException("Expecting non-bin operand, got " + part.getPartType());
         };
