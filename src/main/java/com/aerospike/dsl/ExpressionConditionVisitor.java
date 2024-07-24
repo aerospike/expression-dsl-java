@@ -17,19 +17,19 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitWhenExpression(ConditionParser.WhenExpressionContext ctx) {
-        List<Exp> parts = new ArrayList<>();
+        List<Exp> expressions = new ArrayList<>();
 
         // for each condition declaration
         for (ConditionParser.ExpressionMappingContext emc : ctx.expressionMapping()) {
             // visit condition
-            parts.add(visit(emc.expression(0)).getExp());
+            expressions.add(visit(emc.expression(0)).getExp());
             // visit action
-            parts.add(visit(emc.expression(1)).getExp());
+            expressions.add(visit(emc.expression(1)).getExp());
         }
 
         // visit default
-        parts.add(visit(ctx.expression()).getExp());
-        return new Expr(Exp.cond(parts.toArray(new Exp[0])));
+        expressions.add(visit(ctx.expression()).getExp());
+        return new Expr(Exp.cond(expressions.toArray(new Exp[0])));
     }
 
     @Override
