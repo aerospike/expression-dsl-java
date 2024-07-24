@@ -200,9 +200,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new Expr(exp);
     }
 
-    /*
-        For 2 operands Expressions
-     */
+    // 2 operands Expressions
     private Exp getExpOrFail(AbstractPart left, AbstractPart right, BinaryOperator<Exp> operator) {
         if (left == null) {
             throw new AerospikeDSLException("Unable to parse left operand");
@@ -360,7 +358,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         };
     }
 
-    // For 1 operand Expressions
+    // 1 operand Expressions
     private Exp getExpOrFail(AbstractPart operand, UnaryOperator<Exp> operator) {
         if (operand == null) {
             throw new AerospikeDSLException("Unable to parse operand");
