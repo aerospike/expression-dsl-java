@@ -1,9 +1,11 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
+import static com.aerospike.dsl.util.TestUtils.translate;
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -67,5 +69,32 @@ public class LogicalExpressionsTests {
                         ),
                         Exp.lt(Exp.intBin("intBin3"),
                                 Exp.val(100))));
+    }
+
+    @Test
+    void negativeSyntaxLogicalOperators() {
+        assertThatThrownBy(() -> translate("($.intBin1 > 100 and ($.intBin2 > 100) or"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Could not parse given input");
+
+        assertThatThrownBy(() -> translate("and ($.intBin1 > 100 and ($.intBin2 > 100)"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Could not parse given input");
+
+        assertThatThrownBy(() -> translate("($.intBin1 > 100 and ($.intBin2 > 100) not"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Could not parse given input");
+
+        assertThatThrownBy(() -> translate("($.intBin1 > 100 and ($.intBin2 > 100) exclusive"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Could not parse given input");
+    }
+
+    @Test
+    void negativeBinLogicalExclusiveWithOneParam() {
+        assertThatThrownBy(() -> translateAndCompare("exclusive($.hand == \"hook\")",
+                Exp.exclusive(
+                        Exp.eq(Exp.stringBin("hand"), Exp.val("hook")))))
+                .isInstanceOf(NullPointerException.class);
     }
 }
