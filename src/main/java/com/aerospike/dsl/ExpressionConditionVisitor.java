@@ -200,10 +200,10 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new Expr(exp);
     }
 
+    /*
+        For 2 operands Expressions
+     */
     private Exp getExpOrFail(AbstractPart left, AbstractPart right, BinaryOperator<Exp> operator) {
-        String binNameRight;
-        Exp exp;
-
         if (left == null) {
             throw new AerospikeDSLException("Unable to parse left operand");
         }
@@ -212,140 +212,10 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         if (left.getPartType() == AbstractPart.PartType.BIN_PART) {
-            String binNameLeft = ((BinPart) left).getBinName();
-            exp = switch (right.getPartType()) {
-                case INT_OPERAND -> {
-                    ValidationUtils.validateComparableTypes(((BinPart) left).getExpType(), Exp.Type.INT);
-                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.val(((IntOperand) right).getValue()));
-                }
-                case FLOAT_OPERAND -> {
-                    ValidationUtils.validateComparableTypes(((BinPart) left).getExpType(), Exp.Type.FLOAT);
-                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.FLOAT), Exp.val(((FloatOperand) right).getValue()));
-                }
-                case BOOL_OPERAND -> {
-                    ValidationUtils.validateComparableTypes(((BinPart) left).getExpType(), Exp.Type.BOOL);
-                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.BOOL), Exp.val(((BooleanOperand) right).getValue()));
-                }
-                case STRING_OPERAND -> {
-                    if (((BinPart) left).getExpType() != null &&
-                            ((BinPart) left).getExpType().equals(Exp.Type.BLOB)) {
-                        // Base64 Blob
-                        ValidationUtils.validateComparableTypes(((BinPart) left).getExpType(), Exp.Type.BLOB);
-                        String base64String = ((StringOperand) right).getString();
-                        byte[] value = Base64.getDecoder().decode(base64String);
-                        yield operator.apply(Exp.bin(binNameLeft, Exp.Type.BLOB), Exp.val(value));
-                    } else {
-                        // String
-                        ValidationUtils.validateComparableTypes(((BinPart) left).getExpType(), Exp.Type.STRING);
-                        yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
-                    }
-                }
-                case METADATA_OPERAND -> {
-                    // No need to validate, types are determined by metadata function
-                    Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString());
-                    yield operator.apply(
-                            Exp.bin(binNameLeft, binType),
-                            right.getExp()
-                    );
-                }
-                case EXPR -> {
-                    // Can't validate with Expr on one side
-                    Exp.Type leftExplicitType = ((BinPart) left).getExpType();
-                    if (leftExplicitType != null) {
-                        yield operator.apply(Exp.bin(binNameLeft, leftExplicitType), right.getExp());
-                    } else {
-                        yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), right.getExp());
-                    }
-                }
-                case PATH_OPERAND -> {
-                    Exp.Type leftExplicitType = ((BinPart) left).getExpType();
-                    // Can't validate with Path on one side
-                    if (leftExplicitType != null) {
-                        yield operator.apply(Exp.bin(binNameLeft, leftExplicitType), right.getExp());
-                    } else {
-                        yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), right.getExp());
-                    }
-                }
-                // By default, compare bins as integers unless provided an explicit type to compare
-                case BIN_PART -> {
-                    binNameRight = ((BinPart) right).getBinName();
-                    Exp.Type leftExplicitType = ((BinPart) left).getExpType();
-                    Exp.Type rightExplicitType = ((BinPart) right).getExpType();
-
-                    if (leftExplicitType != null && rightExplicitType != null) {
-                        ValidationUtils.validateComparableTypes(leftExplicitType, rightExplicitType);
-                        yield operator.apply(
-                                Exp.bin(binNameLeft, ((BinPart) left).getExpType()),
-                                Exp.bin(binNameRight, ((BinPart) right).getExpType()));
-                    } else {
-                        yield operator.apply(
-                                Exp.bin(binNameLeft, Exp.Type.INT),
-                                Exp.bin(binNameRight, Exp.Type.INT));
-                    }
-                }
-                default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
-            };
-            return exp;
+            return getExpLeftBinTypeComparison((BinPart) left, right, operator);
         }
         if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
-            binNameRight = ((BinPart) right).getBinName();
-            exp = switch (left.getPartType()) {
-                case INT_OPERAND -> {
-                    ValidationUtils.validateComparableTypes(Exp.Type.INT, ((BinPart) right).getExpType());
-                    yield operator.apply(Exp.val(((IntOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.INT));
-                }
-                case FLOAT_OPERAND -> {
-                    ValidationUtils.validateComparableTypes(Exp.Type.FLOAT, ((BinPart) right).getExpType());
-                    yield operator.apply(Exp.val(((FloatOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.FLOAT));
-                }
-                case BOOL_OPERAND -> {
-                    ValidationUtils.validateComparableTypes(Exp.Type.BOOL, ((BinPart) right).getExpType());
-                    yield operator.apply(Exp.val(((BooleanOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.BOOL));
-                }
-                case STRING_OPERAND -> {
-                    if (((BinPart) right).getExpType() != null &&
-                            ((BinPart) right).getExpType().equals(Exp.Type.BLOB)) {
-                        // Base64 Blob
-                        ValidationUtils.validateComparableTypes(Exp.Type.BLOB, ((BinPart) right).getExpType());
-                        String base64String = ((StringOperand) left).getString();
-                        byte[] value = Base64.getDecoder().decode(base64String);
-                        yield operator.apply(Exp.val(value), Exp.bin(binNameRight, Exp.Type.BLOB));
-                    } else {
-                        // String
-                        ValidationUtils.validateComparableTypes(Exp.Type.STRING, ((BinPart) right).getExpType());
-                        yield operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binNameRight, Exp.Type.STRING));
-                    }
-                }
-                case METADATA_OPERAND -> {
-                    // No need to validate, types are determined by metadata function
-                    Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString());
-                    yield operator.apply(
-                            left.getExp(),
-                            Exp.bin(binNameRight, binType)
-                    );
-                }
-                case EXPR -> {
-                    // Can't validate with Expr on one side
-                    Exp.Type rightExplicitType = ((BinPart) right).getExpType();
-                    if (rightExplicitType != null) {
-                        yield operator.apply(left.getExp(), Exp.bin(binNameRight, rightExplicitType));
-                    } else {
-                        yield operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.INT));
-                    }
-                }
-                case PATH_OPERAND -> {
-                    // Can't validate with Path on one side
-                    Exp.Type rightExplicitType = ((BinPart) right).getExpType();
-                    if (rightExplicitType != null) {
-                        yield operator.apply(left.getExp(), Exp.bin(binNameRight, rightExplicitType));
-                    } else {
-                        yield operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.STRING));
-                    }
-                }
-                // No need for 2 BIN_OPERAND handling since it's covered in the left condition
-                default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
-            };
-            return exp;
+            return getExpRightBinTypeComparison(left, (BinPart) right, operator);
         }
 
         // Handle non Bin operands cases
@@ -354,9 +224,143 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return operator.apply(leftExp, rightExp);
     }
 
-    /*
-        For 1 operand Expressions
-     */
+    private Exp getExpLeftBinTypeComparison(BinPart left, AbstractPart right, BinaryOperator<Exp> operator) {
+        String binNameLeft = left.getBinName();
+        return switch (right.getPartType()) {
+            case INT_OPERAND -> {
+                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.INT);
+                yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.val(((IntOperand) right).getValue()));
+            }
+            case FLOAT_OPERAND -> {
+                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.FLOAT);
+                yield operator.apply(Exp.bin(binNameLeft, Exp.Type.FLOAT), Exp.val(((FloatOperand) right).getValue()));
+            }
+            case BOOL_OPERAND -> {
+                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BOOL);
+                yield operator.apply(Exp.bin(binNameLeft, Exp.Type.BOOL), Exp.val(((BooleanOperand) right).getValue()));
+            }
+            case STRING_OPERAND -> {
+                if (left.getExpType() != null &&
+                        left.getExpType().equals(Exp.Type.BLOB)) {
+                    // Base64 Blob
+                    ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BLOB);
+                    String base64String = ((StringOperand) right).getString();
+                    byte[] value = Base64.getDecoder().decode(base64String);
+                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.BLOB), Exp.val(value));
+                } else {
+                    // String
+                    ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.STRING);
+                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
+                }
+            }
+            case METADATA_OPERAND -> {
+                // No need to validate, types are determined by metadata function
+                Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString());
+                yield operator.apply(
+                        Exp.bin(binNameLeft, binType),
+                        right.getExp()
+                );
+            }
+            case EXPR -> {
+                // Can't validate with Expr on one side
+                Exp.Type leftExplicitType = left.getExpType();
+                if (leftExplicitType != null) {
+                    yield operator.apply(Exp.bin(binNameLeft, leftExplicitType), right.getExp());
+                } else {
+                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), right.getExp());
+                }
+            }
+            case PATH_OPERAND -> {
+                Exp.Type leftExplicitType = left.getExpType();
+                // Can't validate with Path on one side
+                if (leftExplicitType != null) {
+                    yield operator.apply(Exp.bin(binNameLeft, leftExplicitType), right.getExp());
+                } else {
+                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), right.getExp());
+                }
+            }
+            // By default, compare bins as integers unless provided an explicit type to compare
+            case BIN_PART -> {
+                String binNameRight = ((BinPart) right).getBinName();
+                Exp.Type leftExplicitType = left.getExpType();
+                Exp.Type rightExplicitType = ((BinPart) right).getExpType();
+
+                if (leftExplicitType != null && rightExplicitType != null) {
+                    ValidationUtils.validateComparableTypes(leftExplicitType, rightExplicitType);
+                    yield operator.apply(
+                            Exp.bin(binNameLeft, left.getExpType()),
+                            Exp.bin(binNameRight, ((BinPart) right).getExpType()));
+                } else {
+                    yield operator.apply(
+                            Exp.bin(binNameLeft, Exp.Type.INT),
+                            Exp.bin(binNameRight, Exp.Type.INT));
+                }
+            }
+            default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
+        };
+    }
+
+    private Exp getExpRightBinTypeComparison(AbstractPart left, BinPart right, BinaryOperator<Exp> operator) {
+        String binNameRight = right.getBinName();
+        return switch (left.getPartType()) {
+            case INT_OPERAND -> {
+                ValidationUtils.validateComparableTypes(Exp.Type.INT, right.getExpType());
+                yield operator.apply(Exp.val(((IntOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.INT));
+            }
+            case FLOAT_OPERAND -> {
+                ValidationUtils.validateComparableTypes(Exp.Type.FLOAT, right.getExpType());
+                yield operator.apply(Exp.val(((FloatOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.FLOAT));
+            }
+            case BOOL_OPERAND -> {
+                ValidationUtils.validateComparableTypes(Exp.Type.BOOL, right.getExpType());
+                yield operator.apply(Exp.val(((BooleanOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.BOOL));
+            }
+            case STRING_OPERAND -> {
+                if (right.getExpType() != null &&
+                        right.getExpType().equals(Exp.Type.BLOB)) {
+                    // Base64 Blob
+                    ValidationUtils.validateComparableTypes(Exp.Type.BLOB, right.getExpType());
+                    String base64String = ((StringOperand) left).getString();
+                    byte[] value = Base64.getDecoder().decode(base64String);
+                    yield operator.apply(Exp.val(value), Exp.bin(binNameRight, Exp.Type.BLOB));
+                } else {
+                    // String
+                    ValidationUtils.validateComparableTypes(Exp.Type.STRING, right.getExpType());
+                    yield operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binNameRight, Exp.Type.STRING));
+                }
+            }
+            case METADATA_OPERAND -> {
+                // No need to validate, types are determined by metadata function
+                Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString());
+                yield operator.apply(
+                        left.getExp(),
+                        Exp.bin(binNameRight, binType)
+                );
+            }
+            case EXPR -> {
+                // Can't validate with Expr on one side
+                Exp.Type rightExplicitType = right.getExpType();
+                if (rightExplicitType != null) {
+                    yield operator.apply(left.getExp(), Exp.bin(binNameRight, rightExplicitType));
+                } else {
+                    yield operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.INT));
+                }
+            }
+            case PATH_OPERAND -> {
+                // Can't validate with Path on one side
+                Exp.Type rightExplicitType = right.getExpType();
+                if (rightExplicitType != null) {
+                    yield operator.apply(left.getExp(), Exp.bin(binNameRight, rightExplicitType));
+                } else {
+                    yield operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.STRING));
+                }
+            }
+            // No need for 2 BIN_OPERAND handling since it's covered in the left condition
+            default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
+        };
+    }
+
+    // For 1 operand Expressions
     private Exp getExpOrFail(AbstractPart operand, UnaryOperator<Exp> operator) {
         if (operand == null) {
             throw new AerospikeDSLException("Unable to parse operand");
