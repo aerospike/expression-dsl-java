@@ -62,7 +62,7 @@ class BinExpressionsTests {
     @Test
     void negativeStringBinEquals() {
         assertThatThrownBy(() -> translate("$.strBin == yes"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(AerospikeDSLException.class)
                 .hasMessage("Unable to parse right operand");
     }
 

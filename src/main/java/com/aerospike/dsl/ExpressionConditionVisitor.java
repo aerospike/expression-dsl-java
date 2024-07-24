@@ -1,6 +1,7 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
 import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -204,10 +205,10 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Exp exp;
 
         if (left == null) {
-            throw new IllegalArgumentException("Unable to parse left operand");
+            throw new AerospikeDSLException("Unable to parse left operand");
         }
         if (right == null) {
-            throw new IllegalArgumentException("Unable to parse right operand");
+            throw new AerospikeDSLException("Unable to parse right operand");
         }
 
         if (left.getPartType() == AbstractPart.PartType.BIN_PART) {
@@ -282,8 +283,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                                 Exp.bin(binNameRight, Exp.Type.INT));
                     }
                 }
-                default ->
-                        throw new IllegalStateException(String.format("Operand type not supported: %s", right.getPartType()));
+                default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
             };
             return exp;
         }
@@ -343,8 +343,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     }
                 }
                 // No need for 2 BIN_OPERAND handling since it's covered in the left condition
-                default ->
-                        throw new IllegalStateException(String.format("Operand type not supported: %s", left.getPartType()));
+                default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
             };
             return exp;
         }
@@ -360,7 +359,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
      */
     private Exp getExpOrFail(AbstractPart operand, UnaryOperator<Exp> operator) {
         if (operand == null) {
-            throw new IllegalArgumentException("Unable to parse operand");
+            throw new AerospikeDSLException("Unable to parse operand");
         }
 
         // 1 Operand Expression is always a BIN Operand
@@ -375,7 +374,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             case FLOAT_OPERAND -> Exp.val(((FloatOperand) part).getValue());
             case STRING_OPERAND -> Exp.val(((StringOperand) part).getString());
             case EXPR, METADATA_OPERAND, PATH_OPERAND -> part.getExp();
-            default -> throw new IllegalStateException("Error: expecting non-bin operand, got " + part.getPartType());
+            default -> throw new AerospikeDSLException("Expecting non-bin operand, got " + part.getPartType());
         };
     }
 
@@ -431,7 +430,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         if (methodName.startsWith("as") && methodName.endsWith("()")) {
             return methodName.substring(2, methodName.length() - 2);
         } else {
-            throw new IllegalArgumentException("Invalid method name: " + methodName);
+            throw new AerospikeDSLException("Invalid method name: %s".formatted(methodName));
         }
     }
 
@@ -517,12 +516,12 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             switch (part.getPartType()) {
                 case BIN_PART -> binPart = overrideBinType(part, ctx);
                 case LIST_PART -> parts.add(part);
-                default -> throw new IllegalStateException("Unexpected path part: " + part.getPartType());
+                default -> throw new AerospikeDSLException("Unexpected path part: %s".formatted(part.getPartType()));
             }
         }
 
         if (binPart == null) {
-            throw new IllegalArgumentException("Expecting bin to be the first path part from the left");
+            throw new AerospikeDSLException("Expecting bin to be the first path part from the left");
         }
 
         return new BasePath(binPart, parts);
@@ -616,7 +615,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     .build();
         }
 
-        throw new IllegalStateException("Unexpected path type in a List: " + ctx.getText());
+        throw new AerospikeDSLException("Unexpected path type in a List: %s".formatted(ctx.getText()));
     }
 
     @Override

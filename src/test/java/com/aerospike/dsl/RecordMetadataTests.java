@@ -1,6 +1,7 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.translate;
@@ -121,8 +122,8 @@ class RecordMetadataTests {
     @Test
     void negativeTtlAsDifferentType() {
         assertThatThrownBy(() -> translate("$.ttl() == true"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("expecting non-bin operand, got BOOL_OPERAND");
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessageContaining("Expecting non-bin operand, got BOOL_OPERAND");
     }
 
     @Test

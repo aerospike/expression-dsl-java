@@ -124,7 +124,7 @@ class ListExpressionsTests {
 
     @Test
     void negativeTypeComparisonList() {
-        // TODO: should fail? Exp is successfully created
+        // TODO: should fail? Exp is successfully created but comparing int to a string value
         translate("$.listBin1.[#-1].get(type: INT) == \"stringValue\"");
     }
 }

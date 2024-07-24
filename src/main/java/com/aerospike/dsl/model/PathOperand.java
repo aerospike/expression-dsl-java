@@ -3,6 +3,7 @@ package com.aerospike.dsl.model;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 import lombok.Getter;
 
 import java.util.List;
@@ -41,7 +42,7 @@ public class PathOperand extends AbstractPart {
                 case SIZE -> processSize(basePath, lastPathPart, valueType);
             };
         }
-        throw new IllegalStateException("Expecting other parts of path except bin");
+        throw new AerospikeDSLException("Expecting other parts of path except bin");
     }
 
     private static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int listReturnType) {
@@ -71,7 +72,7 @@ public class PathOperand extends AbstractPart {
             case STRING -> Exp.val(listValue);
             case FLOAT -> Exp.val(Float.parseFloat(listValue));
             default -> throw new IllegalStateException(
-                    String.format("Get by value from a List: unexpected value '%s'", valueType));
+                    "Get by value from a List: unexpected value '%s'".formatted(valueType));
         };
     }
 
@@ -82,7 +83,7 @@ public class PathOperand extends AbstractPart {
             return switch (list.getListPathType()) {
                 case BIN -> ListExp.size(Exp.bin(bin.getBinName(), getBinType(basePath)));
                 default -> throw new IllegalStateException(
-                        String.format("Get size from a List: unexpected value '%s'", valueType));
+                        "Get size from a List: unexpected value '%s'".formatted(valueType));
             };
         } else {
             return null; // TODO
