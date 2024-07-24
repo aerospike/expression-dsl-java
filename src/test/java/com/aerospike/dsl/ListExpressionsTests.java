@@ -25,6 +25,8 @@ class ListExpressionsTests {
         translateAndCompare("$.listBin1.[0].get(type: INT) == 100", testExp);
         translateAndCompare("$.listBin1.[0].get(type: INT, return: VALUE) == 100", testExp);
         translateAndCompare("$.listBin1.[0].asInt() == 100", testExp);
+        // TODO: support other types
+        //translateAndCompare("$.listBin1.[0].get(type: STRING) == \"stringVal\"", testExp);
     }
 
     @Test
@@ -122,7 +124,7 @@ class ListExpressionsTests {
                 .isInstanceOf(NullPointerException.class);
     }
 
-    //@Test
+    @Test
     void negativeTypeComparisonList() {
         // TODO: should fail? Exp is successfully created but comparing int to a string value
         assertThatThrownBy(() -> translate("$.listBin1.[#-1].get(type: INT) == \"stringValue\""))
