@@ -107,9 +107,9 @@ public class ImplicitTypesTests {
         );
     }
 
-    // TODO: need to identify types for complicated cases like that
+    // TODO: need to implicitly identify types for complicated cases like that
     //@Test
-    void complicatedWhenImplicitType() {
+    void complicatedWhenImplicitTypeInt() {
         Exp expectedExp = Exp.eq(
                 Exp.intBin("a"),
                 Exp.cond(
@@ -130,6 +130,32 @@ public class ImplicitTypesTests {
         );
 
         translateAndCompare("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, $.b == 3 => $.a3, default => $.a4+1))",
+                expectedExp);
+    }
+
+    // TODO: need to implicitly identify types for complicated cases like that
+    //@Test
+    void complicatedWhenImplicitTypeString() {
+        Exp expectedExp = Exp.eq(
+                Exp.stringBin("a"),
+                Exp.cond(
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(1)
+                        ), Exp.stringBin("a1"),
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(2)
+                        ), Exp.stringBin("a2"),
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(3)
+                        ), Exp.stringBin("a3"),
+                        Exp.val("hello")
+                )
+        );
+
+        translateAndCompare("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, $.b == 3 => $.a3, default => \"hello\"))",
                 expectedExp);
     }
 }
