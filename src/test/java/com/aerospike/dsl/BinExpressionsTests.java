@@ -68,6 +68,6 @@ class BinExpressionsTests {
     // TODO: Will be handled in FMWK-486
     //@Test
     //void logicalOperators_functionCalls() {
-    //    translateAndPrint("$.a.exists() and $.b.exists()");
+    //    translate("$.a.exists() and $.b.exists()");
     //}
 }
