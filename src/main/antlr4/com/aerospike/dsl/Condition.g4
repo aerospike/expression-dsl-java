@@ -7,38 +7,50 @@ grammar Condition;
 parse: expression;
 
 expression
+    // Declaration and Control Expressions
+    : 'with' '(' variableDefinition (',' variableDefinition)* ')' 'do' '('expression')'         # WithExpression
+    | 'when' '(' expressionMapping (',' expressionMapping)* ',' 'default' '=>' expression ')'   # WhenExpression
     // Logical Expressions
-    : expression 'and' expression                  # AndExpression
-    | expression 'or' expression                   # OrExpression
-    | 'not' '('expression')'                       # NotExpression
-    | 'exclusive' '('expression',' expression')'   # ExclusiveExpression
+    | expression 'and' expression                                                               # AndExpression
+    | expression 'or' expression                                                                # OrExpression
+    | 'not' '('expression')'                                                                    # NotExpression
+    | 'exclusive' '('expression',' expression')'                                                # ExclusiveExpression
     // Comparison Expressions
-    | operand '>' operand                          # GreaterThanExpression
-    | operand '>=' operand                         # GreaterThanOrEqualExpression
-    | operand '<' operand                          # LessThanExpression
-    | operand '<=' operand                         # LessThanOrEqualExpression
-    | operand '==' operand                         # EqualityExpression
-    | operand '!=' operand                         # InequalityExpression
+    | operand '>' operand                                                                       # GreaterThanExpression
+    | operand '>=' operand                                                                      # GreaterThanOrEqualExpression
+    | operand '<' operand                                                                       # LessThanExpression
+    | operand '<=' operand                                                                      # LessThanOrEqualExpression
+    | operand '==' operand                                                                      # EqualityExpression
+    | operand '!=' operand                                                                      # InequalityExpression
     // Arithmetic Expressions
-    | operand '+' operand                          # AddExpression
-    | operand '-' operand                          # SubExpression
-    | operand '*' operand                          # MulExpression
-    | operand '/' operand                          # DivExpression
-    | operand '%' operand                          # ModExpression
-    | operand '&' operand                          # IntAndExpression
-    | operand '|' operand                          # IntOrExpression
-    | operand '^' operand                          # IntXorExpression
-    | '~' operand                                  # IntNotExpression
-    | operand '<<' operand                         # IntLShiftExpression
-    | operand '>>' operand                         # IntRShiftExpression
+    | operand '+' operand                                                                       # AddExpression
+    | operand '-' operand                                                                       # SubExpression
+    | operand '*' operand                                                                       # MulExpression
+    | operand '/' operand                                                                       # DivExpression
+    | operand '%' operand                                                                       # ModExpression
+    | operand '&' operand                                                                       # IntAndExpression
+    | operand '|' operand                                                                       # IntOrExpression
+    | operand '^' operand                                                                       # IntXorExpression
+    | '~' operand                                                                               # IntNotExpression
+    | operand '<<' operand                                                                      # IntLShiftExpression
+    | operand '>>' operand                                                                      # IntRShiftExpression
     // Base Operand
-    | operand                                      # OperandExpression
+    | operand                                                                                   # OperandExpression
+    ;
+
+variableDefinition
+    : stringOperand '=' expression
+    ;
+
+expressionMapping
+    : expression '=>' expression
     ;
 
 operand
     : numberOperand
     | booleanOperand
     | stringOperand
+    | variable
     | '$.' pathOrMetadata
     | '(' expression ')'
     ;
@@ -59,6 +71,16 @@ FALSE: 'false';
 stringOperand: QUOTED_STRING;
 
 QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
+
+variable: VARIABLE_REFERENCE;
+
+VARIABLE_REFERENCE
+    : '${' STRING_VARIABLE_NAME '}'
+    ;
+
+fragment STRING_VARIABLE_NAME
+    : [a-zA-Z_][a-zA-Z0-9_]*
+    ;
 
 pathOrMetadata: path | metadata;
 

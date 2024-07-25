@@ -5,11 +5,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
+@Setter
 public abstract class AbstractPart {
 
-    @Setter
     private PartType partType;
-    private final Exp exp;
+    private Exp exp;
 
     public AbstractPart(PartType partType) {
         this.partType = partType;
@@ -32,6 +32,7 @@ public abstract class AbstractPart {
         PATH_OPERAND,
         PATH_FUNCTION,
         METADATA_OPERAND,
-        EXPR
+        EXPR,
+        VARIABLE_OPERAND
     }
 }

@@ -106,4 +106,56 @@ public class ImplicitTypesTests {
                         Exp.val(10.5))
         );
     }
+
+    // TODO: need to implicitly identify types for complicated cases like that
+    //@Test
+    void complicatedWhenImplicitTypeInt() {
+        Exp expectedExp = Exp.eq(
+                Exp.intBin("a"),
+                Exp.cond(
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(1)
+                        ), Exp.intBin("a1"),
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(2)
+                        ), Exp.intBin("a2"),
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(3)
+                        ), Exp.intBin("a3"),
+                        Exp.add(Exp.intBin("a4"), Exp.val(1))
+                )
+        );
+
+        translateAndCompare("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, $.b == 3 => $.a3, default => $.a4+1))",
+                expectedExp);
+    }
+
+    // TODO: need to implicitly identify types for complicated cases like that
+    //@Test
+    void complicatedWhenImplicitTypeString() {
+        Exp expectedExp = Exp.eq(
+                Exp.stringBin("a"),
+                Exp.cond(
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(1)
+                        ), Exp.stringBin("a1"),
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(2)
+                        ), Exp.stringBin("a2"),
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(3)
+                        ), Exp.stringBin("a3"),
+                        Exp.val("hello")
+                )
+        );
+
+        translateAndCompare("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, $.b == 3 => $.a3, default => \"hello\"))",
+                expectedExp);
+    }
 }

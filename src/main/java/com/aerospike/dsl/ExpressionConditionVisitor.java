@@ -18,10 +18,41 @@ import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
     @Override
+    public AbstractPart visitWithExpression(ConditionParser.WithExpressionContext ctx) {
+        List<Exp> expressions = new ArrayList<>();
+
+        // iterate each definition
+        for (ConditionParser.VariableDefinitionContext vdc : ctx.variableDefinition()) {
+            expressions.add(Exp.def(vdc.stringOperand().getText(), visit(vdc.expression()).getExp()));
+        }
+        // last expression is the action (described after "do")
+        expressions.add(visit(ctx.expression()).getExp());
+        return new Expr(Exp.let(expressions.toArray(new Exp[0])));
+    }
+
+    @Override
+    public AbstractPart visitWhenExpression(ConditionParser.WhenExpressionContext ctx) {
+        List<Exp> expressions = new ArrayList<>();
+
+        // iterate each condition declaration
+        for (ConditionParser.ExpressionMappingContext emc : ctx.expressionMapping()) {
+            // visit condition
+            expressions.add(visit(emc.expression(0)).getExp());
+            // visit action
+            expressions.add(visit(emc.expression(1)).getExp());
+        }
+
+        // visit default
+        expressions.add(visit(ctx.expression()).getExp());
+        return new Expr(Exp.cond(expressions.toArray(new Exp[0])));
+    }
+
+    @Override
     public AbstractPart visitAndExpression(ConditionParser.AndExpressionContext ctx) {
         Expr left = (Expr) visit(ctx.expression(0));
         Expr right = (Expr) visit(ctx.expression(1));
 
+        logicalSetBinsAsBooleanExpr(left, right);
         return new Expr(Exp.and(left.getExp(), right.getExp()));
     }
 
@@ -30,14 +61,16 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr left = (Expr) visit(ctx.expression(0));
         Expr right = (Expr) visit(ctx.expression(1));
 
+        logicalSetBinsAsBooleanExpr(left, right);
         return new Expr(Exp.or(left.getExp(), right.getExp()));
     }
 
     @Override
     public AbstractPart visitNotExpression(ConditionParser.NotExpressionContext ctx) {
-        Exp exp = visit(ctx.expression()).getExp();
+        Expr expr = (Expr) visit(ctx.expression());
 
-        return new Expr(Exp.not(exp));
+        logicalSetBinAsBooleanExpr(expr);
+        return new Expr(Exp.not(expr.getExp()));
     }
 
     @Override
@@ -45,7 +78,19 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr left = (Expr) visit(ctx.expression(0));
         Expr right = (Expr) visit(ctx.expression(1));
 
+        logicalSetBinsAsBooleanExpr(left, right);
         return new Expr(Exp.exclusive(left.getExp(), right.getExp()));
+    }
+
+    private void logicalSetBinsAsBooleanExpr(Expr left, Expr right) {
+        logicalSetBinAsBooleanExpr(left);
+        logicalSetBinAsBooleanExpr(right);
+    }
+
+    private void logicalSetBinAsBooleanExpr(Expr expr) {
+        if (expr instanceof BinPart) {
+            ((BinPart) expr).updateExp(Exp.Type.BOOL);
+        }
     }
 
     @Override
@@ -372,11 +417,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     private Exp getExpForNonBinOperand(AbstractPart part) {
         return switch (part.getPartType()) {
-            case INT_OPERAND -> Exp.val(((IntOperand) part).getValue());
-            case FLOAT_OPERAND -> Exp.val(((FloatOperand) part).getValue());
-            case STRING_OPERAND -> Exp.val(((StringOperand) part).getString());
-            case BOOL_OPERAND -> Exp.val(((BooleanOperand) part).getValue());
-            case EXPR, METADATA_OPERAND, PATH_OPERAND -> part.getExp();
+            case INT_OPERAND, BOOL_OPERAND, FLOAT_OPERAND, STRING_OPERAND, EXPR, METADATA_OPERAND, PATH_OPERAND,
+                 VARIABLE_OPERAND -> part.getExp();
             default -> throw new AerospikeDSLException("Expecting non-bin operand, got " + part.getPartType());
         };
     }
@@ -530,6 +572,20 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new BasePath(binPart, parts);
     }
 
+    @Override
+    public AbstractPart visitVariable(ConditionParser.VariableContext ctx) {
+        String text = ctx.VARIABLE_REFERENCE().getText();
+        return new VariableOperand(extractVariableName(text));
+    }
+
+    private String extractVariableName(String variableReference) {
+        if (variableReference.startsWith("${") && variableReference.endsWith("}")) {
+            return variableReference.substring(2, variableReference.length() - 1);
+        } else {
+            throw new IllegalArgumentException("Input string is not in the correct format");
+        }
+    }
+
     private BinPart overrideBinType(AbstractPart part, ConditionParser.BasePathContext ctx) {
         BinPart binPart = (BinPart) part;
 
@@ -542,12 +598,12 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             if (pathFunction != null) {
                 Exp.Type type = pathFunction.getBinType();
                 if (type != null) {
-                    binPart.setExpType(type);
+                    binPart.updateExp(type);
                 }
             }
         } else { // Implicit detect for Float type
             if (implicitDetectFloatFromUpperTree(ctx)) {
-                binPart.setExpType(Exp.Type.FLOAT);
+                binPart.updateExp(Exp.Type.FLOAT);
             }
         }
         return binPart;
