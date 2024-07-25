@@ -19,6 +19,9 @@ public class ControlStructuresTests {
 
         translateAndCompare("when ($.who == 1 => \"bob\", default => \"other\")",
                 expectedExp);
+        // different spacing style
+        translateAndCompare("when($.who == 1 => \"bob\", default => \"other\")",
+                expectedExp);
     }
 
     @Test
@@ -69,6 +72,9 @@ public class ControlStructuresTests {
         );
 
         translateAndCompare("with (x = 1, y = ${x} + 1) do (${x} + ${y})",
+                expectedExp);
+        // different spacing style
+        translateAndCompare("with(x = 1, y = ${x}+1) do(${x}+${y})",
                 expectedExp);
     }
 }
