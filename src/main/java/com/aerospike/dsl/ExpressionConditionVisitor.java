@@ -52,6 +52,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr left = (Expr) visit(ctx.expression(0));
         Expr right = (Expr) visit(ctx.expression(1));
 
+        logicalSetBinAsBooleanExpr(left);
+        logicalSetBinAsBooleanExpr(right);
+
         return new Expr(Exp.and(left.getExp(), right.getExp()));
     }
 
@@ -60,14 +63,19 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr left = (Expr) visit(ctx.expression(0));
         Expr right = (Expr) visit(ctx.expression(1));
 
+        logicalSetBinAsBooleanExpr(left);
+        logicalSetBinAsBooleanExpr(right);
+
         return new Expr(Exp.or(left.getExp(), right.getExp()));
     }
 
     @Override
     public AbstractPart visitNotExpression(ConditionParser.NotExpressionContext ctx) {
-        Exp exp = visit(ctx.expression()).getExp();
+        Expr expr = (Expr) visit(ctx.expression());
 
-        return new Expr(Exp.not(exp));
+        logicalSetBinAsBooleanExpr(expr);
+
+        return new Expr(Exp.not(expr.getExp()));
     }
 
     @Override
@@ -75,7 +83,16 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr left = (Expr) visit(ctx.expression(0));
         Expr right = (Expr) visit(ctx.expression(1));
 
+        logicalSetBinAsBooleanExpr(left);
+        logicalSetBinAsBooleanExpr(right);
+
         return new Expr(Exp.exclusive(left.getExp(), right.getExp()));
+    }
+
+    private void logicalSetBinAsBooleanExpr(Expr expr) {
+        if (expr instanceof BinPart) {
+            ((BinPart) expr).updateExp(Exp.Type.BOOL);
+        }
     }
 
     @Override
@@ -583,12 +600,12 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             if (pathFunction != null) {
                 Exp.Type type = pathFunction.getBinType();
                 if (type != null) {
-                    binPart.setExpType(type);
+                    binPart.updateExp(type);
                 }
             }
         } else { // Implicit detect for Float type
             if (implicitDetectFloatFromUpperTree(ctx)) {
-                binPart.setExpType(Exp.Type.FLOAT);
+                binPart.updateExp(Exp.Type.FLOAT);
             }
         }
         return binPart;

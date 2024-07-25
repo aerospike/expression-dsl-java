@@ -105,9 +105,8 @@ public class ExplicitTypesTests {
         );
     }
 
-    // TODO: Still sees a bin reference as a boolean, even when used with get function, investigate
-    //@Test
-    void complicatedWhenExplicitType() {
+    @Test
+    void complicatedWhenExplicitTypeIntDefault() {
         Exp expectedExp = Exp.eq(
                 Exp.intBin("a"),
                 Exp.cond(
@@ -127,7 +126,41 @@ public class ExplicitTypesTests {
                 )
         );
 
-        translateAndCompare("$.a.get(type: INT) == (when($.b.get(type: INT) == 1 => $.a1.get(type: INT), $.b.get(type: INT) == 2 => $.a2.get(type: INT), $.b.get(type: INT) == 3 => $.a3.get(type: INT), default => $.a4.get(type: INT) + 1))",
+        translateAndCompare("$.a.get(type: INT) == " +
+                        "(when($.b.get(type: INT) == 1 => $.a1.get(type: INT)," +
+                        " $.b.get(type: INT) == 2 => $.a2.get(type: INT)," +
+                        " $.b.get(type: INT) == 3 => $.a3.get(type: INT)," +
+                        " default => $.a4.get(type: INT) + 1))",
+                expectedExp);
+    }
+
+    // TODO: get function with type doesn't work in this case - investigate
+    // @Test
+    void complicatedWhenExplicitTypeString() {
+        Exp expectedExp = Exp.eq(
+                Exp.stringBin("a"),
+                Exp.cond(
+                        Exp.eq(
+                                Exp.stringBin("b"),
+                                Exp.val(1)
+                        ), Exp.stringBin("a1"),
+                        Exp.eq(
+                                Exp.stringBin("b"),
+                                Exp.val(2)
+                        ), Exp.stringBin("a2"),
+                        Exp.eq(
+                                Exp.stringBin("b"),
+                                Exp.val(3)
+                        ), Exp.stringBin("a3"),
+                        Exp.val("hello")
+                )
+        );
+
+        translateAndCompare("$.a.get(type: STRING) == " +
+                        "(when($.b.get(type: STRING) == 1 => $.a1.get(type: STRING)," +
+                        " $.b.get(type: STRING) == 2 => $.a2.get(type: STRING)," +
+                        " $.b.get(type: STRING) == 3 => $.a3.get(type: STRING)," +
+                        " default => \"hello\")",
                 expectedExp);
     }
 }

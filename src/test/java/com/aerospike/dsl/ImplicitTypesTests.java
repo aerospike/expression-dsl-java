@@ -107,8 +107,7 @@ public class ImplicitTypesTests {
         );
     }
 
-    // TODO: need to identify types for complicated cases like that, int as default doesn't work at the moment
-    //  because bin part by itself is considered boolean (we might change that)
+    // TODO: need to identify types for complicated cases like that
     //@Test
     void complicatedWhenImplicitType() {
         Exp expectedExp = Exp.eq(
