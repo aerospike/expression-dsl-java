@@ -52,9 +52,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr left = (Expr) visit(ctx.expression(0));
         Expr right = (Expr) visit(ctx.expression(1));
 
-        logicalSetBinAsBooleanExpr(left);
-        logicalSetBinAsBooleanExpr(right);
-
+        logicalSetBinsAsBooleanExpr(left, right);
         return new Expr(Exp.and(left.getExp(), right.getExp()));
     }
 
@@ -63,9 +61,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr left = (Expr) visit(ctx.expression(0));
         Expr right = (Expr) visit(ctx.expression(1));
 
-        logicalSetBinAsBooleanExpr(left);
-        logicalSetBinAsBooleanExpr(right);
-
+        logicalSetBinsAsBooleanExpr(left, right);
         return new Expr(Exp.or(left.getExp(), right.getExp()));
     }
 
@@ -74,7 +70,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr expr = (Expr) visit(ctx.expression());
 
         logicalSetBinAsBooleanExpr(expr);
-
         return new Expr(Exp.not(expr.getExp()));
     }
 
@@ -83,10 +78,13 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr left = (Expr) visit(ctx.expression(0));
         Expr right = (Expr) visit(ctx.expression(1));
 
+        logicalSetBinsAsBooleanExpr(left, right);
+        return new Expr(Exp.exclusive(left.getExp(), right.getExp()));
+    }
+
+    private void logicalSetBinsAsBooleanExpr(Expr left, Expr right) {
         logicalSetBinAsBooleanExpr(left);
         logicalSetBinAsBooleanExpr(right);
-
-        return new Expr(Exp.exclusive(left.getExp(), right.getExp()));
     }
 
     private void logicalSetBinAsBooleanExpr(Expr expr) {

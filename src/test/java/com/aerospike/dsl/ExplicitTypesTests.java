@@ -134,22 +134,21 @@ public class ExplicitTypesTests {
                 expectedExp);
     }
 
-    // TODO: get function with type doesn't work in this case - investigate
-    // @Test
+    @Test
     void complicatedWhenExplicitTypeString() {
         Exp expectedExp = Exp.eq(
                 Exp.stringBin("a"),
                 Exp.cond(
                         Exp.eq(
-                                Exp.stringBin("b"),
+                                Exp.intBin("b"),
                                 Exp.val(1)
                         ), Exp.stringBin("a1"),
                         Exp.eq(
-                                Exp.stringBin("b"),
+                                Exp.intBin("b"),
                                 Exp.val(2)
                         ), Exp.stringBin("a2"),
                         Exp.eq(
-                                Exp.stringBin("b"),
+                                Exp.intBin("b"),
                                 Exp.val(3)
                         ), Exp.stringBin("a3"),
                         Exp.val("hello")
@@ -157,9 +156,9 @@ public class ExplicitTypesTests {
         );
 
         translateAndCompare("$.a.get(type: STRING) == " +
-                        "(when($.b.get(type: STRING) == 1 => $.a1.get(type: STRING)," +
-                        " $.b.get(type: STRING) == 2 => $.a2.get(type: STRING)," +
-                        " $.b.get(type: STRING) == 3 => $.a3.get(type: STRING)," +
+                        "(when($.b == 1 => $.a1.get(type: STRING)," +
+                        " $.b == 2 => $.a2.get(type: STRING)," +
+                        " $.b == 3 => $.a3.get(type: STRING)," +
                         " default => \"hello\")",
                 expectedExp);
     }
