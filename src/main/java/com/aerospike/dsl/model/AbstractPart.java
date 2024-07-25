@@ -32,6 +32,7 @@ public abstract class AbstractPart {
         PATH_OPERAND,
         PATH_FUNCTION,
         METADATA_OPERAND,
-        EXPR
+        EXPR,
+        VARIABLE_OPERAND
     }
 }

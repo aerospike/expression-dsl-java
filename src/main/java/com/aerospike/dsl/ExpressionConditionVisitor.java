@@ -18,10 +18,23 @@ import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
     @Override
+    public AbstractPart visitWithExpression(ConditionParser.WithExpressionContext ctx) {
+        List<Exp> expressions = new ArrayList<>();
+
+        // iterate each definition
+        for (ConditionParser.VariableDefinitionContext vdc : ctx.variableDefinition()) {
+            expressions.add(Exp.def(vdc.stringOperand().getText(), visit(vdc.expression()).getExp()));
+        }
+        // last expression is the action (described after "do")
+        expressions.add(visit(ctx.expression()).getExp());
+        return new Expr(Exp.let(expressions.toArray(new Exp[0])));
+    }
+
+    @Override
     public AbstractPart visitWhenExpression(ConditionParser.WhenExpressionContext ctx) {
         List<Exp> expressions = new ArrayList<>();
 
-        // for each condition declaration
+        // iterate each condition declaration
         for (ConditionParser.ExpressionMappingContext emc : ctx.expressionMapping()) {
             // visit condition
             expressions.add(visit(emc.expression(0)).getExp());
@@ -389,11 +402,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     private Exp getExpForNonBinOperand(AbstractPart part) {
         return switch (part.getPartType()) {
-            case INT_OPERAND -> Exp.val(((IntOperand) part).getValue());
-            case FLOAT_OPERAND -> Exp.val(((FloatOperand) part).getValue());
-            case STRING_OPERAND -> Exp.val(((StringOperand) part).getString());
-            case BOOL_OPERAND -> Exp.val(((BooleanOperand) part).getValue());
-            case EXPR, METADATA_OPERAND, PATH_OPERAND -> part.getExp();
+            case INT_OPERAND, BOOL_OPERAND, FLOAT_OPERAND, STRING_OPERAND, EXPR, METADATA_OPERAND, PATH_OPERAND,
+                 VARIABLE_OPERAND -> part.getExp();
             default -> throw new AerospikeDSLException("Expecting non-bin operand, got " + part.getPartType());
         };
     }
@@ -545,6 +555,20 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         return new BasePath(binPart, parts);
+    }
+
+    @Override
+    public AbstractPart visitVariable(ConditionParser.VariableContext ctx) {
+        String text = ctx.VARIABLE_REFERENCE().getText();
+        return new VariableOperand(extractVariableName(text));
+    }
+
+    private String extractVariableName(String variableReference) {
+        if (variableReference.startsWith("${") && variableReference.endsWith("}")) {
+            return variableReference.substring(2, variableReference.length() - 1);
+        } else {
+            throw new IllegalArgumentException("Input string is not in the correct format");
+        }
     }
 
     private BinPart overrideBinType(AbstractPart part, ConditionParser.BasePathContext ctx) {

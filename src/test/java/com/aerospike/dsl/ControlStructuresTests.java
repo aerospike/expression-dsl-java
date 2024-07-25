@@ -55,4 +55,20 @@ public class ControlStructuresTests {
         translateAndCompare("when ($.who == 1 => \"bob\", $.who == 2 => \"fred\", default => \"other\")",
                 expectedExp);
     }
+
+    @Test
+    void withMultipleVariablesDefinitionAndUsage() {
+        Exp expectedExp = Exp.let(
+                Exp.def("x",
+                        Exp.val(1)
+                ),
+                Exp.def("y",
+                        Exp.add(Exp.var("x"), Exp.val(1))
+                ),
+                Exp.add(Exp.var("x"), Exp.var("y"))
+        );
+
+        translateAndCompare("with (x = 1, y = ${x} + 1) do (${x} + ${y})",
+                expectedExp);
+    }
 }

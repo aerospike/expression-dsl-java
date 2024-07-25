@@ -8,7 +8,8 @@ parse: expression;
 
 expression
     // Declaration and Control Expressions
-    : 'when' '(' expressionMapping (',' expressionMapping)* ',' 'default' '=>' expression ')'   # WhenExpression
+    : 'with' '(' variableDefinition (',' variableDefinition)* ')' 'do' '('expression')'         # WithExpression
+    | 'when' '(' expressionMapping (',' expressionMapping)* ',' 'default' '=>' expression ')'   # WhenExpression
     // Logical Expressions
     | expression 'and' expression                                                               # AndExpression
     | expression 'or' expression                                                                # OrExpression
@@ -37,6 +38,10 @@ expression
     | operand                                                                                   # OperandExpression
     ;
 
+variableDefinition
+    : stringOperand '=' expression
+    ;
+
 expressionMapping
     : expression '=>' expression
     ;
@@ -45,6 +50,7 @@ operand
     : numberOperand
     | booleanOperand
     | stringOperand
+    | variable
     | '$.' pathOrMetadata
     | '(' expression ')'
     ;
@@ -65,6 +71,16 @@ FALSE: 'false';
 stringOperand: QUOTED_STRING;
 
 QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
+
+variable: VARIABLE_REFERENCE;
+
+VARIABLE_REFERENCE
+    : '${' STRING_VARIABLE_NAME '}'
+    ;
+
+fragment STRING_VARIABLE_NAME
+    : [a-zA-Z_][a-zA-Z0-9_]*
+    ;
 
 pathOrMetadata: path | metadata;
 

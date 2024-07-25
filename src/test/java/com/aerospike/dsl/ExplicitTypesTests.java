@@ -104,4 +104,30 @@ public class ExplicitTypesTests {
                         Exp.val(10.5))
         );
     }
+
+    // TODO: Still sees a bin reference as a boolean, even when used with get function, investigate
+    //@Test
+    void complicatedWhenExplicitType() {
+        Exp expectedExp = Exp.eq(
+                Exp.intBin("a"),
+                Exp.cond(
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(1)
+                        ), Exp.intBin("a1"),
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(2)
+                        ), Exp.intBin("a2"),
+                        Exp.eq(
+                                Exp.intBin("b"),
+                                Exp.val(3)
+                        ), Exp.intBin("a3"),
+                        Exp.add(Exp.intBin("a4"), Exp.val(1))
+                )
+        );
+
+        translateAndCompare("$.a.get(type: INT) == (when($.b.get(type: INT) == 1 => $.a1.get(type: INT), $.b.get(type: INT) == 2 => $.a2.get(type: INT), $.b.get(type: INT) == 3 => $.a3.get(type: INT), default => $.a4.get(type: INT) + 1))",
+                expectedExp);
+    }
 }
