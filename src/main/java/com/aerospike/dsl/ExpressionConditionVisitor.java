@@ -560,7 +560,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             AbstractPart part = visit(child);
             switch (part.getPartType()) {
                 case BIN_PART -> binPart = overrideBinType(part, ctx);
-                case LIST_PART -> parts.add(part);
+                case LIST_PART, MAP_PART -> parts.add(part);
                 default -> throw new AerospikeDSLException("Unexpected path part: %s".formatted(part.getPartType()));
             }
         }
@@ -675,6 +675,11 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         throw new AerospikeDSLException("Unexpected path type in a List: %s".formatted(ctx.getText()));
+    }
+
+    @Override
+    public AbstractPart visitMapPath(ConditionParser.MapPathContext ctx) {
+        return new MapPart(AbstractPart.PartType.MAP_PART, ctx.NAME_IDENTIFIER().getText());
     }
 
     @Override

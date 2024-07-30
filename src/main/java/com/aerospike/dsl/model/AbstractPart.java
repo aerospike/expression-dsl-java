@@ -29,6 +29,7 @@ public abstract class AbstractPart {
         BASE_PATH,
         BIN_PART,
         LIST_PART,
+        MAP_PART,
         PATH_OPERAND,
         PATH_FUNCTION,
         METADATA_OPERAND,

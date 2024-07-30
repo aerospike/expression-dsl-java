@@ -1,11 +1,15 @@
 package com.aerospike.dsl.model;
 
+import com.aerospike.client.Value;
+import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
+import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -60,6 +64,34 @@ public class PathOperand extends AbstractPart {
                 case RANK -> ListExp.getByRank(listReturnType, valueType, Exp.val(list.getListRank()),
                         Exp.bin(bin.getBinName(), getBinType(basePath)));
             };
+        } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
+            MapPart mapLastPart = (MapPart) lastPathPart;
+            BinPart bin = basePath.getBinPart();
+
+            if (basePath.getParts().size() == 1) {
+                // Single map key access
+                return MapExp.getByKey(listReturnType, valueType,
+                        Exp.val(mapLastPart.getKey()), Exp.mapBin(bin.getBinName()));
+            } else {
+                // Nested (Context) map key access
+                List<CTX> context = new ArrayList<>();
+
+                // No need to iterate the last part, it is not considered a CTX
+                for (int i = 0; i < basePath.getParts().size() - 1; i++) {
+                    AbstractPart part = basePath.getParts().get(i);
+                    switch (part.getPartType()) {
+                        case LIST_PART -> {
+                            // TODO: support bin, index, rank, value
+                        }
+                        case MAP_PART -> {
+                            // TODO: support other types (map rank, map index etc...)
+                            context.add(CTX.mapKey(Value.get(((MapPart) part).getKey())));
+                        }
+                    }
+                }
+                return MapExp.getByKey(listReturnType, valueType,
+                        Exp.val(mapLastPart.getKey()), Exp.mapBin(bin.getBinName()), context.toArray(new CTX[0]));
+            }
         } else {
             return null; // TODO
         }

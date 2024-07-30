@@ -25,7 +25,6 @@ class ListExpressionsTests {
         translateAndCompare("$.listBin1.[0].get(type: INT) == 100", testExp);
         translateAndCompare("$.listBin1.[0].get(type: INT, return: VALUE) == 100", testExp);
         translateAndCompare("$.listBin1.[0].asInt() == 100", testExp);
-
     }
 
     @Test
