@@ -3,6 +3,7 @@ package com.aerospike.dsl;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
+import com.aerospike.dsl.util.ParsingUtils;
 import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -679,6 +680,10 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitMapPath(ConditionParser.MapPathContext ctx) {
+        if (ctx.QUOTED_STRING() != null) {
+            return new MapPart(AbstractPart.PartType.MAP_PART,
+                    ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()));
+        }
         return new MapPart(AbstractPart.PartType.MAP_PART, ctx.NAME_IDENTIFIER().getText());
     }
 

@@ -137,7 +137,7 @@ PATH_FUNCTION_PARAM_RETURN_VALUE
 
 pathPart: NAME_IDENTIFIER;
 
-mapPath: NAME_IDENTIFIER;
+mapPath: NAME_IDENTIFIER | QUOTED_STRING;
 
 listPath: LIST_BIN | listIndex | listValue | listRank;
 
@@ -195,6 +195,8 @@ pathFunctionGet
 pathFunctionParams: pathFunctionParam (',' pathFunctionParam)*?;
 
 pathFunctionParam: pathFunctionParamName ':' pathFunctionParamValue;
+
+quotedNameIdentifier: '"' NAME_IDENTIFIER '"';
 
 NAME_IDENTIFIER: [a-zA-Z0-9_]+;
 

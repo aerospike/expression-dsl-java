@@ -36,7 +36,8 @@ public class MapExpressionsTests {
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val("stringVal"));
-        //translateAndCompare("$.mapBin1.a == \"stringVal\"", testExp); // TODO: fix
+        // TODO: implicit type detection by other operand is difficult in this case
+        //translateAndCompare("$.mapBin1.a == \"stringVal\"", testExp);
         translateAndCompare("$.mapBin1.a.get(type: STRING) == \"stringVal\"", testExp);
         translateAndCompare("$.mapBin1.a.get(type: STRING, return: VALUE) == \"stringVal\"", testExp);
     }
@@ -55,8 +56,6 @@ public class MapExpressionsTests {
         translateAndCompare("$.mapBin1.a.bb.bcc > 200", testExp);
         translateAndCompare("$.mapBin1.a.bb.bcc.get(type: INT) > 200", testExp);
         translateAndCompare("$.mapBin1.a.bb.bcc.get(type: INT, return: VALUE) > 200", testExp);
-        //translateAndCompare("$.mapBin1.a.\"66\".get(type: STR) == \"ff\"", testExp);
-        //translateAndCompare("$.mapBin1.a.dd.[1].{#0}.get(return: UNORDERED_MAP)", testExp);
 
         // String
         testExp = Exp.eq(
@@ -68,8 +67,39 @@ public class MapExpressionsTests {
                         CTX.mapKey(Value.get("a")), CTX.mapKey(Value.get("bb"))
                 ),
                 Exp.val("stringVal"));
-        //translateAndCompare("$.mapBin1.a.bb.bcc == \"stringVal\"", testExp); // TODO: fix
+        // TODO: implicit type detection by other operand is difficult in this case
+        //translateAndCompare("$.mapBin1.a.bb.bcc == \"stringVal\"", testExp);
         translateAndCompare("$.mapBin1.a.bb.bcc.get(type: STRING) == \"stringVal\"", testExp);
         translateAndCompare("$.mapBin1.a.bb.bcc.get(type: STRING, return: VALUE) == \"stringVal\"", testExp);
+    }
+
+    @Test
+    void quotedStringInExpressionPath() {
+        Exp testExp = Exp.gt(
+                MapExp.getByKey(
+                        MapReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val("bcc"),
+                        Exp.mapBin("mapBin1"),
+                        CTX.mapKey(Value.get("a")), CTX.mapKey(Value.get("bb"))
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: INT) > 200", testExp);
+        //Reserved character with quoted string
+        translateAndCompare("$.mapBin1.a.\"bb\".bcc.get(type: INT) > 200", testExp);
+        translateAndCompare("$.mapBin1.a.'bb'.bcc.get(type: INT) > 200", testExp);
+
+        testExp = Exp.gt(
+                MapExp.getByKey(
+                        MapReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val("bcc"),
+                        Exp.mapBin("mapBin1"),
+                        CTX.mapKey(Value.get("127.0.0.1"))
+                ),
+                Exp.val(200));
+
+        translateAndCompare("$.mapBin1.\"127.0.0.1\".bcc.get(type: INT) > 200", testExp);
+        translateAndCompare("$.mapBin1.'127.0.0.1'.bcc.get(type: INT) > 200", testExp);
     }
 }
