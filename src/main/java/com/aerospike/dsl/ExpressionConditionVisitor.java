@@ -642,7 +642,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         List<AbstractPart> parts = basePath.getParts();
 
         // if there are other parts except bin, get a corresponding Exp
-        if (!parts.isEmpty() || ctx.pathFunction() != null) {
+        if (!parts.isEmpty() || ctx.pathFunction() != null && ctx.pathFunction().pathFunctionSize() != null) {
             Exp exp = PathOperand.processPath(basePath, ctx.pathFunction() == null
                     ? null
                     : (PathFunction) visit(ctx.pathFunction()));
