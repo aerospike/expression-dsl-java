@@ -32,9 +32,9 @@ public class PathOperand extends AbstractPart {
 
         Exp.Type valueType = Exp.Type.valueOf(binType.toString());
 
-        int listReturnType = switch (returnParam) {
-            case VALUE -> ListReturnType.VALUE;
-            case COUNT, NONE -> ListReturnType.COUNT;
+        int cdtReturnType = switch (returnParam) {
+            case VALUE -> ListReturnType.VALUE; // same as MapReturnType.VALUE
+            case COUNT, NONE -> ListReturnType.COUNT; // same as MapReturnType.COUNT
         };
 
         List<AbstractPart> parts = basePath.getParts();
@@ -51,7 +51,7 @@ public class PathOperand extends AbstractPart {
 
             return switch (pathFunctionType) {
                 // CAST is the same as get with a different type
-                case GET, COUNT, CAST -> processGet(basePath, lastPathPart, valueType, listReturnType);
+                case GET, COUNT, CAST -> processGet(basePath, lastPathPart, valueType, cdtReturnType);
                 case SIZE -> processSize(basePath, lastPathPart, valueType);
             };
         }
