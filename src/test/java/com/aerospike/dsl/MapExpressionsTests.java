@@ -7,6 +7,8 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
 
 public class MapExpressionsTests {
@@ -119,5 +121,19 @@ public class MapExpressionsTests {
                 ),
                 Exp.val(200));
         translateAndCompare("$.mapBin1.a.size() > 200", testExp);
+    }
+
+    // TODO: Plural leaf elements FMWK-476
+    //@Test
+    void mapKeyList() {
+        Exp testExp = Exp.gt(
+                MapExp.size(
+                        MapExp.getByKeyList(
+                                MapReturnType.ORDERED_MAP,
+                                Exp.val(List.of(1, 2)),
+                                Exp.mapBin("mapBin1"))
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.{1,2}.size() > 200", testExp);
     }
 }
