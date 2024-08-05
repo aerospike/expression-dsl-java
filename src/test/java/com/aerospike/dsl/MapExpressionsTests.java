@@ -182,6 +182,23 @@ public class MapExpressionsTests {
         translateAndCompare("$.mapBin1.{#-1}.asInt() == 100", testExp);
     }
 
+    @Test
+    void mapByRankWithNesting() {
+        Exp testExp = Exp.eq(
+                MapExp.getByRank(
+                        MapReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val(-1),
+                        Exp.mapBin("mapBin1"),
+                        CTX.mapKey(Value.get("a"))
+                ),
+                Exp.val(100));
+        translateAndCompare("$.mapBin1.a.{#-1} == 100", testExp);
+        translateAndCompare("$.mapBin1.a.{#-1}.get(type: INT) == 100", testExp);
+        translateAndCompare("$.mapBin1.a.{#-1}.get(type: INT, return: VALUE) == 100", testExp);
+        translateAndCompare("$.mapBin1.a.{#-1}.asInt() == 100", testExp);
+    }
+
     // TODO: Plural leaf elements FMWK-476
     //@Test
     void mapKeyList() {
