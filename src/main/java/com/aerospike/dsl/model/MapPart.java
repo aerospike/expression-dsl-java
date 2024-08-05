@@ -7,8 +7,8 @@ public class MapPart extends AbstractPart {
 
     private final String key;
 
-    public MapPart(PartType partType, String key) {
-        super(partType);
+    public MapPart(String key) {
+        super(PartType.MAP_PART);
         this.key = key;
     }
 }

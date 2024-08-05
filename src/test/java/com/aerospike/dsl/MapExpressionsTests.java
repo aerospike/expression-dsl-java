@@ -100,4 +100,24 @@ public class MapExpressionsTests {
         translateAndCompare("$.mapBin1.\"127.0.0.1\".bcc.get(type: INT) > 200", testExp);
         translateAndCompare("$.mapBin1.'127.0.0.1'.bcc.get(type: INT) > 200", testExp);
     }
+
+    @Test
+    void mapSize() {
+        // Without Context
+        Exp testExp = Exp.gt(
+                MapExp.size(
+                        Exp.mapBin("mapBin1")
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.size() > 200", testExp);
+
+        // With Context
+        testExp = Exp.gt(
+                MapExp.size(
+                        Exp.mapBin("mapBin1"),
+                        CTX.mapKey(Value.get("a"))
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.a.size() > 200", testExp);
+    }
 }

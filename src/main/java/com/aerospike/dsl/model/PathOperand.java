@@ -38,8 +38,17 @@ public class PathOperand extends AbstractPart {
         };
 
         List<AbstractPart> parts = basePath.getParts();
-        if (!parts.isEmpty()) { // if there is a path inside bin given
-            AbstractPart lastPathPart = parts.get(parts.size() - 1);
+        AbstractPart lastPathPart;
+        if (!parts.isEmpty() || pathFunction != null) {
+            if (!parts.isEmpty()) {
+                lastPathPart = parts.get(parts.size() - 1);
+            } else {
+                // No parts but with pathFunction (e.g. size()), in this case we will create synthetic Map part
+                // Key doesn't matter in this case, we look at the base part
+                lastPathPart = new MapPart(null);
+                basePath.getParts().add(lastPathPart);
+            }
+
             return switch (pathFunctionType) {
                 // CAST is the same as get with a different type
                 case GET, COUNT, CAST -> processGet(basePath, lastPathPart, valueType, listReturnType);
@@ -53,7 +62,7 @@ public class PathOperand extends AbstractPart {
         if (lastPathPart.getPartType() == PartType.LIST_PART) {
             ListPart list = (ListPart) lastPathPart;
             BinPart bin = basePath.getBinPart();
-            CTX[] context = getContextArray(basePath);
+            CTX[] context = getContextArray(basePath, false);
 
             return switch (list.getListPathType()) {
                 case BIN -> Exp.listBin(bin.getBinName());
@@ -95,7 +104,7 @@ public class PathOperand extends AbstractPart {
                         Exp.val(mapLastPart.getKey()), Exp.bin(bin.getBinName(), getBinType(basePath)));
             } else {
                 // Context map access
-                CTX[] context = getContextArray(basePath);
+                CTX[] context = getContextArray(basePath, false);
                 return MapExp.getByKey(listReturnType, valueType,
                         Exp.val(mapLastPart.getKey()), Exp.bin(bin.getBinName(), getBinType(basePath)), context);
             }
@@ -104,12 +113,14 @@ public class PathOperand extends AbstractPart {
         }
     }
 
-    private static CTX[] getContextArray(BasePath basePath) {
+    private static CTX[] getContextArray(BasePath basePath, boolean includeLast) {
         // Nested (Context) map key access
         List<CTX> context = new ArrayList<>();
 
-        // No need to iterate the last part, it is not considered a CTX
-        for (int i = 0; i < basePath.getParts().size() - 1; i++) {
+        for (int i = 0; i < basePath.getParts().size(); i++) {
+            if (!includeLast && i == basePath.getParts().size() - 1) {
+                continue;
+            }
             AbstractPart part = basePath.getParts().get(i);
             switch (part.getPartType()) {
                 case LIST_PART -> {
@@ -144,8 +155,16 @@ public class PathOperand extends AbstractPart {
                 default -> throw new IllegalStateException(
                         "Get size from a List: unexpected value '%s'".formatted(valueType));
             };
+        } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
+            BinPart bin = basePath.getBinPart();
+            CTX[] context = getContextArray(basePath, true);
+            // Valid Context (without synthetic map access for scenarios like mapBin1.size())
+            if (context.length != 0 && !context[0].value.equals(Value.getAsNull())) {
+                return MapExp.size(Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+            }
+            return MapExp.size(Exp.bin(bin.getBinName(), getBinType(basePath)));
         } else {
-            return null; // TODO
+            return null;
         }
     }
 

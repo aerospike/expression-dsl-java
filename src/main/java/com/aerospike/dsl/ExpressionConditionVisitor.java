@@ -642,7 +642,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         List<AbstractPart> parts = basePath.getParts();
 
         // if there are other parts except bin, get a corresponding Exp
-        if (!parts.isEmpty()) {
+        if (!parts.isEmpty() || ctx.pathFunction() != null) {
             Exp exp = PathOperand.processPath(basePath, ctx.pathFunction() == null
                     ? null
                     : (PathFunction) visit(ctx.pathFunction()));
@@ -681,10 +681,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitMapPath(ConditionParser.MapPathContext ctx) {
         if (ctx.QUOTED_STRING() != null) {
-            return new MapPart(AbstractPart.PartType.MAP_PART,
-                    ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()));
+            return new MapPart(ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()));
         }
-        return new MapPart(AbstractPart.PartType.MAP_PART, ctx.NAME_IDENTIFIER().getText());
+        return new MapPart(ctx.NAME_IDENTIFIER().getText());
     }
 
     @Override
