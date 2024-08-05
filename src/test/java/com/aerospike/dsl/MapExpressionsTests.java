@@ -85,7 +85,6 @@ public class MapExpressionsTests {
                 ),
                 Exp.val(200));
         translateAndCompare("$.mapBin1.a.bb.bcc.get(type: INT) > 200", testExp);
-        //Reserved character with quoted string
         translateAndCompare("$.mapBin1.a.\"bb\".bcc.get(type: INT) > 200", testExp);
         translateAndCompare("$.mapBin1.a.'bb'.bcc.get(type: INT) > 200", testExp);
 
@@ -98,7 +97,6 @@ public class MapExpressionsTests {
                         CTX.mapKey(Value.get("127.0.0.1"))
                 ),
                 Exp.val(200));
-
         translateAndCompare("$.mapBin1.\"127.0.0.1\".bcc.get(type: INT) > 200", testExp);
         translateAndCompare("$.mapBin1.'127.0.0.1'.bcc.get(type: INT) > 200", testExp);
     }

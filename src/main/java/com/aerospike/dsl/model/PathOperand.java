@@ -53,16 +53,37 @@ public class PathOperand extends AbstractPart {
         if (lastPathPart.getPartType() == PartType.LIST_PART) {
             ListPart list = (ListPart) lastPathPart;
             BinPart bin = basePath.getBinPart();
+            CTX[] context = getContextArray(basePath);
+
             return switch (list.getListPathType()) {
                 case BIN -> Exp.listBin(bin.getBinName());
-                case INDEX -> ListExp.getByIndex(listReturnType, valueType, Exp.val(list.getListIndex()),
-                        Exp.bin(bin.getBinName(), getBinType(basePath)));
+                case INDEX -> {
+                    if (context.length == 0) {
+                        yield ListExp.getByIndex(listReturnType, valueType, Exp.val(list.getListIndex()),
+                                Exp.bin(bin.getBinName(), getBinType(basePath)));
+                    } else {
+                        yield ListExp.getByIndex(listReturnType, valueType, Exp.val(list.getListIndex()),
+                                Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                    }
+                }
                 case VALUE -> {
                     Exp value = getExpVal(valueType, list.getListValue());
-                    yield ListExp.getByValue(listReturnType, value, Exp.bin(bin.getBinName(), getBinType(basePath)));
+                    if (context.length == 0) {
+                        yield ListExp.getByValue(listReturnType, value, Exp.bin(bin.getBinName(), getBinType(basePath)));
+                    } else {
+                        yield ListExp.getByValue(listReturnType, value, Exp.bin(bin.getBinName(),
+                                getBinType(basePath)), context);
+                    }
                 }
-                case RANK -> ListExp.getByRank(listReturnType, valueType, Exp.val(list.getListRank()),
-                        Exp.bin(bin.getBinName(), getBinType(basePath)));
+                case RANK -> {
+                    if (context.length == 0) {
+                        yield ListExp.getByRank(listReturnType, valueType, Exp.val(list.getListRank()),
+                                Exp.bin(bin.getBinName(), getBinType(basePath)));
+                    } else {
+                        yield ListExp.getByRank(listReturnType, valueType, Exp.val(list.getListRank()),
+                                Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                    }
+                }
             };
         } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
             MapPart mapLastPart = (MapPart) lastPathPart;
@@ -71,30 +92,36 @@ public class PathOperand extends AbstractPart {
             if (basePath.getParts().size() == 1) {
                 // Single map key access
                 return MapExp.getByKey(listReturnType, valueType,
-                        Exp.val(mapLastPart.getKey()), Exp.mapBin(bin.getBinName()));
+                        Exp.val(mapLastPart.getKey()), Exp.bin(bin.getBinName(), getBinType(basePath)));
             } else {
-                // Nested (Context) map key access
-                List<CTX> context = new ArrayList<>();
-
-                // No need to iterate the last part, it is not considered a CTX
-                for (int i = 0; i < basePath.getParts().size() - 1; i++) {
-                    AbstractPart part = basePath.getParts().get(i);
-                    switch (part.getPartType()) {
-                        case LIST_PART -> {
-                            // TODO: support bin, index, rank, value
-                        }
-                        case MAP_PART -> {
-                            // TODO: support other types (map rank, map index etc...)
-                            context.add(CTX.mapKey(Value.get(((MapPart) part).getKey())));
-                        }
-                    }
-                }
+                // Context map access
+                CTX[] context = getContextArray(basePath);
                 return MapExp.getByKey(listReturnType, valueType,
-                        Exp.val(mapLastPart.getKey()), Exp.mapBin(bin.getBinName()), context.toArray(new CTX[0]));
+                        Exp.val(mapLastPart.getKey()), Exp.bin(bin.getBinName(), getBinType(basePath)), context);
             }
         } else {
             return null; // TODO
         }
+    }
+
+    private static CTX[] getContextArray(BasePath basePath) {
+        // Nested (Context) map key access
+        List<CTX> context = new ArrayList<>();
+
+        // No need to iterate the last part, it is not considered a CTX
+        for (int i = 0; i < basePath.getParts().size() - 1; i++) {
+            AbstractPart part = basePath.getParts().get(i);
+            switch (part.getPartType()) {
+                case LIST_PART -> {
+                    // TODO: support bin, index, rank, value
+                }
+                case MAP_PART -> {
+                    // TODO: support other types (map rank, map index etc...)
+                    context.add(CTX.mapKey(Value.get(((MapPart) part).getKey())));
+                }
+            }
+        }
+        return context.toArray(new CTX[0]);
     }
 
     private static Exp getExpVal(Exp.Type valueType, String listValue) {
@@ -122,11 +149,12 @@ public class PathOperand extends AbstractPart {
         }
     }
 
+    // Bin type is determined by the base path's first element
     private static Exp.Type getBinType(BasePath basePath) {
-        List<AbstractPart> parts = basePath.getParts();
-        if (parts.get(parts.size() - 1).getPartType() == PartType.LIST_PART) {
-            return Exp.Type.LIST;
-        }
-        return null; // TODO
+        return switch (basePath.getParts().get(0).getPartType()) {
+            case MAP_PART -> Exp.Type.MAP;
+            case LIST_PART -> Exp.Type.LIST;
+            default -> null;
+        };
     }
 }
