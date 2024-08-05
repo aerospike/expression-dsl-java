@@ -123,6 +123,65 @@ public class MapExpressionsTests {
         translateAndCompare("$.mapBin1.a.size() > 200", testExp);
     }
 
+    @Test
+    void mapByIndex() {
+        Exp testExp = Exp.eq(
+                MapExp.getByIndex(
+                        MapReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val(0),
+                        Exp.mapBin("mapBin1")
+                ),
+                Exp.val(100));
+        translateAndCompare("$.mapBin1.{0} == 100", testExp);
+        translateAndCompare("$.mapBin1.{0}.get(type: INT) == 100", testExp);
+        translateAndCompare("$.mapBin1.{0}.get(type: INT, return: VALUE) == 100", testExp);
+        translateAndCompare("$.mapBin1.{0}.asInt() == 100", testExp);
+    }
+
+    @Test
+    void mapByValue() {
+        Exp testExp = Exp.eq(
+                MapExp.getByValue(
+                        MapReturnType.VALUE,
+                        Exp.val(100),
+                        Exp.mapBin("mapBin1")
+                ),
+                Exp.val(100));
+        translateAndCompare("$.mapBin1.{=100} == 100", testExp);
+        translateAndCompare("$.mapBin1.{=100}.get(type: INT) == 100", testExp);
+        translateAndCompare("$.mapBin1.{=100}.get(type: INT, return: VALUE) == 100", testExp);
+        translateAndCompare("$.mapBin1.{=100}.asInt() == 100", testExp);
+    }
+
+    @Test
+    void mapByValueCount() {
+        Exp testExp = Exp.gt(
+                MapExp.getByValue(
+                        MapReturnType.COUNT,
+                        Exp.val(100),
+                        Exp.mapBin("mapBin1")
+                ),
+                Exp.val(0));
+        translateAndCompare("$.mapBin1.{=100}.count() > 0", testExp);
+    }
+
+    @Test
+    void mapByRank() {
+        Exp testExp = Exp.eq(
+                MapExp.getByRank(
+                        MapReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val(-1),
+                        Exp.mapBin("mapBin1")
+                ),
+                Exp.val(100));
+        translateAndCompare("$.mapBin1.{#-1} == 100", testExp);
+        translateAndCompare("$.mapBin1.{#-1}.get(type: INT) == 100", testExp);
+        translateAndCompare("$.mapBin1.{#-1}.get(type: INT, return: VALUE) == 100", testExp);
+        translateAndCompare("$.mapBin1.{#-1}.asInt() == 100", testExp);
+    }
+
     // TODO: Plural leaf elements FMWK-476
     //@Test
     void mapKeyList() {

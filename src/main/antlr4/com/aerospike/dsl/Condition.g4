@@ -137,7 +137,13 @@ PATH_FUNCTION_PARAM_RETURN_VALUE
 
 pathPart: NAME_IDENTIFIER;
 
-mapPath: NAME_IDENTIFIER | QUOTED_STRING;
+mapPath: NAME_IDENTIFIER | QUOTED_STRING | mapValue | mapRank | mapIndex;
+
+mapValue: '{' VALUE_IDENTIFIER '}';
+
+mapRank: '{' RANK_IDENTIFIER '}';
+
+mapIndex: '{' INT '}';
 
 listPath: LIST_BIN | listIndex | listValue | listRank;
 

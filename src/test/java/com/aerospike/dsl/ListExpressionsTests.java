@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class ListExpressionsTests {
 
     @Test
-    void listBinElementIntEquals_ByIndex() {
+    void listByIndexInteger() {
         Exp testExp = Exp.eq(
                 ListExp.getByIndex(
                         ListReturnType.VALUE,
@@ -28,7 +28,7 @@ class ListExpressionsTests {
     }
 
     @Test
-    void listBinElementOtherTypesEquals_ByIndex() {
+    void listByIndexOtherTypes() {
         Exp testExp = Exp.eq(
                 ListExp.getByIndex(
                         ListReturnType.VALUE,
@@ -53,7 +53,7 @@ class ListExpressionsTests {
     }
 
     @Test
-    void listBinElementEquals_ByValue() {
+    void listByValue() {
         Exp testExp = Exp.eq(
                 ListExp.getByValue(
                         ListReturnType.VALUE,
@@ -68,7 +68,7 @@ class ListExpressionsTests {
     }
 
     @Test
-    void listBinElementEquals_ByValue_Count() {
+    void listByValueCount() {
         Exp testExp = Exp.gt(
                 ListExp.getByValue(
                         ListReturnType.COUNT,
@@ -80,7 +80,7 @@ class ListExpressionsTests {
     }
 
     @Test
-    void listBinElementEquals_ByRank() {
+    void listByRank() {
         Exp testExp = Exp.eq(
                 ListExp.getByRank(
                         ListReturnType.VALUE,
@@ -112,7 +112,7 @@ class ListExpressionsTests {
 //    }
 
     @Test
-    void listBinSize() {
+    void listSize() {
         Exp testExp = Exp.eq(
                 ListExp.size(Exp.listBin("listBin1")),
                 Exp.val(1));

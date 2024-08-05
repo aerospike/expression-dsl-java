@@ -674,16 +674,43 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     .setListRank(Integer.parseInt(listRank.substring(1)))
                     .build();
         }
-
         throw new AerospikeDSLException("Unexpected path type in a List: %s".formatted(ctx.getText()));
     }
 
     @Override
     public AbstractPart visitMapPath(ConditionParser.MapPathContext ctx) {
         if (ctx.QUOTED_STRING() != null) {
-            return new MapPart(ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()));
+            return MapPart.builder()
+                    .setMapKey(ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()))
+                    .build();
         }
-        return new MapPart(ctx.NAME_IDENTIFIER().getText());
+
+        if (ctx.NAME_IDENTIFIER() != null) {
+            return MapPart.builder()
+                    .setMapKey(ctx.NAME_IDENTIFIER().getText())
+                    .build();
+        }
+
+        if (ctx.mapIndex() != null) {
+            return MapPart.builder()
+                    .setMapIndex(Integer.parseInt(ctx.mapIndex().INT().getText()))
+                    .build();
+        }
+
+        if (ctx.mapValue() != null) {
+            String mapValue = ctx.mapValue().VALUE_IDENTIFIER().getText();
+            return MapPart.builder()
+                    .setMapValue(mapValue.substring(1))
+                    .build();
+        }
+
+        if (ctx.mapRank() != null) {
+            String mapRank = ctx.mapRank().RANK_IDENTIFIER().getText();
+            return MapPart.builder()
+                    .setMapRank(Integer.parseInt(mapRank.substring(1)))
+                    .build();
+        }
+        throw new AerospikeDSLException("Unexpected path type in a Map: %s".formatted(ctx.getText()));
     }
 
     @Override

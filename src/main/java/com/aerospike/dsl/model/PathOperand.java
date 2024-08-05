@@ -45,7 +45,7 @@ public class PathOperand extends AbstractPart {
             } else {
                 // No parts but with pathFunction (e.g. size()), in this case we will create synthetic Map part
                 // Key doesn't matter in this case, we look at the base part
-                lastPathPart = new MapPart(null);
+                lastPathPart = MapPart.builder().build();
                 basePath.getParts().add(lastPathPart);
             }
 
@@ -58,56 +58,42 @@ public class PathOperand extends AbstractPart {
         throw new AerospikeDSLException("Expecting other parts of path except bin");
     }
 
-    private static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int listReturnType) {
-        if (lastPathPart.getPartType() == PartType.LIST_PART) {
-            ListPart list = (ListPart) lastPathPart;
-            BinPart bin = basePath.getBinPart();
-            CTX[] context = getContextArray(basePath, false);
+    private static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int cdtReturnType) {
+        // Context can be empty
+        CTX[] context = getContextArray(basePath, false);
+        BinPart bin = basePath.getBinPart();
 
-            return switch (list.getListPathType()) {
+        if (lastPathPart.getPartType() == PartType.LIST_PART) {
+            ListPart listLastPart = (ListPart) lastPathPart;
+
+            return switch (listLastPart.getListPathType()) {
                 case BIN -> Exp.listBin(bin.getBinName());
-                case INDEX -> {
-                    if (context.length == 0) {
-                        yield ListExp.getByIndex(listReturnType, valueType, Exp.val(list.getListIndex()),
-                                Exp.bin(bin.getBinName(), getBinType(basePath)));
-                    } else {
-                        yield ListExp.getByIndex(listReturnType, valueType, Exp.val(list.getListIndex()),
-                                Exp.bin(bin.getBinName(), getBinType(basePath)), context);
-                    }
-                }
+                case INDEX -> ListExp.getByIndex(cdtReturnType, valueType, Exp.val(listLastPart.getListIndex()),
+                        Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 case VALUE -> {
-                    Exp value = getExpVal(valueType, list.getListValue());
-                    if (context.length == 0) {
-                        yield ListExp.getByValue(listReturnType, value, Exp.bin(bin.getBinName(), getBinType(basePath)));
-                    } else {
-                        yield ListExp.getByValue(listReturnType, value, Exp.bin(bin.getBinName(),
-                                getBinType(basePath)), context);
-                    }
+                    Exp value = getExpVal(valueType, listLastPart.getListValue());
+                    yield ListExp.getByValue(cdtReturnType, value, Exp.bin(bin.getBinName(),
+                            getBinType(basePath)), context);
                 }
-                case RANK -> {
-                    if (context.length == 0) {
-                        yield ListExp.getByRank(listReturnType, valueType, Exp.val(list.getListRank()),
-                                Exp.bin(bin.getBinName(), getBinType(basePath)));
-                    } else {
-                        yield ListExp.getByRank(listReturnType, valueType, Exp.val(list.getListRank()),
-                                Exp.bin(bin.getBinName(), getBinType(basePath)), context);
-                    }
-                }
+                case RANK -> ListExp.getByRank(cdtReturnType, valueType, Exp.val(listLastPart.getListRank()),
+                        Exp.bin(bin.getBinName(), getBinType(basePath)), context);
             };
         } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
             MapPart mapLastPart = (MapPart) lastPathPart;
-            BinPart bin = basePath.getBinPart();
 
-            if (basePath.getParts().size() == 1) {
-                // Single map key access
-                return MapExp.getByKey(listReturnType, valueType,
-                        Exp.val(mapLastPart.getKey()), Exp.bin(bin.getBinName(), getBinType(basePath)));
-            } else {
-                // Context map access
-                CTX[] context = getContextArray(basePath, false);
-                return MapExp.getByKey(listReturnType, valueType,
-                        Exp.val(mapLastPart.getKey()), Exp.bin(bin.getBinName(), getBinType(basePath)), context);
-            }
+            return switch (mapLastPart.getMapPathType()) {
+                case BIN -> MapExp.getByKey(cdtReturnType, valueType,
+                        Exp.val(mapLastPart.getMapKey()), Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                case INDEX -> MapExp.getByIndex(cdtReturnType, valueType, Exp.val(mapLastPart.getMapIndex()),
+                        Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                case VALUE -> {
+                    Exp value = getExpVal(valueType, mapLastPart.getMapValue());
+                    yield MapExp.getByValue(cdtReturnType, value, Exp.bin(bin.getBinName(),
+                            getBinType(basePath)), context);
+                }
+                case RANK -> MapExp.getByRank(cdtReturnType, valueType, Exp.val(mapLastPart.getMapRank()),
+                        Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+            };
         } else {
             return null; // TODO
         }
@@ -128,7 +114,7 @@ public class PathOperand extends AbstractPart {
                 }
                 case MAP_PART -> {
                     // TODO: support other types (map rank, map index etc...)
-                    context.add(CTX.mapKey(Value.get(((MapPart) part).getKey())));
+                    context.add(CTX.mapKey(Value.get(((MapPart) part).getMapKey())));
                 }
             }
         }

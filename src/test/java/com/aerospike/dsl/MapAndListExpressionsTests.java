@@ -14,7 +14,7 @@ import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
 public class MapAndListExpressionsTests {
 
     @Test
-    void mapAndListComb() {
+    void listInsideAMap() {
         Exp testExp = Exp.eq(
                 ListExp.getByIndex(
                         ListReturnType.VALUE,
@@ -39,7 +39,7 @@ public class MapAndListExpressionsTests {
     }
 
     //@Test
-    void listAndThenMap() {
+    void mapInsideAList() {
         // TODO: verify expected expression is correct
         Exp testExp = Exp.gt(
                 MapExp.getByKey(
