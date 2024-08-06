@@ -263,8 +263,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         // Handle non Bin operands cases
-        Exp leftExp = getExpForNonBinOperand(left);
-        Exp rightExp = getExpForNonBinOperand(right);
+        Exp leftExp = left.getExp();
+        Exp rightExp = right.getExp();
         return operator.apply(leftExp, rightExp);
     }
 
@@ -414,14 +414,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         String binName = ((BinPart) operand).getBinName();
 
         return operator.apply(Exp.bin(binName, Exp.Type.INT));
-    }
-
-    private Exp getExpForNonBinOperand(AbstractPart part) {
-        return switch (part.getPartType()) {
-            case INT_OPERAND, BOOL_OPERAND, FLOAT_OPERAND, STRING_OPERAND, EXPR, METADATA_OPERAND, PATH_OPERAND,
-                 VARIABLE_OPERAND -> part.getExp();
-            default -> throw new AerospikeDSLException("Expecting non-bin operand, got " + part.getPartType());
-        };
     }
 
     @Override
