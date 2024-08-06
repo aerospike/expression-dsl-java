@@ -16,7 +16,7 @@ public class MapExpressionsTests {
     @Test
     void mapOneLevelExpressions() {
         // Int
-        Exp testExp = Exp.eq(
+        Exp expected = Exp.eq(
                 MapExp.getByKey(
                         MapReturnType.VALUE,
                         Exp.Type.INT,
@@ -24,13 +24,13 @@ public class MapExpressionsTests {
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.a == 200", testExp);
-        translateAndCompare("$.mapBin1.a.get(type: INT) == 200", testExp);
-        translateAndCompare("$.mapBin1.a.get(type: INT, return: VALUE) == 200", testExp);
-        translateAndCompare("$.mapBin1.a.asInt() == 200", testExp);
+        translateAndCompare("$.mapBin1.a == 200", expected);
+        translateAndCompare("$.mapBin1.a.get(type: INT) == 200", expected);
+        translateAndCompare("$.mapBin1.a.get(type: INT, return: VALUE) == 200", expected);
+        translateAndCompare("$.mapBin1.a.asInt() == 200", expected);
 
         // String
-        testExp = Exp.eq(
+        expected = Exp.eq(
                 MapExp.getByKey(
                         MapReturnType.VALUE,
                         Exp.Type.STRING,
@@ -39,14 +39,14 @@ public class MapExpressionsTests {
                 ),
                 Exp.val("stringVal"));
         // TODO: implicit type detection by other operand is difficult in this case
-        //translateAndCompare("$.mapBin1.a == \"stringVal\"", testExp);
-        translateAndCompare("$.mapBin1.a.get(type: STRING) == \"stringVal\"", testExp);
-        translateAndCompare("$.mapBin1.a.get(type: STRING, return: VALUE) == \"stringVal\"", testExp);
+        //translateAndCompare("$.mapBin1.a == \"stringVal\"", expected);
+        translateAndCompare("$.mapBin1.a.get(type: STRING) == \"stringVal\"", expected);
+        translateAndCompare("$.mapBin1.a.get(type: STRING, return: VALUE) == \"stringVal\"", expected);
     }
 
     @Test
     void mapNestedLevelExpressions() {
-        Exp testExp = Exp.gt(
+        Exp expected = Exp.gt(
                 MapExp.getByKey(
                         MapReturnType.VALUE,
                         Exp.Type.INT,
@@ -55,12 +55,12 @@ public class MapExpressionsTests {
                         CTX.mapKey(Value.get("a")), CTX.mapKey(Value.get("bb"))
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.a.bb.bcc > 200", testExp);
-        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: INT) > 200", testExp);
-        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: INT, return: VALUE) > 200", testExp);
+        translateAndCompare("$.mapBin1.a.bb.bcc > 200", expected);
+        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: INT) > 200", expected);
+        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: INT, return: VALUE) > 200", expected);
 
         // String
-        testExp = Exp.eq(
+        expected = Exp.eq(
                 MapExp.getByKey(
                         MapReturnType.VALUE,
                         Exp.Type.STRING,
@@ -70,14 +70,14 @@ public class MapExpressionsTests {
                 ),
                 Exp.val("stringVal"));
         // TODO: implicit type detection by other operand is difficult in this case
-        //translateAndCompare("$.mapBin1.a.bb.bcc == \"stringVal\"", testExp);
-        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: STRING) == \"stringVal\"", testExp);
-        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: STRING, return: VALUE) == \"stringVal\"", testExp);
+        //translateAndCompare("$.mapBin1.a.bb.bcc == \"stringVal\"", expected);
+        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: STRING) == \"stringVal\"", expected);
+        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: STRING, return: VALUE) == \"stringVal\"", expected);
     }
 
     @Test
     void quotedStringInExpressionPath() {
-        Exp testExp = Exp.gt(
+        Exp expected = Exp.gt(
                 MapExp.getByKey(
                         MapReturnType.VALUE,
                         Exp.Type.INT,
@@ -86,11 +86,11 @@ public class MapExpressionsTests {
                         CTX.mapKey(Value.get("a")), CTX.mapKey(Value.get("bb"))
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: INT) > 200", testExp);
-        translateAndCompare("$.mapBin1.a.\"bb\".bcc.get(type: INT) > 200", testExp);
-        translateAndCompare("$.mapBin1.a.'bb'.bcc.get(type: INT) > 200", testExp);
+        translateAndCompare("$.mapBin1.a.bb.bcc.get(type: INT) > 200", expected);
+        translateAndCompare("$.mapBin1.a.\"bb\".bcc.get(type: INT) > 200", expected);
+        translateAndCompare("$.mapBin1.a.'bb'.bcc.get(type: INT) > 200", expected);
 
-        testExp = Exp.gt(
+        expected = Exp.gt(
                 MapExp.getByKey(
                         MapReturnType.VALUE,
                         Exp.Type.INT,
@@ -99,33 +99,33 @@ public class MapExpressionsTests {
                         CTX.mapKey(Value.get("127.0.0.1"))
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.\"127.0.0.1\".bcc.get(type: INT) > 200", testExp);
-        translateAndCompare("$.mapBin1.'127.0.0.1'.bcc.get(type: INT) > 200", testExp);
+        translateAndCompare("$.mapBin1.\"127.0.0.1\".bcc.get(type: INT) > 200", expected);
+        translateAndCompare("$.mapBin1.'127.0.0.1'.bcc.get(type: INT) > 200", expected);
     }
 
     @Test
     void mapSize() {
         // Without Context
-        Exp testExp = Exp.gt(
+        Exp expected = Exp.gt(
                 MapExp.size(
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.size() > 200", testExp);
+        translateAndCompare("$.mapBin1.size() > 200", expected);
 
         // With Context
-        testExp = Exp.gt(
+        expected = Exp.gt(
                 MapExp.size(
                         Exp.mapBin("mapBin1"),
                         CTX.mapKey(Value.get("a"))
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.a.size() > 200", testExp);
+        translateAndCompare("$.mapBin1.a.size() > 200", expected);
     }
 
     @Test
     void mapByIndex() {
-        Exp testExp = Exp.eq(
+        Exp expected = Exp.eq(
                 MapExp.getByIndex(
                         MapReturnType.VALUE,
                         Exp.Type.INT,
@@ -133,42 +133,42 @@ public class MapExpressionsTests {
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val(100));
-        translateAndCompare("$.mapBin1.{0} == 100", testExp);
-        translateAndCompare("$.mapBin1.{0}.get(type: INT) == 100", testExp);
-        translateAndCompare("$.mapBin1.{0}.get(type: INT, return: VALUE) == 100", testExp);
-        translateAndCompare("$.mapBin1.{0}.asInt() == 100", testExp);
+        translateAndCompare("$.mapBin1.{0} == 100", expected);
+        translateAndCompare("$.mapBin1.{0}.get(type: INT) == 100", expected);
+        translateAndCompare("$.mapBin1.{0}.get(type: INT, return: VALUE) == 100", expected);
+        translateAndCompare("$.mapBin1.{0}.asInt() == 100", expected);
     }
 
     @Test
     void mapByValue() {
-        Exp testExp = Exp.eq(
+        Exp expected = Exp.eq(
                 MapExp.getByValue(
                         MapReturnType.VALUE,
                         Exp.val(100),
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val(100));
-        translateAndCompare("$.mapBin1.{=100} == 100", testExp);
-        translateAndCompare("$.mapBin1.{=100}.get(type: INT) == 100", testExp);
-        translateAndCompare("$.mapBin1.{=100}.get(type: INT, return: VALUE) == 100", testExp);
-        translateAndCompare("$.mapBin1.{=100}.asInt() == 100", testExp);
+        translateAndCompare("$.mapBin1.{=100} == 100", expected);
+        translateAndCompare("$.mapBin1.{=100}.get(type: INT) == 100", expected);
+        translateAndCompare("$.mapBin1.{=100}.get(type: INT, return: VALUE) == 100", expected);
+        translateAndCompare("$.mapBin1.{=100}.asInt() == 100", expected);
     }
 
     @Test
     void mapByValueCount() {
-        Exp testExp = Exp.gt(
+        Exp expected = Exp.gt(
                 MapExp.getByValue(
                         MapReturnType.COUNT,
                         Exp.val(100),
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val(0));
-        translateAndCompare("$.mapBin1.{=100}.count() > 0", testExp);
+        translateAndCompare("$.mapBin1.{=100}.count() > 0", expected);
     }
 
     @Test
     void mapByRank() {
-        Exp testExp = Exp.eq(
+        Exp expected = Exp.eq(
                 MapExp.getByRank(
                         MapReturnType.VALUE,
                         Exp.Type.INT,
@@ -176,15 +176,15 @@ public class MapExpressionsTests {
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val(100));
-        translateAndCompare("$.mapBin1.{#-1} == 100", testExp);
-        translateAndCompare("$.mapBin1.{#-1}.get(type: INT) == 100", testExp);
-        translateAndCompare("$.mapBin1.{#-1}.get(type: INT, return: VALUE) == 100", testExp);
-        translateAndCompare("$.mapBin1.{#-1}.asInt() == 100", testExp);
+        translateAndCompare("$.mapBin1.{#-1} == 100", expected);
+        translateAndCompare("$.mapBin1.{#-1}.get(type: INT) == 100", expected);
+        translateAndCompare("$.mapBin1.{#-1}.get(type: INT, return: VALUE) == 100", expected);
+        translateAndCompare("$.mapBin1.{#-1}.asInt() == 100", expected);
     }
 
     @Test
     void mapByRankWithNesting() {
-        Exp testExp = Exp.eq(
+        Exp expected = Exp.eq(
                 MapExp.getByRank(
                         MapReturnType.VALUE,
                         Exp.Type.INT,
@@ -193,16 +193,16 @@ public class MapExpressionsTests {
                         CTX.mapKey(Value.get("a"))
                 ),
                 Exp.val(100));
-        translateAndCompare("$.mapBin1.a.{#-1} == 100", testExp);
-        translateAndCompare("$.mapBin1.a.{#-1}.get(type: INT) == 100", testExp);
-        translateAndCompare("$.mapBin1.a.{#-1}.get(type: INT, return: VALUE) == 100", testExp);
-        translateAndCompare("$.mapBin1.a.{#-1}.asInt() == 100", testExp);
+        translateAndCompare("$.mapBin1.a.{#-1} == 100", expected);
+        translateAndCompare("$.mapBin1.a.{#-1}.get(type: INT) == 100", expected);
+        translateAndCompare("$.mapBin1.a.{#-1}.get(type: INT, return: VALUE) == 100", expected);
+        translateAndCompare("$.mapBin1.a.{#-1}.asInt() == 100", expected);
     }
 
     // TODO: Plural leaf elements FMWK-476
     //@Test
     void mapKeyList() {
-        Exp testExp = Exp.gt(
+        Exp expected = Exp.gt(
                 MapExp.size(
                         MapExp.getByKeyList(
                                 MapReturnType.ORDERED_MAP,
@@ -210,6 +210,6 @@ public class MapExpressionsTests {
                                 Exp.mapBin("mapBin1"))
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.{1,2}.size() > 200", testExp);
+        translateAndCompare("$.mapBin1.{1,2}.size() > 200", expected);
     }
 }

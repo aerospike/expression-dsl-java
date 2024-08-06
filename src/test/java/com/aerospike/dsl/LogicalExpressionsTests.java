@@ -13,11 +13,11 @@ public class LogicalExpressionsTests {
 
     @Test
     void binLogicalAndOrCombinations() {
-        Exp testExp1 = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+        Exp expected1 = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
-        translateAndCompare("$.intBin1 > 100 and $.intBin2 > 100", testExp1);
+        translateAndCompare("$.intBin1 > 100 and $.intBin2 > 100", expected1);
 
-        Exp testExp2 = Exp.or(
+        Exp expected2 = Exp.or(
                 Exp.and(
                         Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                         Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
@@ -25,20 +25,20 @@ public class LogicalExpressionsTests {
                 Exp.lt(Exp.intBin("intBin3"), Exp.val(100))
         );
         // TODO: what should be the default behaviour with no parentheses?
-        translateAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 < 100", testExp2);
-        translateAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 < 100", testExp2);
+        translateAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 < 100", expected2);
+        translateAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 < 100", expected2);
 
-        Exp testExp3 = Exp.and(
+        Exp expected3 = Exp.and(
                 Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.or(
                         Exp.gt(Exp.intBin("intBin2"), Exp.val(100)),
                         Exp.lt(Exp.intBin("intBin3"), Exp.val(100))
                 )
         );
-        translateAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", testExp3);
+        translateAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", expected3);
 
         // check that parentheses make difference
-        assertThatThrownBy(() -> translateAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", testExp2))
+        assertThatThrownBy(() -> translateAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", expected2))
                 .isInstanceOf(AssertionFailedError.class);
     }
 

@@ -105,6 +105,7 @@ public class PathOperand extends AbstractPart {
 
         for (int i = 0; i < basePath.getParts().size(); i++) {
             if (!includeLast && i == basePath.getParts().size() - 1) {
+                // Skip last
                 continue;
             }
             AbstractPart part = basePath.getParts().get(i);
@@ -121,14 +122,14 @@ public class PathOperand extends AbstractPart {
         return context.toArray(new CTX[0]);
     }
 
-    private static Exp getExpVal(Exp.Type valueType, String listValue) {
+    private static Exp getExpVal(Exp.Type valueType, String cdtValue) {
         return switch (valueType) {
-            case BOOL -> Exp.val(Boolean.parseBoolean(listValue));
-            case INT -> Exp.val(Integer.parseInt(listValue));
-            case STRING -> Exp.val(listValue);
-            case FLOAT -> Exp.val(Float.parseFloat(listValue));
+            case BOOL -> Exp.val(Boolean.parseBoolean(cdtValue));
+            case INT -> Exp.val(Integer.parseInt(cdtValue));
+            case STRING -> Exp.val(cdtValue);
+            case FLOAT -> Exp.val(Float.parseFloat(cdtValue));
             default -> throw new IllegalStateException(
-                    "Get by value from a List: unexpected value '%s'".formatted(valueType));
+                    "Get by value from a CDT: unexpected value '%s'".formatted(valueType));
         };
     }
 

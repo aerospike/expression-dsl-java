@@ -9,7 +9,7 @@ public class ControlStructuresTests {
 
     @Test
     void whenWithASingleDeclaration() {
-        Exp expectedExp = Exp.cond(
+        Exp expected = Exp.cond(
                 Exp.eq(
                         Exp.intBin("who"),
                         Exp.val(1)
@@ -18,15 +18,15 @@ public class ControlStructuresTests {
         );
 
         translateAndCompare("when ($.who == 1 => \"bob\", default => \"other\")",
-                expectedExp);
+                expected);
         // different spacing style
         translateAndCompare("when($.who == 1 => \"bob\", default => \"other\")",
-                expectedExp);
+                expected);
     }
 
     @Test
     void whenUsingTheResult() {
-        Exp expectedExp = Exp.eq(
+        Exp expected = Exp.eq(
                 Exp.stringBin("stringBin1"),
                 Exp.cond(
                         Exp.eq(
@@ -38,12 +38,12 @@ public class ControlStructuresTests {
         );
 
         translateAndCompare("$.stringBin1.get(type: STRING) == (when ($.who == 1 => \"bob\", default => \"other\"))",
-                expectedExp);
+                expected);
     }
 
     @Test
     void whenWithMultipleDeclarations() {
-        Exp expectedExp = Exp.cond(
+        Exp expected = Exp.cond(
                 Exp.eq(
                         Exp.intBin("who"),
                         Exp.val(1)
@@ -56,12 +56,12 @@ public class ControlStructuresTests {
         );
 
         translateAndCompare("when ($.who == 1 => \"bob\", $.who == 2 => \"fred\", default => \"other\")",
-                expectedExp);
+                expected);
     }
 
     @Test
     void withMultipleVariablesDefinitionAndUsage() {
-        Exp expectedExp = Exp.let(
+        Exp expected = Exp.let(
                 Exp.def("x",
                         Exp.val(1)
                 ),
@@ -72,9 +72,9 @@ public class ControlStructuresTests {
         );
 
         translateAndCompare("with (x = 1, y = ${x} + 1) do (${x} + ${y})",
-                expectedExp);
+                expected);
         // different spacing style
         translateAndCompare("with(x = 1, y = ${x}+1) do(${x}+${y})",
-                expectedExp);
+                expected);
     }
 }

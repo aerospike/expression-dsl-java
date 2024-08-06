@@ -13,7 +13,7 @@ class ListExpressionsTests {
 
     @Test
     void listByIndexInteger() {
-        Exp testExp = Exp.eq(
+        Exp expected = Exp.eq(
                 ListExp.getByIndex(
                         ListReturnType.VALUE,
                         Exp.Type.INT,
@@ -21,15 +21,15 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[0] == 100", testExp);
-        translateAndCompare("$.listBin1.[0].get(type: INT) == 100", testExp);
-        translateAndCompare("$.listBin1.[0].get(type: INT, return: VALUE) == 100", testExp);
-        translateAndCompare("$.listBin1.[0].asInt() == 100", testExp);
+        translateAndCompare("$.listBin1.[0] == 100", expected);
+        translateAndCompare("$.listBin1.[0].get(type: INT) == 100", expected);
+        translateAndCompare("$.listBin1.[0].get(type: INT, return: VALUE) == 100", expected);
+        translateAndCompare("$.listBin1.[0].asInt() == 100", expected);
     }
 
     @Test
     void listByIndexOtherTypes() {
-        Exp testExp = Exp.eq(
+        Exp expected = Exp.eq(
                 ListExp.getByIndex(
                         ListReturnType.VALUE,
                         Exp.Type.STRING,
@@ -37,10 +37,10 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val("stringVal"));
-        translateAndCompare("$.listBin1.[0].get(type: STRING) == \"stringVal\"", testExp);
-        translateAndCompare("$.listBin1.[0].get(type: STRING, return: VALUE) == \"stringVal\"", testExp);
+        translateAndCompare("$.listBin1.[0].get(type: STRING) == \"stringVal\"", expected);
+        translateAndCompare("$.listBin1.[0].get(type: STRING, return: VALUE) == \"stringVal\"", expected);
 
-        testExp = Exp.eq(
+        expected = Exp.eq(
                 ListExp.getByIndex(
                         ListReturnType.VALUE,
                         Exp.Type.BOOL,
@@ -48,40 +48,40 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(true));
-        translateAndCompare("$.listBin1.[0].get(type: BOOL) == true", testExp);
-        translateAndCompare("$.listBin1.[0].get(type: BOOL, return: VALUE) == true", testExp);
+        translateAndCompare("$.listBin1.[0].get(type: BOOL) == true", expected);
+        translateAndCompare("$.listBin1.[0].get(type: BOOL, return: VALUE) == true", expected);
     }
 
     @Test
     void listByValue() {
-        Exp testExp = Exp.eq(
+        Exp expected = Exp.eq(
                 ListExp.getByValue(
                         ListReturnType.VALUE,
                         Exp.val(100),
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[=100] == 100", testExp);
-        translateAndCompare("$.listBin1.[=100].get(type: INT) == 100", testExp);
-        translateAndCompare("$.listBin1.[=100].get(type: INT, return: VALUE) == 100", testExp);
-        translateAndCompare("$.listBin1.[=100].asInt() == 100", testExp);
+        translateAndCompare("$.listBin1.[=100] == 100", expected);
+        translateAndCompare("$.listBin1.[=100].get(type: INT) == 100", expected);
+        translateAndCompare("$.listBin1.[=100].get(type: INT, return: VALUE) == 100", expected);
+        translateAndCompare("$.listBin1.[=100].asInt() == 100", expected);
     }
 
     @Test
     void listByValueCount() {
-        Exp testExp = Exp.gt(
+        Exp expected = Exp.gt(
                 ListExp.getByValue(
                         ListReturnType.COUNT,
                         Exp.val(100),
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(0));
-        translateAndCompare("$.listBin1.[=100].count() > 0", testExp);
+        translateAndCompare("$.listBin1.[=100].count() > 0", expected);
     }
 
     @Test
     void listByRank() {
-        Exp testExp = Exp.eq(
+        Exp expected = Exp.eq(
                 ListExp.getByRank(
                         ListReturnType.VALUE,
                         Exp.Type.INT,
@@ -89,16 +89,16 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[#-1] == 100", testExp);
-        translateAndCompare("$.listBin1.[#-1].get(type: INT) == 100", testExp);
-        translateAndCompare("$.listBin1.[#-1].get(type: INT, return: VALUE) == 100", testExp);
-        translateAndCompare("$.listBin1.[#-1].asInt() == 100", testExp);
+        translateAndCompare("$.listBin1.[#-1] == 100", expected);
+        translateAndCompare("$.listBin1.[#-1].get(type: INT) == 100", expected);
+        translateAndCompare("$.listBin1.[#-1].get(type: INT, return: VALUE) == 100", expected);
+        translateAndCompare("$.listBin1.[#-1].asInt() == 100", expected);
     }
 
     // Will be handled within context support task
 //    @Test
 //    void listBinElementEquals_Nested() {
-//        Exp testExp = Exp.eq(
+//        Exp expected = Exp.eq(
 //                ListExp.getByIndex(
 //                        ListReturnType.VALUE,
 //                        Exp.Type.INT,
@@ -106,23 +106,23 @@ class ListExpressionsTests {
 //                        Exp.listBin("listBin1")
 //                ),
 //                Exp.val(100));
-//        translateAndCompare("$.listBin1.[0].[0].[0] == 100", testExp);
-//        translateAndCompare("$.listBin1.[0].[0].[0].get(type: INT) == 100", testExp);
-//        translateAndCompare("$.listBin1.[0].[0].[0].get(type: INT, return: VALUE) == 100", testExp);
+//        translateAndCompare("$.listBin1.[0].[0].[0] == 100", expected);
+//        translateAndCompare("$.listBin1.[0].[0].[0].get(type: INT) == 100", expected);
+//        translateAndCompare("$.listBin1.[0].[0].[0].get(type: INT, return: VALUE) == 100", expected);
 //    }
 
     @Test
     void listSize() {
-        Exp testExp = Exp.eq(
+        Exp expected = Exp.eq(
                 ListExp.size(Exp.listBin("listBin1")),
                 Exp.val(1));
-        translateAndCompare("$.listBin1.[].size() == 1", testExp);
+        translateAndCompare("$.listBin1.[].size() == 1", expected);
     }
 
 //
 //    @Test
 //    void listBinElementCount() {
-//        Exp testExp = Exp.eq(
+//        Exp expected = Exp.eq(
 //                ListExp.getByIndex(
 //                        ListReturnType.COUNT,
 //                        Exp.Type.LIST, // TODO: how to determine the type of $.listBin1.[0]?
@@ -130,9 +130,9 @@ class ListExpressionsTests {
 //                        Exp.listBin("listBin1")
 //                ),
 //                Exp.val(100));
-//        translateAndCompare("$.listBin1.[0].count() == 1", testExp);
-//        translateAndCompare("$.listBin1.[0].get(return: COUNT) == 1", testExp);
-//        translateAndCompare("$.listBin1.[0].get(type: INT, return: COUNT) == 1", testExp);
+//        translateAndCompare("$.listBin1.[0].count() == 1", expected);
+//        translateAndCompare("$.listBin1.[0].get(return: COUNT) == 1", expected);
+//        translateAndCompare("$.listBin1.[0].get(type: INT, return: COUNT) == 1", expected);
 //    }
 
     //@Test
