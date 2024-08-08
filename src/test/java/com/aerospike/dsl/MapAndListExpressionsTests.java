@@ -38,22 +38,75 @@ public class MapAndListExpressionsTests {
         translateAndCompare("$.mapBin1.a.cc.[2].get(type: INT) > 100", expected);
     }
 
-    //@Test
+    @Test
+    void mapListList() {
+        Exp expected = Exp.eq(
+                ListExp.getByIndex(
+                        ListReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val(0),
+                        Exp.mapBin("mapBin1"),
+                        CTX.mapKey(Value.get("a")),
+                        CTX.listIndex(0)
+                ),
+                Exp.val(100));
+        translateAndCompare("$.mapBin1.a.[0].[0] == 100", expected);
+    }
+
+    @Test
     void mapInsideAList() {
-        // TODO: verify expected expression is correct
         Exp expected = Exp.gt(
                 MapExp.getByKey(
                         MapReturnType.VALUE,
                         Exp.Type.INT,
                         Exp.val("cc"),
-                        ListExp.getByIndex(
-                                ListReturnType.VALUE,
-                                Exp.Type.MAP,
-                                Exp.val(2),
-                                Exp.listBin("listBin1")
-                        )
+                        Exp.listBin("listBin1"),
+                        CTX.listIndex(2)
                 ), Exp.val(100));
         translateAndCompare("$.listBin1.[2].cc.get(type: INT) > 100", expected);
+    }
+
+    @Test
+    void listMapMap() {
+        Exp expected = Exp.gt(
+                MapExp.getByKey(
+                        MapReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val("cc"),
+                        Exp.listBin("listBin1"),
+                        CTX.listIndex(2),
+                        CTX.mapKey(Value.get("aa"))
+                ), Exp.val(100));
+        translateAndCompare("$.listBin1.[2].aa.cc.get(type: INT) > 100", expected);
+    }
+
+    @Test
+    void listMapList() {
+        Exp expected = Exp.eq(
+                ListExp.getByIndex(
+                        ListReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val(0),
+                        Exp.listBin("listBin1"),
+                        CTX.listIndex(1),
+                        CTX.mapKey(Value.get("a"))
+                ),
+                Exp.val(100));
+        translateAndCompare("$.listBin1.[1].a.[0] == 100", expected);
+    }
+
+    @Test
+    void mapListMap() {
+        Exp expected = Exp.gt(
+                MapExp.getByKey(
+                        MapReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val("cc"),
+                        Exp.mapBin("mapBin1"),
+                        CTX.mapKey(Value.get("a")),
+                        CTX.listIndex(0)
+                ), Exp.val(100));
+        translateAndCompare("$.mapBin1.a.[0].cc.get(type: INT) > 100", expected);
     }
 
     //@Test

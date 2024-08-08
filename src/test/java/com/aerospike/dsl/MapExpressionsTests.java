@@ -199,6 +199,33 @@ public class MapExpressionsTests {
         translateAndCompare("$.mapBin1.a.{#-1}.asInt() == 100", expected);
     }
 
+    @Test
+    void nestedListsWithDifferentContextTypes() {
+        // Nested List Rank
+        Exp expected = Exp.eq(
+                MapExp.getByRank(
+                        MapReturnType.VALUE,
+                        Exp.Type.STRING,
+                        Exp.val(-1),
+                        Exp.mapBin("mapBin1"),
+                        CTX.mapIndex(5)
+                ),
+                Exp.val("stringVal"));
+        translateAndCompare("$.mapBin1.{5}.{#-1}.get(type: STRING) == \"stringVal\"", expected);
+
+        // Nested List Rank Value
+        expected = Exp.eq(
+                MapExp.getByValue(
+                        MapReturnType.VALUE,
+                        Exp.val(100),
+                        Exp.mapBin("mapBin1"),
+                        CTX.mapIndex(5),
+                        CTX.mapRank(-1)
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.{5}.{#-1}.{=100} == 200", expected);
+    }
+
     // TODO: Plural leaf elements FMWK-476
     //@Test
     void mapKeyList() {
