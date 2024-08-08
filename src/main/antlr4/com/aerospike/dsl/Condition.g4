@@ -202,8 +202,6 @@ pathFunctionParams: pathFunctionParam (',' pathFunctionParam)*?;
 
 pathFunctionParam: pathFunctionParamName ':' pathFunctionParamValue;
 
-quotedNameIdentifier: '"' NAME_IDENTIFIER '"';
-
 NAME_IDENTIFIER: [a-zA-Z0-9_]+;
 
 WS: [ \t\r\n]+ -> skip;
