@@ -14,9 +14,9 @@ public class TestUtils {
         ConditionTranslator.translate(input);
     }
 
-    public static void translateAndCompare(String input, Exp testExp) {
-        Expression expression = ConditionTranslator.translate(input);
-        Expression testExpr = Exp.build(testExp);
-        assertEquals(expression, testExpr);
+    public static void translateAndCompare(String input, Exp expected) {
+        Expression actualExpression = ConditionTranslator.translate(input);
+        Expression expectedExpression = Exp.build(expected);
+        assertEquals(actualExpression, expectedExpression);
     }
 }

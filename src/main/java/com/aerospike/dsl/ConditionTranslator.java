@@ -24,6 +24,7 @@ public class ConditionTranslator {
         if (abstractPart == null) {
             throw new AerospikeDSLException("Could not parse given input, wrong syntax");
         }
-        return Exp.build(abstractPart.getExp());
+        Exp expResult = abstractPart.getExp();
+        return Exp.build(expResult);
     }
 }

@@ -107,7 +107,7 @@ public class ExplicitTypesTests {
 
     @Test
     void complicatedWhenExplicitTypeIntDefault() {
-        Exp expectedExp = Exp.eq(
+        Exp expected = Exp.eq(
                 Exp.intBin("a"),
                 Exp.cond(
                         Exp.eq(
@@ -131,12 +131,12 @@ public class ExplicitTypesTests {
                         " $.b.get(type: INT) == 2 => $.a2.get(type: INT)," +
                         " $.b.get(type: INT) == 3 => $.a3.get(type: INT)," +
                         " default => $.a4.get(type: INT) + 1))",
-                expectedExp);
+                expected);
     }
 
     @Test
     void complicatedWhenExplicitTypeString() {
-        Exp expectedExp = Exp.eq(
+        Exp expected = Exp.eq(
                 Exp.stringBin("a"),
                 Exp.cond(
                         Exp.eq(
@@ -160,6 +160,6 @@ public class ExplicitTypesTests {
                         " $.b == 2 => $.a2.get(type: STRING)," +
                         " $.b == 3 => $.a3.get(type: STRING)," +
                         " default => \"hello\")",
-                expectedExp);
+                expected);
     }
 }

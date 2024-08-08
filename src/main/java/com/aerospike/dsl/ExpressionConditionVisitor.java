@@ -3,6 +3,7 @@ package com.aerospike.dsl;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
+import com.aerospike.dsl.util.ParsingUtils;
 import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -262,8 +263,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         // Handle non Bin operands cases
-        Exp leftExp = getExpForNonBinOperand(left);
-        Exp rightExp = getExpForNonBinOperand(right);
+        Exp leftExp = left.getExp();
+        Exp rightExp = right.getExp();
         return operator.apply(leftExp, rightExp);
     }
 
@@ -415,14 +416,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return operator.apply(Exp.bin(binName, Exp.Type.INT));
     }
 
-    private Exp getExpForNonBinOperand(AbstractPart part) {
-        return switch (part.getPartType()) {
-            case INT_OPERAND, BOOL_OPERAND, FLOAT_OPERAND, STRING_OPERAND, EXPR, METADATA_OPERAND, PATH_OPERAND,
-                 VARIABLE_OPERAND -> part.getExp();
-            default -> throw new AerospikeDSLException("Expecting non-bin operand, got " + part.getPartType());
-        };
-    }
-
     @Override
     public AbstractPart visitPathFunctionSize(ConditionParser.PathFunctionSizeContext ctx) {
         return new PathFunction(PathFunction.PathFunctionType.SIZE, null, null);
@@ -560,7 +553,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             AbstractPart part = visit(child);
             switch (part.getPartType()) {
                 case BIN_PART -> binPart = overrideBinType(part, ctx);
-                case LIST_PART -> parts.add(part);
+                case LIST_PART, MAP_PART -> parts.add(part);
                 default -> throw new AerospikeDSLException("Unexpected path part: %s".formatted(part.getPartType()));
             }
         }
@@ -641,7 +634,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         List<AbstractPart> parts = basePath.getParts();
 
         // if there are other parts except bin, get a corresponding Exp
-        if (!parts.isEmpty()) {
+        if (!parts.isEmpty() || ctx.pathFunction() != null && ctx.pathFunction().pathFunctionSize() != null) {
             Exp exp = PathOperand.processPath(basePath, ctx.pathFunction() == null
                     ? null
                     : (PathFunction) visit(ctx.pathFunction()));
@@ -673,8 +666,43 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     .setListRank(Integer.parseInt(listRank.substring(1)))
                     .build();
         }
-
         throw new AerospikeDSLException("Unexpected path type in a List: %s".formatted(ctx.getText()));
+    }
+
+    @Override
+    public AbstractPart visitMapPath(ConditionParser.MapPathContext ctx) {
+        if (ctx.QUOTED_STRING() != null) {
+            return MapPart.builder()
+                    .setMapKey(ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()))
+                    .build();
+        }
+
+        if (ctx.NAME_IDENTIFIER() != null) {
+            return MapPart.builder()
+                    .setMapKey(ctx.NAME_IDENTIFIER().getText())
+                    .build();
+        }
+
+        if (ctx.mapIndex() != null) {
+            return MapPart.builder()
+                    .setMapIndex(Integer.parseInt(ctx.mapIndex().INT().getText()))
+                    .build();
+        }
+
+        if (ctx.mapValue() != null) {
+            String mapValue = ctx.mapValue().VALUE_IDENTIFIER().getText();
+            return MapPart.builder()
+                    .setMapValue(mapValue.substring(1))
+                    .build();
+        }
+
+        if (ctx.mapRank() != null) {
+            String mapRank = ctx.mapRank().RANK_IDENTIFIER().getText();
+            return MapPart.builder()
+                    .setMapRank(Integer.parseInt(mapRank.substring(1)))
+                    .build();
+        }
+        throw new AerospikeDSLException("Unexpected path type in a Map: %s".formatted(ctx.getText()));
     }
 
     @Override
