@@ -1,5 +1,6 @@
 package com.aerospike.dsl;
 
+import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
@@ -95,37 +96,85 @@ class ListExpressionsTests {
         translateAndCompare("$.listBin1.[#-1].asInt() == 100", expected);
     }
 
-    // Will be handled within context support task
-//    @Test
-//    void listBinElementEquals_Nested() {
-//        Exp expected = Exp.eq(
-//                ListExp.getByIndex(
-//                        ListReturnType.VALUE,
-//                        Exp.Type.INT,
-//                        Exp.val(0),
-//                        Exp.listBin("listBin1")
-//                ),
-//                Exp.val(100));
-//        translateAndCompare("$.listBin1.[0].[0].[0] == 100", expected);
-//        translateAndCompare("$.listBin1.[0].[0].[0].get(type: INT) == 100", expected);
-//        translateAndCompare("$.listBin1.[0].[0].[0].get(type: INT, return: VALUE) == 100", expected);
-//    }
+    @Test
+    void listBinElementEquals_Nested() {
+        Exp expected = Exp.eq(
+                ListExp.getByIndex(
+                        ListReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val(0),
+                        Exp.listBin("listBin1"),
+                        CTX.listIndex(0),
+                        CTX.listIndex(0)
+                ),
+                Exp.val(100));
+        translateAndCompare("$.listBin1.[0].[0].[0] == 100", expected);
+        translateAndCompare("$.listBin1.[0].[0].[0].get(type: INT) == 100", expected);
+        translateAndCompare("$.listBin1.[0].[0].[0].get(type: INT, return: VALUE) == 100", expected);
+    }
 
     @Test
     void listSize() {
+        // Without Context
         Exp expected = Exp.eq(
                 ListExp.size(Exp.listBin("listBin1")),
                 Exp.val(1));
         translateAndCompare("$.listBin1.[].size() == 1", expected);
+
+        // With Context
+        expected = Exp.eq(
+                ListExp.size(Exp.listBin("listBin1"), CTX.listIndex(2)),
+                Exp.val(1));
+        translateAndCompare("$.listBin1.[2].size() == 1", expected);
     }
 
-//
+    @Test
+    void nestedLists() {
+        Exp expected = Exp.eq(
+                ListExp.getByIndex(
+                        ListReturnType.VALUE,
+                        Exp.Type.STRING,
+                        Exp.val(1),
+                        Exp.listBin("listBin1"),
+                        CTX.listIndex(5)
+                ),
+                Exp.val("stringVal"));
+        translateAndCompare("$.listBin1.[5].[1].get(type: STRING) == \"stringVal\"", expected);
+    }
+
+    @Test
+    void nestedListsWithDifferentContextTypes() {
+        // Nested List Rank
+        Exp expected = Exp.eq(
+                ListExp.getByRank(
+                        ListReturnType.VALUE,
+                        Exp.Type.STRING,
+                        Exp.val(-1),
+                        Exp.listBin("listBin1"),
+                        CTX.listIndex(5)
+                ),
+                Exp.val("stringVal"));
+        translateAndCompare("$.listBin1.[5].[#-1].get(type: STRING) == \"stringVal\"", expected);
+
+        // Nested List Rank Value
+        expected = Exp.eq(
+                ListExp.getByValue(
+                        ListReturnType.VALUE,
+                        Exp.val(100),
+                        Exp.listBin("listBin1"),
+                        CTX.listIndex(5),
+                        CTX.listRank(-1)
+                ),
+                Exp.val(200));
+        translateAndCompare("$.listBin1.[5].[#-1].[=100] == 200", expected);
+    }
+
 //    @Test
 //    void listBinElementCount() {
 //        Exp expected = Exp.eq(
 //                ListExp.getByIndex(
 //                        ListReturnType.COUNT,
-//                        Exp.Type.LIST, // TODO: how to determine the type of $.listBin1.[0]?
+//                        Exp.Type.LIST, // TODO: how to determine the type of $.listBin1.[0]? could be list/map
 //                        Exp.val(0),
 //                        Exp.listBin("listBin1")
 //                ),

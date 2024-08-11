@@ -645,13 +645,17 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitListPath(ConditionParser.ListPathContext ctx) {
-        if (ctx.LIST_BIN() != null) return ListPart.builder()
-                .setListBin(true)
-                .build();
+        if (ctx.LIST_BIN() != null) {
+            return ListPart.builder()
+                    .setListBin(true)
+                    .build();
+        }
 
-        if (ctx.listIndex() != null) return ListPart.builder()
-                .setListIndex(Integer.parseInt(ctx.listIndex().INT().getText()))
-                .build();
+        if (ctx.listIndex() != null) {
+            return ListPart.builder()
+                    .setListIndex(Integer.parseInt(ctx.listIndex().INT().getText()))
+                    .build();
+        }
 
         if (ctx.listValue() != null) {
             String listValue = ctx.listValue().VALUE_IDENTIFIER().getText();

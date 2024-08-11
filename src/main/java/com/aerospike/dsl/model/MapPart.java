@@ -34,6 +34,12 @@ public class MapPart extends AbstractPart {
         public Builder() {
         }
 
+        public Builder setMapKeyBin(String mapKeyBin) {
+            this.mapKey = mapKeyBin;
+            this.mapPathType = MapPathType.BIN;
+            return this;
+        }
+
         public Builder setMapIndex(int mapIndex) {
             this.mapIndex = mapIndex;
             this.mapPathType = MapPathType.INDEX;
@@ -54,7 +60,7 @@ public class MapPart extends AbstractPart {
 
         public Builder setMapKey(String mapKey) {
             this.mapKey = mapKey;
-            this.mapPathType = MapPathType.BIN;
+            this.mapPathType = MapPathType.KEY;
             return this;
         }
 
@@ -65,6 +71,7 @@ public class MapPart extends AbstractPart {
 
     public enum MapPathType {
         BIN,
+        KEY,
         INDEX,
         VALUE,
         RANK
