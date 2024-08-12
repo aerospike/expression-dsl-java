@@ -86,7 +86,7 @@ pathOrMetadata: path | metadata;
 
 path: basePath ('.' pathFunction)?;
 
-basePath: pathPart ('.' (mapPath | listPath))*?;
+basePath: binPart ('.' (mapPath | listPath))*?;
 
 metadata: METADATA_FUNCTION;
 
@@ -135,7 +135,7 @@ PATH_FUNCTION_PARAM_RETURN_VALUE
     | 'NONE'
     ;
 
-pathPart: NAME_IDENTIFIER;
+binPart: NAME_IDENTIFIER;
 
 mapPath: NAME_IDENTIFIER | QUOTED_STRING | mapValue | mapRank | mapIndex;
 

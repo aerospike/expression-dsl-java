@@ -506,7 +506,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
-    public AbstractPart visitPathPart(ConditionParser.PathPartContext ctx) {
+    public AbstractPart visitBinPart(ConditionParser.BinPartContext ctx) {
         return new BinPart(ctx.NAME_IDENTIFIER().getText());
     }
 
