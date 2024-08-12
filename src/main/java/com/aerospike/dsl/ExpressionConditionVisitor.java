@@ -75,11 +75,18 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitExclusiveExpression(ConditionParser.ExclusiveExpressionContext ctx) {
-        Expr left = (Expr) visit(ctx.expression(0));
-        Expr right = (Expr) visit(ctx.expression(1));
+        if (ctx.expression().size() < 2) {
+            throw new AerospikeDSLException("Exclusive logical operator requires 2 or more expressions");
+        }
+        List<Exp> expressions = new ArrayList<>();
 
-        logicalSetBinsAsBooleanExpr(left, right);
-        return new Expr(Exp.exclusive(left.getExp(), right.getExp()));
+        // iterate each condition declaration
+        for (ConditionParser.ExpressionContext ec : ctx.expression()) {
+            Expr expr = (Expr) visit(ec);
+            logicalSetBinAsBooleanExpr(expr);
+            expressions.add(expr.getExp());
+        }
+        return new Expr(Exp.exclusive(expressions.toArray(new Exp[0])));
     }
 
     private void logicalSetBinsAsBooleanExpr(Expr left, Expr right) {

@@ -8,13 +8,13 @@ parse: expression;
 
 expression
     // Declaration and Control Expressions
-    : 'with' '(' variableDefinition (',' variableDefinition)* ')' 'do' '('expression')'         # WithExpression
+    : 'with' '(' variableDefinition (',' variableDefinition)* ')' 'do' '(' expression ')'       # WithExpression
     | 'when' '(' expressionMapping (',' expressionMapping)* ',' 'default' '=>' expression ')'   # WhenExpression
     // Logical Expressions
     | expression 'and' expression                                                               # AndExpression
     | expression 'or' expression                                                                # OrExpression
-    | 'not' '('expression')'                                                                    # NotExpression
-    | 'exclusive' '('expression',' expression')'                                                # ExclusiveExpression
+    | 'not' '(' expression ')'                                                                  # NotExpression
+    | 'exclusive' '(' expression (',' expression)+ ')'                                          # ExclusiveExpression
     // Comparison Expressions
     | operand '>' operand                                                                       # GreaterThanExpression
     | operand '>=' operand                                                                      # GreaterThanOrEqualExpression
