@@ -653,7 +653,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
-    public AbstractPart visitListPath(ConditionParser.ListPathContext ctx) {
+    public AbstractPart visitListPart(ConditionParser.ListPartContext ctx) {
         if (ctx.LIST_BIN() != null) {
             return ListPart.builder()
                     .setListBin(true)
@@ -683,7 +683,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
-    public AbstractPart visitMapPath(ConditionParser.MapPathContext ctx) {
+    public AbstractPart visitMapPart(ConditionParser.MapPartContext ctx) {
         if (ctx.QUOTED_STRING() != null) {
             return MapPart.builder()
                     .setMapKey(ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()))
