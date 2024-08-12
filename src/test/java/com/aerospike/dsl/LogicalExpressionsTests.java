@@ -53,6 +53,14 @@ public class LogicalExpressionsTests {
                 Exp.exclusive(
                         Exp.eq(Exp.stringBin("hand"), Exp.val("hook")),
                         Exp.eq(Exp.stringBin("leg"), Exp.val("peg"))));
+
+        // More than 2 expressions exclusive
+        translateAndCompare("exclusive($.a == \"aVal\", $.b == \"bVal\", $.c == \"cVal\", $.d == 4)",
+                Exp.exclusive(
+                        Exp.eq(Exp.stringBin("a"), Exp.val("aVal")),
+                        Exp.eq(Exp.stringBin("b"), Exp.val("bVal")),
+                        Exp.eq(Exp.stringBin("c"), Exp.val("cVal")),
+                        Exp.eq(Exp.intBin("d"), Exp.val(4))));
     }
 
     //TODO: FMWK-488
@@ -95,6 +103,7 @@ public class LogicalExpressionsTests {
         assertThatThrownBy(() -> translateAndCompare("exclusive($.hand == \"hook\")",
                 Exp.exclusive(
                         Exp.eq(Exp.stringBin("hand"), Exp.val("hook")))))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessage("Exclusive logical operator requires 2 or more expressions");
     }
 }
