@@ -10,6 +10,8 @@ public abstract class AbstractPart {
 
     private PartType partType;
     private Exp exp;
+    @Setter
+    Exp.Type expType;
 
     public AbstractPart(PartType partType) {
         this.partType = partType;

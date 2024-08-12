@@ -7,7 +7,6 @@ import lombok.Getter;
 public class BinPart extends Expr {
 
     private final String binName;
-    private Exp.Type expType;
 
     public BinPart(String binName) {
         super(null); // Exp unknown

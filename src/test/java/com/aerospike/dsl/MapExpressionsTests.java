@@ -24,6 +24,7 @@ public class MapExpressionsTests {
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val(200));
+        // Implicit detect as Int
         translateAndCompare("$.mapBin1.a == 200", expected);
         translateAndCompare("$.mapBin1.a.get(type: INT) == 200", expected);
         translateAndCompare("$.mapBin1.a.get(type: INT, return: VALUE) == 200", expected);
@@ -38,8 +39,8 @@ public class MapExpressionsTests {
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val("stringVal"));
-        // TODO: implicit type detection by other operand is difficult in this case
-        //translateAndCompare("$.mapBin1.a == \"stringVal\"", expected);
+        // Implicit detect as String
+        translateAndCompare("$.mapBin1.a == \"stringVal\"", expected);
         translateAndCompare("$.mapBin1.a.get(type: STRING) == \"stringVal\"", expected);
         translateAndCompare("$.mapBin1.a.get(type: STRING, return: VALUE) == \"stringVal\"", expected);
     }
@@ -69,8 +70,8 @@ public class MapExpressionsTests {
                         CTX.mapKey(Value.get("a")), CTX.mapKey(Value.get("bb"))
                 ),
                 Exp.val("stringVal"));
-        // TODO: implicit type detection by other operand is difficult in this case
-        //translateAndCompare("$.mapBin1.a.bb.bcc == \"stringVal\"", expected);
+        // Implicit detect as String
+        translateAndCompare("$.mapBin1.a.bb.bcc == \"stringVal\"", expected);
         translateAndCompare("$.mapBin1.a.bb.bcc.get(type: STRING) == \"stringVal\"", expected);
         translateAndCompare("$.mapBin1.a.bb.bcc.get(type: STRING, return: VALUE) == \"stringVal\"", expected);
     }
@@ -211,6 +212,8 @@ public class MapExpressionsTests {
                         CTX.mapIndex(5)
                 ),
                 Exp.val("stringVal"));
+        // Implicit detect as String
+        translateAndCompare("$.mapBin1.{5}.{#-1} == \"stringVal\"", expected);
         translateAndCompare("$.mapBin1.{5}.{#-1}.get(type: STRING) == \"stringVal\"", expected);
 
         // Nested List Rank Value

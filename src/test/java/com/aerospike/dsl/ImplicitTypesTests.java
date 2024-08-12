@@ -107,8 +107,7 @@ public class ImplicitTypesTests {
         );
     }
 
-    // TODO: need to implicitly identify types for complicated cases like that
-    //@Test
+    @Test
     void complicatedWhenImplicitTypeInt() {
         Exp expected = Exp.eq(
                 Exp.intBin("a"),
@@ -133,7 +132,7 @@ public class ImplicitTypesTests {
                 expected);
     }
 
-    // TODO: need to implicitly identify types for complicated cases like that
+    // TODO: FMWK-533 Implicit Type Detection for Control Structures
     //@Test
     void complicatedWhenImplicitTypeString() {
         Exp expected = Exp.eq(

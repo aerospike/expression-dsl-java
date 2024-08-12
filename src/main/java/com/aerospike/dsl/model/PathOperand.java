@@ -20,17 +20,17 @@ public class PathOperand extends AbstractPart {
     }
 
     public static Exp processPath(BasePath basePath, PathFunction pathFunction) {
-        Exp.Type binType = Exp.Type.INT;
+        Exp.Type valueType = null;
         PathFunction.ReturnParam returnParam = PathFunction.ReturnParam.VALUE;
         PathFunction.PathFunctionType pathFunctionType = PathFunction.PathFunctionType.GET;
 
         if (pathFunction != null) {
             if (pathFunction.getReturnParam() != null) returnParam = pathFunction.getReturnParam();
-            if (pathFunction.getBinType() != null) binType = pathFunction.getBinType();
+            if (pathFunction.getBinType() != null) {
+                valueType = Exp.Type.valueOf(pathFunction.getBinType().toString());
+            }
             if (pathFunction.getPathFunctionType() != null) pathFunctionType = pathFunction.getPathFunctionType();
         }
-
-        Exp.Type valueType = Exp.Type.valueOf(binType.toString());
 
         int cdtReturnType = switch (returnParam) {
             case VALUE -> ListReturnType.VALUE; // same as MapReturnType.VALUE
@@ -63,6 +63,20 @@ public class PathOperand extends AbstractPart {
         // Context can be empty
         CTX[] context = getContextArray(basePath, false);
         BinPart bin = basePath.getBinPart();
+
+        /*
+            Determine valueType according to this priority:
+            1. From pathFunction (explicit type, casting) is preferred
+            2. Type detection (lastPathPart.getExpType())
+            3. Default INT
+         */
+        if (valueType == null) {
+            if (lastPathPart.getExpType() != null) {
+                valueType = lastPathPart.getExpType();
+            } else {
+                valueType = Exp.Type.INT;
+            }
+        }
 
         if (lastPathPart.getPartType() == PartType.LIST_PART) {
             ListPart listLastPart = (ListPart) lastPathPart;

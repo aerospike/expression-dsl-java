@@ -36,7 +36,10 @@ public class ControlStructuresTests {
                         Exp.val("other")
                 )
         );
-
+        // TODO: FMWK-533 Implicit Type Detection for Control Structures
+        // Implicit detect as String
+        //translateAndCompare("$.stringBin1 == (when ($.who == 1 => \"bob\", default => \"other\"))",
+        //        expected);
         translateAndCompare("$.stringBin1.get(type: STRING) == (when ($.who == 1 => \"bob\", default => \"other\"))",
                 expected);
     }

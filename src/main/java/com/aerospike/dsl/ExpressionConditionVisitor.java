@@ -5,7 +5,6 @@ import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
 import com.aerospike.dsl.util.ParsingUtils;
 import com.aerospike.dsl.util.ValidationUtils;
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.ArrayList;
@@ -327,13 +326,13 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             case BIN_PART -> {
                 String binNameRight = ((BinPart) right).getBinName();
                 Exp.Type leftExplicitType = left.getExpType();
-                Exp.Type rightExplicitType = ((BinPart) right).getExpType();
+                Exp.Type rightExplicitType = right.getExpType();
 
                 if (leftExplicitType != null && rightExplicitType != null) {
                     ValidationUtils.validateComparableTypes(leftExplicitType, rightExplicitType);
                     yield operator.apply(
                             Exp.bin(binNameLeft, left.getExpType()),
-                            Exp.bin(binNameRight, ((BinPart) right).getExpType()));
+                            Exp.bin(binNameRight, right.getExpType()));
                 } else {
                     yield operator.apply(
                             Exp.bin(binNameLeft, Exp.Type.INT),
@@ -552,8 +551,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         for (ParseTree child : ctxChildrenExclDots) {
             AbstractPart part = visit(child);
             switch (part.getPartType()) {
-                case BIN_PART -> binPart = overrideBinType(part, ctx);
-                case LIST_PART, MAP_PART -> parts.add(part);
+                case BIN_PART -> binPart = (BinPart) overrideType(part, ctx);
+                case LIST_PART, MAP_PART -> parts.add(overrideType(part, ctx));
                 default -> throw new AerospikeDSLException("Unexpected path part: %s".formatted(part.getPartType()));
             }
         }
@@ -579,53 +578,63 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
     }
 
-    private BinPart overrideBinType(AbstractPart part, ConditionParser.BasePathContext ctx) {
-        BinPart binPart = (BinPart) part;
+    private AbstractPart overrideType(AbstractPart part, ConditionParser.BasePathContext ctx) {
+        ConditionParser.PathFunctionContext pathFunctionContext =
+                ((ConditionParser.PathContext) ctx.getParent()).pathFunction();
 
-        ConditionParser.PathFunctionContext pathFunctionContext = ((ConditionParser.PathContext) ctx.getParent()).pathFunction();
-
-        // In case we have a path function (explicit get or cast) override the type
+        // Override with Path Function (explicit get or cast)
         if (pathFunctionContext != null) {
             PathFunction pathFunction = (PathFunction) visit(pathFunctionContext);
 
             if (pathFunction != null) {
                 Exp.Type type = pathFunction.getBinType();
                 if (type != null) {
-                    binPart.updateExp(type);
+                    if (part instanceof BinPart) {
+                        ((BinPart) part).updateExp(type);
+                    } else {
+                        part.setExpType(type);
+                    }
                 }
             }
-        } else { // Implicit detect for Float type
-            if (implicitDetectFloatFromUpperTree(ctx)) {
-                binPart.updateExp(Exp.Type.FLOAT);
+        } else { // Override using Implicit type detection
+            Exp.Type implicitType = detectImplicitTypeFromUpperTree(ctx);
+            if (part instanceof BinPart) {
+                ((BinPart) part).updateExp(implicitType);
+            } else { // ListPart or MapPart
+                part.setExpType(implicitType);
             }
         }
-        return binPart;
+        return part;
     }
 
-    /*
-        Return true if implicitly required to compare current expression branch as floats.
-        Implicit casting of a complicated expression should only detect floats:
-        1. Arithmetic expressions only works on numbers, so by default int unless we detect a float operand
-        2. Logical expressions always operate on booleans
-        3. Metadata expressions we know the type to compare, and it's never a float
-        4. Comparison expressions can be everything, but they do not alter and always return a boolean
-     */
-    private boolean implicitDetectFloatFromUpperTree(ConditionParser.BasePathContext ctx) {
-        ParserRuleContext obj = ctx;
+    private Exp.Type detectImplicitTypeFromUpperTree(ParseTree ctx) {
+        // Search for a "leaf" operand child (Int, Float, String and Boolean)
+        // in the above levels of the current path in the expression tree
+        while (ctx.getParent() != null) {
+            ctx = ctx.getParent();
 
-        // Search for a float operand child in the above levels of the current path in the expression tree
-        while (obj.getParent() != null) {
-            obj = obj.getParent();
-
-            for (ParseTree child : obj.children) {
-                if (child instanceof ConditionParser.OperandContext operandContext &&
-                        operandContext.numberOperand() != null &&
-                        operandContext.numberOperand().floatOperand() != null) {
-                    return true;
+            for (int i = 0; i < ctx.getChildCount(); i++) {
+                ParseTree child = ctx.getChild(i);
+                if (child instanceof ConditionParser.WhenExpressionContext) {
+                    System.out.println("hi");
+                }
+                if (child instanceof ConditionParser.OperandContext operandContext) {
+                    if (operandContext.numberOperand() != null) {
+                        if (operandContext.numberOperand().intOperand() != null) {
+                            return Exp.Type.INT;
+                        } else if (operandContext.numberOperand().floatOperand() != null) {
+                            return Exp.Type.FLOAT;
+                        }
+                    } else if (operandContext.stringOperand() != null) {
+                        return Exp.Type.STRING;
+                    } else if (operandContext.booleanOperand() != null) {
+                        return Exp.Type.BOOL;
+                    }
                 }
             }
         }
-        return false;
+        // Default INT
+        return Exp.Type.INT;
     }
 
     @Override
