@@ -272,15 +272,15 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return switch (right.getPartType()) {
             case INT_OPERAND -> {
                 ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.INT);
-                yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), Exp.val(((IntOperand) right).getValue()));
+                yield operator.apply(left.getExp(), right.getExp());
             }
             case FLOAT_OPERAND -> {
                 ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.FLOAT);
-                yield operator.apply(Exp.bin(binNameLeft, Exp.Type.FLOAT), Exp.val(((FloatOperand) right).getValue()));
+                yield operator.apply(left.getExp(), right.getExp());
             }
             case BOOL_OPERAND -> {
                 ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BOOL);
-                yield operator.apply(Exp.bin(binNameLeft, Exp.Type.BOOL), Exp.val(((BooleanOperand) right).getValue()));
+                yield operator.apply(left.getExp(), right.getExp());
             }
             case STRING_OPERAND -> {
                 if (left.getExpType() != null &&
@@ -289,11 +289,11 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BLOB);
                     String base64String = ((StringOperand) right).getString();
                     byte[] value = Base64.getDecoder().decode(base64String);
-                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.BLOB), Exp.val(value));
+                    yield operator.apply(left.getExp(), Exp.val(value));
                 } else {
                     // String
                     ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.STRING);
-                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), Exp.val(((StringOperand) right).getString()));
+                    yield operator.apply(left.getExp(), right.getExp());
                 }
             }
             case METADATA_OPERAND -> {
@@ -304,40 +304,13 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         right.getExp()
                 );
             }
-            case EXPR -> {
-                // Can't validate with Expr on one side
-                Exp.Type leftExplicitType = left.getExpType();
-                if (leftExplicitType != null) {
-                    yield operator.apply(Exp.bin(binNameLeft, leftExplicitType), right.getExp());
-                } else {
-                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.INT), right.getExp());
-                }
-            }
-            case PATH_OPERAND -> {
-                Exp.Type leftExplicitType = left.getExpType();
-                // Can't validate with Path on one side
-                if (leftExplicitType != null) {
-                    yield operator.apply(Exp.bin(binNameLeft, leftExplicitType), right.getExp());
-                } else {
-                    yield operator.apply(Exp.bin(binNameLeft, Exp.Type.STRING), right.getExp());
-                }
-            }
-            // By default, compare bins as integers unless provided an explicit type to compare
+            case EXPR, PATH_OPERAND ->
+                    operator.apply(left.getExp(), right.getExp()); // Can't validate with Expr on one side
+            // Left and right are both bin parts
             case BIN_PART -> {
-                String binNameRight = ((BinPart) right).getBinName();
-                Exp.Type leftExplicitType = left.getExpType();
-                Exp.Type rightExplicitType = right.getExpType();
-
-                if (leftExplicitType != null && rightExplicitType != null) {
-                    ValidationUtils.validateComparableTypes(leftExplicitType, rightExplicitType);
-                    yield operator.apply(
-                            Exp.bin(binNameLeft, left.getExpType()),
-                            Exp.bin(binNameRight, right.getExpType()));
-                } else {
-                    yield operator.apply(
-                            Exp.bin(binNameLeft, Exp.Type.INT),
-                            Exp.bin(binNameRight, Exp.Type.INT));
-                }
+                // Validate types if possible
+                ValidationUtils.validateComparableTypes(left.getExpType(), right.getExpType());
+                yield operator.apply(left.getExp(), right.getExp());
             }
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
         };
@@ -348,15 +321,15 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return switch (left.getPartType()) {
             case INT_OPERAND -> {
                 ValidationUtils.validateComparableTypes(Exp.Type.INT, right.getExpType());
-                yield operator.apply(Exp.val(((IntOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.INT));
+                yield operator.apply(left.getExp(), right.getExp());
             }
             case FLOAT_OPERAND -> {
                 ValidationUtils.validateComparableTypes(Exp.Type.FLOAT, right.getExpType());
-                yield operator.apply(Exp.val(((FloatOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.FLOAT));
+                yield operator.apply(left.getExp(), right.getExp());
             }
             case BOOL_OPERAND -> {
                 ValidationUtils.validateComparableTypes(Exp.Type.BOOL, right.getExpType());
-                yield operator.apply(Exp.val(((BooleanOperand) left).getValue()), Exp.bin(binNameRight, Exp.Type.BOOL));
+                yield operator.apply(left.getExp(), right.getExp());
             }
             case STRING_OPERAND -> {
                 if (right.getExpType() != null &&
@@ -365,11 +338,11 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     ValidationUtils.validateComparableTypes(Exp.Type.BLOB, right.getExpType());
                     String base64String = ((StringOperand) left).getString();
                     byte[] value = Base64.getDecoder().decode(base64String);
-                    yield operator.apply(Exp.val(value), Exp.bin(binNameRight, Exp.Type.BLOB));
+                    yield operator.apply(Exp.val(value), right.getExp());
                 } else {
                     // String
                     ValidationUtils.validateComparableTypes(Exp.Type.STRING, right.getExpType());
-                    yield operator.apply(Exp.val(((StringOperand) left).getString()), Exp.bin(binNameRight, Exp.Type.STRING));
+                    yield operator.apply(left.getExp(), right.getExp());
                 }
             }
             case METADATA_OPERAND -> {
@@ -380,24 +353,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         Exp.bin(binNameRight, binType)
                 );
             }
-            case EXPR -> {
-                // Can't validate with Expr on one side
-                Exp.Type rightExplicitType = right.getExpType();
-                if (rightExplicitType != null) {
-                    yield operator.apply(left.getExp(), Exp.bin(binNameRight, rightExplicitType));
-                } else {
-                    yield operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.INT));
-                }
-            }
-            case PATH_OPERAND -> {
-                // Can't validate with Path on one side
-                Exp.Type rightExplicitType = right.getExpType();
-                if (rightExplicitType != null) {
-                    yield operator.apply(left.getExp(), Exp.bin(binNameRight, rightExplicitType));
-                } else {
-                    yield operator.apply(left.getExp(), Exp.bin(binNameRight, Exp.Type.STRING));
-                }
-            }
+            case EXPR, PATH_OPERAND ->
+                    operator.apply(left.getExp(), right.getExp()); // Can't validate with Expr on one side
             // No need for 2 BIN_OPERAND handling since it's covered in the left condition
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
         };
@@ -412,6 +369,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         // 1 Operand Expression is always a BIN Operand
         String binName = ((BinPart) operand).getBinName();
 
+        // There is only 1 case of a single operand expression (int not), and it always gets an integer
         return operator.apply(Exp.bin(binName, Exp.Type.INT));
     }
 
@@ -578,7 +536,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
     }
 
-    private AbstractPart overrideType(AbstractPart part, ConditionParser.BasePathContext ctx) {
+    private AbstractPart overrideType(AbstractPart part, ParseTree ctx) {
         ConditionParser.PathFunctionContext pathFunctionContext =
                 ((ConditionParser.PathContext) ctx.getParent()).pathFunction();
 
@@ -615,9 +573,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
             for (int i = 0; i < ctx.getChildCount(); i++) {
                 ParseTree child = ctx.getChild(i);
-                if (child instanceof ConditionParser.WhenExpressionContext) {
-                    System.out.println("hi");
-                }
+
                 if (child instanceof ConditionParser.OperandContext operandContext) {
                     if (operandContext.numberOperand() != null) {
                         if (operandContext.numberOperand().intOperand() != null) {

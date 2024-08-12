@@ -109,6 +109,11 @@ class RecordMetadataTests {
                 Exp.eq(Exp.setName(), Exp.val("groupB"))
         );
         translateAndCompare(input, expected);
+
+        // set name compared with String Bin
+        input = "$.mySetBin == $.setName()";
+        expected = Exp.eq(Exp.stringBin("mySetBin"), Exp.setName());
+        translateAndCompare(input, expected);
     }
 
     @Test
