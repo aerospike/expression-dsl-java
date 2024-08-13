@@ -22,6 +22,7 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(100));
+        // Implicit detect as Int
         translateAndCompare("$.listBin1.[0] == 100", expected);
         translateAndCompare("$.listBin1.[0].get(type: INT) == 100", expected);
         translateAndCompare("$.listBin1.[0].get(type: INT, return: VALUE) == 100", expected);
@@ -38,6 +39,8 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val("stringVal"));
+        // Implicit detect as string
+        translateAndCompare("$.listBin1.[0] == \"stringVal\"", expected);
         translateAndCompare("$.listBin1.[0].get(type: STRING) == \"stringVal\"", expected);
         translateAndCompare("$.listBin1.[0].get(type: STRING, return: VALUE) == \"stringVal\"", expected);
 
@@ -49,6 +52,8 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(true));
+        // Implicit detect as boolean
+        translateAndCompare("$.listBin1.[0] == true", expected);
         translateAndCompare("$.listBin1.[0].get(type: BOOL) == true", expected);
         translateAndCompare("$.listBin1.[0].get(type: BOOL, return: VALUE) == true", expected);
     }
@@ -154,6 +159,8 @@ class ListExpressionsTests {
                         CTX.listIndex(5)
                 ),
                 Exp.val("stringVal"));
+        // Implicit detect as String
+        translateAndCompare("$.listBin1.[5].[#-1] == \"stringVal\"", expected);
         translateAndCompare("$.listBin1.[5].[#-1].get(type: STRING) == \"stringVal\"", expected);
 
         // Nested List Rank Value
@@ -166,6 +173,7 @@ class ListExpressionsTests {
                         CTX.listRank(-1)
                 ),
                 Exp.val(200));
+        // Implicit detect as Int
         translateAndCompare("$.listBin1.[5].[#-1].[=100] == 200", expected);
     }
 

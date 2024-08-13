@@ -9,7 +9,7 @@ public class MapPart extends AbstractPart {
     private final String mapValue;
     private final int mapRank;
     private final String mapKey;
-    private final MapPathType mapPathType;
+    private final MapPartType mapPartType;
 
     public static Builder builder() {
         return new Builder();
@@ -21,7 +21,7 @@ public class MapPart extends AbstractPart {
         this.mapValue = builder.mapValue;
         this.mapRank = builder.mapRank;
         this.mapKey = builder.mapKey;
-        this.mapPathType = builder.mapPathType;
+        this.mapPartType = builder.mapPartType;
     }
 
     public static class Builder {
@@ -29,38 +29,38 @@ public class MapPart extends AbstractPart {
         private String mapValue;
         private int mapRank;
         private String mapKey;
-        private MapPathType mapPathType;
+        private MapPartType mapPartType;
 
         public Builder() {
         }
 
         public Builder setMapKeyBin(String mapKeyBin) {
             this.mapKey = mapKeyBin;
-            this.mapPathType = MapPathType.BIN;
+            this.mapPartType = MapPartType.BIN;
             return this;
         }
 
         public Builder setMapIndex(int mapIndex) {
             this.mapIndex = mapIndex;
-            this.mapPathType = MapPathType.INDEX;
+            this.mapPartType = MapPartType.INDEX;
             return this;
         }
 
         public Builder setMapValue(String mapValue) {
             this.mapValue = mapValue;
-            this.mapPathType = MapPathType.VALUE;
+            this.mapPartType = MapPartType.VALUE;
             return this;
         }
 
         public Builder setMapRank(int mapRank) {
             this.mapRank = mapRank;
-            this.mapPathType = MapPathType.RANK;
+            this.mapPartType = MapPartType.RANK;
             return this;
         }
 
         public Builder setMapKey(String mapKey) {
             this.mapKey = mapKey;
-            this.mapPathType = MapPathType.KEY;
+            this.mapPartType = MapPartType.KEY;
             return this;
         }
 
@@ -69,7 +69,7 @@ public class MapPart extends AbstractPart {
         }
     }
 
-    public enum MapPathType {
+    public enum MapPartType {
         BIN,
         KEY,
         INDEX,

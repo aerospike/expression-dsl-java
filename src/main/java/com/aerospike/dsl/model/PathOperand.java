@@ -20,17 +20,17 @@ public class PathOperand extends AbstractPart {
     }
 
     public static Exp processPath(BasePath basePath, PathFunction pathFunction) {
-        Exp.Type binType = Exp.Type.INT;
+        Exp.Type valueType = null;
         PathFunction.ReturnParam returnParam = PathFunction.ReturnParam.VALUE;
         PathFunction.PathFunctionType pathFunctionType = PathFunction.PathFunctionType.GET;
 
         if (pathFunction != null) {
             if (pathFunction.getReturnParam() != null) returnParam = pathFunction.getReturnParam();
-            if (pathFunction.getBinType() != null) binType = pathFunction.getBinType();
+            if (pathFunction.getBinType() != null) {
+                valueType = Exp.Type.valueOf(pathFunction.getBinType().toString());
+            }
             if (pathFunction.getPathFunctionType() != null) pathFunctionType = pathFunction.getPathFunctionType();
         }
-
-        Exp.Type valueType = Exp.Type.valueOf(binType.toString());
 
         int cdtReturnType = switch (returnParam) {
             case VALUE -> ListReturnType.VALUE; // same as MapReturnType.VALUE
@@ -64,10 +64,24 @@ public class PathOperand extends AbstractPart {
         CTX[] context = getContextArray(basePath, false);
         BinPart bin = basePath.getBinPart();
 
+        /*
+            Determine valueType according to this priority:
+            1. From pathFunction (explicit type, casting) is preferred
+            2. Type detection (lastPathPart.getExpType())
+            3. Default INT
+         */
+        if (valueType == null) {
+            if (lastPathPart.getExpType() != null) {
+                valueType = lastPathPart.getExpType();
+            } else {
+                valueType = Exp.Type.INT;
+            }
+        }
+
         if (lastPathPart.getPartType() == PartType.LIST_PART) {
             ListPart listLastPart = (ListPart) lastPathPart;
 
-            return switch (listLastPart.getListPathType()) {
+            return switch (listLastPart.getListPartType()) {
                 case BIN -> Exp.listBin(bin.getBinName());
                 case INDEX -> ListExp.getByIndex(cdtReturnType, valueType, Exp.val(listLastPart.getListIndex()),
                         Exp.bin(bin.getBinName(), getBinType(basePath)), context);
@@ -82,7 +96,7 @@ public class PathOperand extends AbstractPart {
         } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
             MapPart mapLastPart = (MapPart) lastPathPart;
 
-            return switch (mapLastPart.getMapPathType()) {
+            return switch (mapLastPart.getMapPartType()) {
                 case BIN -> Exp.mapBin(bin.getBinName());
                 case KEY -> MapExp.getByKey(cdtReturnType, valueType,
                         Exp.val(mapLastPart.getMapKey()), Exp.bin(bin.getBinName(), getBinType(basePath)), context);
@@ -114,17 +128,17 @@ public class PathOperand extends AbstractPart {
             switch (part.getPartType()) {
                 case LIST_PART -> {
                     ListPart listPart = (ListPart) part;
-                    switch (listPart.getListPathType()) {
+                    switch (listPart.getListPartType()) {
                         case INDEX -> context.add(CTX.listIndex(listPart.getListIndex()));
                         case VALUE -> context.add(CTX.listValue(Value.get(listPart.getListValue())));
                         case RANK -> context.add(CTX.listRank(listPart.getListRank()));
                         default -> throw new AerospikeDSLException("Unsupported List Part in Context: %s."
-                                .formatted(listPart.getListPathType()));
+                                .formatted(listPart.getListPartType()));
                     }
                 }
                 case MAP_PART -> {
                     MapPart mapPart = (MapPart) part;
-                    switch (mapPart.getMapPathType()) {
+                    switch (mapPart.getMapPartType()) {
                         case KEY -> context.add(CTX.mapKey(Value.get(mapPart.getMapKey())));
                         case INDEX -> context.add(CTX.mapIndex(mapPart.getMapIndex()));
                         case VALUE -> context.add(CTX.mapValue(Value.get(mapPart.getMapValue())));
@@ -151,7 +165,7 @@ public class PathOperand extends AbstractPart {
         BinPart bin = basePath.getBinPart();
         if (lastPathPart.getPartType() == PartType.LIST_PART) {
             ListPart list = (ListPart) lastPathPart;
-            if (list.getListPathType().equals(ListPart.ListPathType.BIN)) {
+            if (list.getListPartType().equals(ListPart.ListPartType.BIN)) {
                 return ListExp.size(Exp.bin(bin.getBinName(), getBinType(basePath)));
             } else {
                 // In size() the last element is considered context
@@ -160,7 +174,7 @@ public class PathOperand extends AbstractPart {
             }
         } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
             MapPart map = (MapPart) lastPathPart;
-            if (map.getMapPathType().equals(MapPart.MapPathType.BIN)) {
+            if (map.getMapPartType().equals(MapPart.MapPartType.BIN)) {
                 return MapExp.size(Exp.bin(bin.getBinName(), getBinType(basePath)));
             } else {
                 // In size() the last element is considered context

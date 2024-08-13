@@ -77,6 +77,7 @@ public class MapAndListExpressionsTests {
                         CTX.listIndex(2),
                         CTX.mapKey(Value.get("aa"))
                 ), Exp.val(100));
+        translateAndCompare("$.listBin1.[2].aa.cc > 100", expected);
         translateAndCompare("$.listBin1.[2].aa.cc.get(type: INT) > 100", expected);
     }
 
@@ -106,6 +107,7 @@ public class MapAndListExpressionsTests {
                         CTX.mapKey(Value.get("a")),
                         CTX.listIndex(0)
                 ), Exp.val(100));
+        translateAndCompare("$.mapBin1.a.[0].cc > 100", expected);
         translateAndCompare("$.mapBin1.a.[0].cc.get(type: INT) > 100", expected);
     }
 

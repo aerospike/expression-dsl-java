@@ -86,7 +86,7 @@ pathOrMetadata: path | metadata;
 
 path: basePath ('.' pathFunction)?;
 
-basePath: pathPart ('.' (mapPath | listPath))*?;
+basePath: binPart ('.' (mapPart | listPart))*?;
 
 metadata: METADATA_FUNCTION;
 
@@ -135,9 +135,9 @@ PATH_FUNCTION_PARAM_RETURN_VALUE
     | 'NONE'
     ;
 
-pathPart: NAME_IDENTIFIER;
+binPart: NAME_IDENTIFIER;
 
-mapPath: NAME_IDENTIFIER | QUOTED_STRING | mapValue | mapRank | mapIndex;
+mapPart: NAME_IDENTIFIER | QUOTED_STRING | mapValue | mapRank | mapIndex;
 
 mapValue: '{' VALUE_IDENTIFIER '}';
 
@@ -145,7 +145,7 @@ mapRank: '{' RANK_IDENTIFIER '}';
 
 mapIndex: '{' INT '}';
 
-listPath: LIST_BIN | listIndex | listValue | listRank;
+listPart: LIST_BIN | listIndex | listValue | listRank;
 
 LIST_BIN: '[]';
 

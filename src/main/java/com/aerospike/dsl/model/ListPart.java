@@ -9,7 +9,7 @@ public class ListPart extends AbstractPart {
     private final String listValue;
     private final int listRank;
     private final boolean listBin;
-    private final ListPathType listPathType;
+    private final ListPartType listPartType;
 
     private ListPart(Builder builder) {
         super(PartType.LIST_PART);
@@ -17,7 +17,7 @@ public class ListPart extends AbstractPart {
         this.listValue = builder.listValue;
         this.listRank = builder.listRank;
         this.listBin = builder.listBin;
-        this.listPathType = builder.listPathType;
+        this.listPartType = builder.listPartType;
     }
 
     public static Builder builder() {
@@ -29,32 +29,32 @@ public class ListPart extends AbstractPart {
         private String listValue;
         private int listRank;
         private boolean listBin;
-        private ListPathType listPathType;
+        private ListPartType listPartType;
 
         public Builder() {
         }
 
         public Builder setListIndex(int listIndex) {
             this.listIndex = listIndex;
-            this.listPathType = ListPathType.INDEX;
+            this.listPartType = ListPartType.INDEX;
             return this;
         }
 
         public Builder setListValue(String listValue) {
             this.listValue = listValue;
-            this.listPathType = ListPathType.VALUE;
+            this.listPartType = ListPartType.VALUE;
             return this;
         }
 
         public Builder setListRank(int listRank) {
             this.listRank = listRank;
-            this.listPathType = ListPathType.RANK;
+            this.listPartType = ListPartType.RANK;
             return this;
         }
 
         public Builder setListBin(boolean listBin) {
             this.listBin = listBin;
-            this.listPathType = ListPathType.BIN;
+            this.listPartType = ListPartType.BIN;
             return this;
         }
 
@@ -63,7 +63,7 @@ public class ListPart extends AbstractPart {
         }
     }
 
-    public enum ListPathType {
+    public enum ListPartType {
         BIN,
         INDEX,
         VALUE,

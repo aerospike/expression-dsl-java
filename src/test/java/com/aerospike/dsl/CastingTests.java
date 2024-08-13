@@ -12,8 +12,10 @@ public class CastingTests {
 
     @Test
     void floatToIntComparison() {
-        translateAndCompare("$.intBin1.get(type: INT) > $.floatBin1.asInt()",
-                Exp.gt(Exp.intBin("intBin1"), Exp.intBin("floatBin1")));
+        Exp expectedExp = Exp.gt(Exp.intBin("intBin1"), Exp.intBin("floatBin1"));
+        // Int is default
+        translateAndCompare("$.intBin1 > $.floatBin1.asInt()", expectedExp);
+        translateAndCompare("$.intBin1.get(type: INT) > $.floatBin1.asInt()", expectedExp);
     }
 
     @Test
