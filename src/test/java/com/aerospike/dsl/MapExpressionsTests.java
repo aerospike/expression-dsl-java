@@ -229,17 +229,50 @@ public class MapExpressionsTests {
         translateAndCompare("$.mapBin1.{5}.{#-1}.{=100} == 200", expected);
     }
 
-    // TODO: Plural leaf elements FMWK-476
-    //@Test
+    @Test
+    void mapKeyRange() {
+        Exp expected = MapExp.getByKeyRange(
+                MapReturnType.VALUE,
+                Exp.val("a"),
+                Exp.val("c"),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{a-c}", expected);
+        translateAndCompare("$.mapBin1.{\"a\"-\"c\"}", expected);
+
+        // Inverted
+        expected = MapExp.getByKeyRange(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val("a"),
+                Exp.val("c"),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!a-c}", expected);
+        translateAndCompare("$.mapBin1.{!\"a\"-\"c\"}", expected);
+
+        // From start till the end
+        expected = MapExp.getByKeyRange(
+                MapReturnType.VALUE,
+                Exp.val("a"),
+                null,
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{a-}", expected);
+        translateAndCompare("$.mapBin1.{\"a\"-}", expected);
+    }
+
+    @Test
     void mapKeyList() {
-        Exp expected = Exp.gt(
-                MapExp.size(
-                        MapExp.getByKeyList(
-                                MapReturnType.ORDERED_MAP,
-                                Exp.val(List.of(1, 2)),
-                                Exp.mapBin("mapBin1"))
-                ),
-                Exp.val(200));
-        translateAndCompare("$.mapBin1.{1,2}.size() > 200", expected);
+        Exp expected = MapExp.getByKeyList(
+                MapReturnType.VALUE,
+                Exp.val(List.of("a", "b", "c")),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{a,b,c}", expected);
+        translateAndCompare("$.mapBin1.{\"a\",\"b\",\"c\"}", expected);
+
+        // Inverted
+        expected = MapExp.getByKeyList(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val(List.of("a", "b", "c")),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!a,b,c}", expected);
+        translateAndCompare("$.mapBin1.{!\"a\",\"b\",\"c\"}", expected);
     }
 }

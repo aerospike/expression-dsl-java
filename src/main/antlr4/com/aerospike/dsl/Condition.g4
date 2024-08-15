@@ -137,7 +137,54 @@ PATH_FUNCTION_PARAM_RETURN_VALUE
 
 binPart: NAME_IDENTIFIER;
 
-mapPart: NAME_IDENTIFIER | QUOTED_STRING | mapValue | mapRank | mapIndex;
+mapPart
+    : mapKey
+    | mapKeyRange
+    | mapKeyList
+    | mapValue
+    | mapRank
+    | mapIndex
+    ;
+
+mapKey
+    : NAME_IDENTIFIER
+    | QUOTED_STRING
+    ;
+
+mapKeyRange
+    : invertedKeyRange
+    | keyRange
+    ;
+
+invertedKeyRange
+    : '{' '!' keyRangeIdentifier '}'
+    ;
+
+keyRange
+    : '{' keyRangeIdentifier '}'
+    ;
+
+keyRangeIdentifier
+    : mapKey '-' mapKey
+    | mapKey '-'
+    ;
+
+mapKeyList
+    : invertedKeyList
+    | keyList
+    ;
+
+invertedKeyList
+    : '{' '!' keyListIdentifier '}'
+    ;
+
+keyList
+    : '{' keyListIdentifier '}'
+    ;
+
+keyListIdentifier
+    : mapKey (',' mapKey)*
+    ;
 
 mapValue: '{' VALUE_IDENTIFIER '}';
 
@@ -145,19 +192,24 @@ mapRank: '{' RANK_IDENTIFIER '}';
 
 mapIndex: '{' INT '}';
 
-listPart: LIST_BIN | listIndex | listValue | listRank;
-
-LIST_BIN: '[]';
+listPart
+    : LIST_BIN
+    | listIndex
+    | listValue
+    | listRank
+    ;
 
 listValue: '[' VALUE_IDENTIFIER ']';
 
-VALUE_IDENTIFIER: '=' NAME_IDENTIFIER;
-
 listRank: '[' RANK_IDENTIFIER ']';
 
-RANK_IDENTIFIER: '#' INT;
-
 listIndex: '[' INT ']';
+
+LIST_BIN: '[]';
+
+VALUE_IDENTIFIER: '=' NAME_IDENTIFIER;
+
+RANK_IDENTIFIER: '#' INT;
 
 pathFunction
     : pathFunctionCast

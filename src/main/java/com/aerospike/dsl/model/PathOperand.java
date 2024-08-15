@@ -3,6 +3,7 @@ package com.aerospike.dsl.model;
 import com.aerospike.client.Value;
 import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.ListReturnType;
+import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
@@ -100,6 +101,25 @@ public class PathOperand extends AbstractPart {
                 case BIN -> Exp.mapBin(bin.getBinName());
                 case KEY -> MapExp.getByKey(cdtReturnType, valueType,
                         Exp.val(mapLastPart.getMapKey()), Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                case KEY_RANGE -> {
+                    if (mapLastPart.getMapKeyRange().isInverted()) {
+                        cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+                    }
+                    Exp start = Exp.val(mapLastPart.getMapKeyRange().getStart());
+                    Exp end = null;
+                    if (mapLastPart.getMapKeyRange().getEnd() != null) {
+                        end = Exp.val(mapLastPart.getMapKeyRange().getEnd());
+                    }
+                    yield MapExp.getByKeyRange(cdtReturnType, start, end, Exp.bin(bin.getBinName(),
+                            getBinType(basePath)), context);
+                }
+                case KEY_LIST -> {
+                    if (mapLastPart.getMapKeyList().isInverted()) {
+                        cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+                    }
+                    yield MapExp.getByKeyList(cdtReturnType, Exp.val(mapLastPart.getMapKeyList().getKeyList()),
+                            Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                }
                 case INDEX -> MapExp.getByIndex(cdtReturnType, valueType, Exp.val(mapLastPart.getMapIndex()),
                         Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 case VALUE -> {

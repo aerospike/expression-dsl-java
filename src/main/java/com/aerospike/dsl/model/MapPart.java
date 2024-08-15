@@ -2,6 +2,8 @@ package com.aerospike.dsl.model;
 
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 public class MapPart extends AbstractPart {
 
@@ -9,6 +11,8 @@ public class MapPart extends AbstractPart {
     private final String mapValue;
     private final int mapRank;
     private final String mapKey;
+    private final MapKeyRange mapKeyRange;
+    private final MapKeyList mapKeyList;
     private final MapPartType mapPartType;
 
     public static Builder builder() {
@@ -21,6 +25,8 @@ public class MapPart extends AbstractPart {
         this.mapValue = builder.mapValue;
         this.mapRank = builder.mapRank;
         this.mapKey = builder.mapKey;
+        this.mapKeyRange = builder.mapKeyRange;
+        this.mapKeyList = builder.mapKeyList;
         this.mapPartType = builder.mapPartType;
     }
 
@@ -29,6 +35,8 @@ public class MapPart extends AbstractPart {
         private String mapValue;
         private int mapRank;
         private String mapKey;
+        private MapKeyRange mapKeyRange;
+        private MapKeyList mapKeyList;
         private MapPartType mapPartType;
 
         public Builder() {
@@ -64,6 +72,18 @@ public class MapPart extends AbstractPart {
             return this;
         }
 
+        public Builder setMapKeyRange(boolean inverted, String start, String end) {
+            this.mapKeyRange = new MapKeyRange(inverted, start, end);
+            this.mapPartType = MapPartType.KEY_RANGE;
+            return this;
+        }
+
+        public Builder setMapKeyList(boolean inverted, List<String> keyList) {
+            this.mapKeyList = new MapKeyList(inverted, keyList);
+            this.mapPartType = MapPartType.KEY_LIST;
+            return this;
+        }
+
         public MapPart build() {
             return new MapPart(this);
         }
@@ -74,6 +94,8 @@ public class MapPart extends AbstractPart {
         KEY,
         INDEX,
         VALUE,
-        RANK
+        RANK,
+        KEY_RANGE,
+        KEY_LIST
     }
 }

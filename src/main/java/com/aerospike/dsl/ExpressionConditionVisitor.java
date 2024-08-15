@@ -647,16 +647,67 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitMapPart(ConditionParser.MapPartContext ctx) {
-        if (ctx.QUOTED_STRING() != null) {
-            return MapPart.builder()
-                    .setMapKey(ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()))
-                    .build();
+        if (ctx.mapKey() != null) {
+            if (ctx.mapKey().QUOTED_STRING() != null) {
+                return MapPart.builder()
+                        .setMapKey(ParsingUtils.getWithoutQuotes(ctx.mapKey().QUOTED_STRING().getText()))
+                        .build();
+            }
+            if (ctx.mapKey().NAME_IDENTIFIER() != null) {
+                return MapPart.builder()
+                        .setMapKey(ctx.mapKey().NAME_IDENTIFIER().getText())
+                        .build();
+            }
         }
 
-        if (ctx.NAME_IDENTIFIER() != null) {
-            return MapPart.builder()
-                    .setMapKey(ctx.NAME_IDENTIFIER().getText())
-                    .build();
+        if (ctx.mapKeyRange() != null) {
+            ConditionParser.KeyRangeContext keyRange = ctx.mapKeyRange().keyRange();
+            ConditionParser.InvertedKeyRangeContext invertedKeyRange = ctx.mapKeyRange().invertedKeyRange();
+
+            if (keyRange != null || invertedKeyRange != null) {
+                ConditionParser.KeyRangeIdentifierContext range =
+                        keyRange != null ? keyRange.keyRangeIdentifier() : invertedKeyRange.keyRangeIdentifier();
+                boolean isInverted = keyRange == null;
+
+                String startKey = range.mapKey(0).NAME_IDENTIFIER() != null
+                        ? range.mapKey(0).NAME_IDENTIFIER().getText()
+                        : ParsingUtils.getWithoutQuotes(range.mapKey(0).QUOTED_STRING().getText());
+
+                String endKey = range.mapKey(1) != null
+                        ? (range.mapKey(1).NAME_IDENTIFIER() != null
+                        ? range.mapKey(1).NAME_IDENTIFIER().getText()
+                        : ParsingUtils.getWithoutQuotes(range.mapKey(1).QUOTED_STRING().getText()))
+                        : null;
+
+                return MapPart.builder()
+                        .setMapKeyRange(isInverted, startKey, endKey)
+                        .build();
+            }
+        }
+
+        if (ctx.mapKeyList() != null) {
+            ConditionParser.KeyListContext keyList = ctx.mapKeyList().keyList();
+            ConditionParser.InvertedKeyListContext invertedKeyList = ctx.mapKeyList().invertedKeyList();
+
+            if (keyList != null || invertedKeyList != null) {
+                ConditionParser.KeyListIdentifierContext list =
+                        keyList != null ? keyList.keyListIdentifier() : invertedKeyList.keyListIdentifier();
+                boolean isInverted = keyList == null;
+
+                List<String> keyListStrings = list.mapKey().stream().map(
+                        mapKey -> {
+                            if (mapKey.NAME_IDENTIFIER() != null) {
+                                return mapKey.NAME_IDENTIFIER().getText();
+                            } else {
+                                return ParsingUtils.getWithoutQuotes(mapKey.QUOTED_STRING().getText());
+                            }
+                        }
+                ).toList();
+
+                return MapPart.builder()
+                        .setMapKeyList(isInverted, keyListStrings)
+                        .build();
+            }
         }
 
         if (ctx.mapIndex() != null) {
