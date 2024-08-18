@@ -710,6 +710,27 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             }
         }
 
+        if (ctx.mapIndexRange() != null) {
+            ConditionParser.IndexRangeContext indexRange = ctx.mapIndexRange().indexRange();
+            ConditionParser.InvertedIndexRangeContext invertedIndexRange = ctx.mapIndexRange().invertedIndexRange();
+
+            if (indexRange != null || invertedIndexRange != null) {
+                ConditionParser.IndexRangeIdentifierContext range =
+                        indexRange != null ? indexRange.indexRangeIdentifier() : invertedIndexRange.indexRangeIdentifier();
+                boolean isInverted = indexRange == null;
+
+                Integer start = Integer.parseInt(range.start().INT().getText());
+                Integer count = null;
+                if (range.count() != null) {
+                    count = Integer.parseInt(range.count().INT().getText());
+                }
+
+                return MapPart.builder()
+                        .setMapIndexRange(isInverted, start, count)
+                        .build();
+            }
+        }
+
         if (ctx.mapIndex() != null) {
             return MapPart.builder()
                     .setMapIndex(Integer.parseInt(ctx.mapIndex().INT().getText()))

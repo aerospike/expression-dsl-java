@@ -141,6 +141,7 @@ mapPart
     : mapKey
     | mapKeyRange
     | mapKeyList
+    | mapIndexRange
     | mapValue
     | mapRank
     | mapIndex
@@ -185,6 +186,28 @@ keyList
 keyListIdentifier
     : mapKey (',' mapKey)*
     ;
+
+mapIndexRange
+    : invertedIndexRange
+    | indexRange
+    ;
+
+invertedIndexRange
+    : '{' '!' indexRangeIdentifier '}'
+    ;
+
+indexRange
+    : '{' indexRangeIdentifier '}'
+    ;
+
+indexRangeIdentifier
+    : start ':' count
+    | start ':'
+    ;
+
+start: INT | '-' INT;
+
+count: INT | '-' INT;
 
 mapValue: '{' VALUE_IDENTIFIER '}';
 

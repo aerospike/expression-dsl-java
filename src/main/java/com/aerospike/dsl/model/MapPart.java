@@ -13,6 +13,7 @@ public class MapPart extends AbstractPart {
     private final String mapKey;
     private final MapKeyRange mapKeyRange;
     private final MapKeyList mapKeyList;
+    private final MapIndexRange mapIndexRange;
     private final MapPartType mapPartType;
 
     public static Builder builder() {
@@ -27,6 +28,7 @@ public class MapPart extends AbstractPart {
         this.mapKey = builder.mapKey;
         this.mapKeyRange = builder.mapKeyRange;
         this.mapKeyList = builder.mapKeyList;
+        this.mapIndexRange = builder.mapIndexRange;
         this.mapPartType = builder.mapPartType;
     }
 
@@ -37,6 +39,7 @@ public class MapPart extends AbstractPart {
         private String mapKey;
         private MapKeyRange mapKeyRange;
         private MapKeyList mapKeyList;
+        private MapIndexRange mapIndexRange;
         private MapPartType mapPartType;
 
         public Builder() {
@@ -84,6 +87,12 @@ public class MapPart extends AbstractPart {
             return this;
         }
 
+        public Builder setMapIndexRange(boolean inverted, Integer start, Integer count) {
+            this.mapIndexRange = new MapIndexRange(inverted, start, count);
+            this.mapPartType = MapPartType.INDEX_RANGE;
+            return this;
+        }
+
         public MapPart build() {
             return new MapPart(this);
         }
@@ -96,6 +105,7 @@ public class MapPart extends AbstractPart {
         VALUE,
         RANK,
         KEY_RANGE,
-        KEY_LIST
+        KEY_LIST,
+        INDEX_RANGE
     }
 }

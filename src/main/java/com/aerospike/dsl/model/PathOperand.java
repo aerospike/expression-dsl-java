@@ -120,6 +120,23 @@ public class PathOperand extends AbstractPart {
                     yield MapExp.getByKeyList(cdtReturnType, Exp.val(mapLastPart.getMapKeyList().getKeyList()),
                             Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 }
+                case INDEX_RANGE -> {
+                    if (mapLastPart.getMapIndexRange().isInverted()) {
+                        cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+                    }
+                    Exp start = Exp.val(mapLastPart.getMapIndexRange().getStart());
+                    Exp count = null;
+                    if (mapLastPart.getMapIndexRange().getCount() != null) {
+                        count = Exp.val(mapLastPart.getMapIndexRange().getCount());
+                    }
+                    if (count == null) {
+                        yield MapExp.getByIndexRange(cdtReturnType, start, Exp.bin(bin.getBinName(),
+                                getBinType(basePath)), context);
+                    } else {
+                        yield MapExp.getByIndexRange(cdtReturnType, start, count, Exp.bin(bin.getBinName(),
+                                getBinType(basePath)), context);
+                    }
+                }
                 case INDEX -> MapExp.getByIndex(cdtReturnType, valueType, Exp.val(mapLastPart.getMapIndex()),
                         Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 case VALUE -> {

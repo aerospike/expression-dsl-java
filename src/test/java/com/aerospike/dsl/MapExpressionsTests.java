@@ -275,4 +275,37 @@ public class MapExpressionsTests {
         translateAndCompare("$.mapBin1.{!a,b,c}", expected);
         translateAndCompare("$.mapBin1.{!\"a\",\"b\",\"c\"}", expected);
     }
+
+    @Test
+    void mapIndexRange() {
+        Exp expected = MapExp.getByIndexRange(
+                MapReturnType.VALUE,
+                Exp.val(1),
+                Exp.val(3),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{1:3}", expected);
+
+        // Negative
+        expected = MapExp.getByIndexRange(
+                MapReturnType.VALUE,
+                Exp.val(-3),
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{-3:1}", expected);
+
+        // Inverted
+        expected = MapExp.getByIndexRange(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val(2),
+                Exp.val(4),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!2:4}", expected);
+
+        // From start till the end
+        expected = MapExp.getByIndexRange(
+                MapReturnType.VALUE,
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{1:}", expected);
+    }
 }
