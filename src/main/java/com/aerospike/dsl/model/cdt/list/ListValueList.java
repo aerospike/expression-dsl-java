@@ -1,7 +1,12 @@
-package com.aerospike.dsl.model.list;
+package com.aerospike.dsl.model.cdt.list;
 
+import com.aerospike.client.cdt.CTX;
+import com.aerospike.client.cdt.ListReturnType;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.model.BasePath;
 import lombok.Getter;
 
 import java.util.List;
@@ -17,6 +22,15 @@ public class ListValueList extends ListPart {
         super(ListPartType.VALUE_LIST);
         this.inverted = inverted;
         this.valueList = valueList;
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (isInverted()) {
+            cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
+        }
+        return ListExp.getByValueList(cdtReturnType, Exp.val(getValueList()),
+                Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
     }
 
     public static ListValueList constructFromCTX(ConditionParser.ListValueListContext ctx) {

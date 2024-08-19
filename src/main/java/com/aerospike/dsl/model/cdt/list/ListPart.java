@@ -1,10 +1,10 @@
-package com.aerospike.dsl.model.list;
+package com.aerospike.dsl.model.cdt.list;
 
-import com.aerospike.dsl.model.AbstractPart;
+import com.aerospike.dsl.model.cdt.CdtPart;
 import lombok.Getter;
 
 @Getter
-public class ListPart extends AbstractPart {
+public abstract class ListPart extends CdtPart {
 
     private final ListPartType listPartType;
 

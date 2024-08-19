@@ -3,8 +3,8 @@ package com.aerospike.dsl;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
-import com.aerospike.dsl.model.list.*;
-import com.aerospike.dsl.model.map.*;
+import com.aerospike.dsl.model.cdt.list.*;
+import com.aerospike.dsl.model.cdt.map.*;
 import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
 

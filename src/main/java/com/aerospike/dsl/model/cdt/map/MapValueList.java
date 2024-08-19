@@ -1,8 +1,13 @@
-package com.aerospike.dsl.model.map;
+package com.aerospike.dsl.model.cdt.map;
 
 
+import com.aerospike.client.cdt.CTX;
+import com.aerospike.client.cdt.MapReturnType;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.model.BasePath;
 import lombok.Getter;
 
 import java.util.List;
@@ -18,6 +23,15 @@ public class MapValueList extends MapPart {
         super(MapPartType.VALUE_LIST);
         this.inverted = inverted;
         this.valueList = valueList;
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (isInverted()) {
+            cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+        }
+        return MapExp.getByValueList(cdtReturnType, Exp.val(getValueList()),
+                Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
     }
 
     public static MapValueList constructFromCTX(ConditionParser.MapValueListContext ctx) {

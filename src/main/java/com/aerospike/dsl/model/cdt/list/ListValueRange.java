@@ -1,7 +1,12 @@
-package com.aerospike.dsl.model.list;
+package com.aerospike.dsl.model.cdt.list;
 
+import com.aerospike.client.cdt.CTX;
+import com.aerospike.client.cdt.ListReturnType;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.model.BasePath;
 import lombok.Getter;
 
 @Getter
@@ -15,6 +20,22 @@ public class ListValueRange extends ListPart {
         this.inverted = inverted;
         this.start = start;
         this.end = end;
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (isInverted()) {
+            cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
+        }
+
+        Exp start = Exp.val(getStart());
+        Exp end = null;
+
+        if (getEnd() != null) {
+            end = Exp.val(getEnd());
+        }
+        return ListExp.getByValueRange(cdtReturnType, start, end, Exp.bin(basePath.getBinPart().getBinName(),
+                basePath.getBinType()), context);
     }
 
     public static ListValueRange constructFromCTX(ConditionParser.ListValueRangeContext ctx) {

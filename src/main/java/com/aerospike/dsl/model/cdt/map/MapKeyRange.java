@@ -1,7 +1,12 @@
-package com.aerospike.dsl.model.map;
+package com.aerospike.dsl.model.cdt.map;
 
+import com.aerospike.client.cdt.CTX;
+import com.aerospike.client.cdt.MapReturnType;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
 import lombok.Getter;
 
@@ -16,6 +21,20 @@ public class MapKeyRange extends MapPart {
         this.inverted = inverted;
         this.start = start;
         this.end = end;
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (isInverted()) {
+            cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+        }
+        Exp start = Exp.val(getStart());
+        Exp end = null;
+        if (getEnd() != null) {
+            end = Exp.val(getEnd());
+        }
+        return MapExp.getByKeyRange(cdtReturnType, start, end, Exp.bin(basePath.getBinPart().getBinName(),
+                basePath.getBinType()), context);
     }
 
     public static MapKeyRange constructFromCTX(ConditionParser.MapKeyRangeContext ctx) {

@@ -1,10 +1,10 @@
-package com.aerospike.dsl.model.map;
+package com.aerospike.dsl.model.cdt.map;
 
-import com.aerospike.dsl.model.AbstractPart;
+import com.aerospike.dsl.model.cdt.CdtPart;
 import lombok.Getter;
 
 @Getter
-public abstract class MapPart extends AbstractPart {
+public abstract class MapPart extends CdtPart {
 
     private final MapPartType mapPartType;
 

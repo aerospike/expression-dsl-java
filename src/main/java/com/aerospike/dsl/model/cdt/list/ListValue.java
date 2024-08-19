@@ -1,6 +1,10 @@
-package com.aerospike.dsl.model.list;
+package com.aerospike.dsl.model.cdt.list;
 
+import com.aerospike.client.cdt.CTX;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
+import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
 import lombok.Getter;
 
@@ -11,6 +15,13 @@ public class ListValue extends ListPart {
     public ListValue(Object value) {
         super(ListPartType.VALUE);
         this.value = value;
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        Exp value = getExpVal(valueType, getValue());
+        return ListExp.getByValue(cdtReturnType, value, Exp.bin(basePath.getBinPart().getBinName(),
+                basePath.getBinType()), context);
     }
 
     public static ListValue constructFromCTX(ConditionParser.ListValueContext ctx) {

@@ -1,7 +1,12 @@
-package com.aerospike.dsl.model.map;
+package com.aerospike.dsl.model.cdt.map;
 
+import com.aerospike.client.cdt.CTX;
+import com.aerospike.client.cdt.MapReturnType;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.model.BasePath;
 import lombok.Getter;
 
 @Getter
@@ -15,6 +20,25 @@ public class MapRankRange extends MapPart {
         this.inverted = inverted;
         this.start = start;
         this.count = count;
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (isInverted()) {
+            cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+        }
+        Exp start = Exp.val(getStart());
+        Exp count = null;
+        if (getCount() != null) {
+            count = Exp.val(getCount());
+        }
+        if (count == null) {
+            return MapExp.getByRankRange(cdtReturnType, start, Exp.bin(basePath.getBinPart().getBinName(),
+                    basePath.getBinType()), context);
+        } else {
+            return MapExp.getByRankRange(cdtReturnType, start, count, Exp.bin(basePath.getBinPart().getBinName(),
+                    basePath.getBinType()), context);
+        }
     }
 
     public static MapRankRange constructFromCTX(ConditionParser.MapRankRangeContext ctx) {
