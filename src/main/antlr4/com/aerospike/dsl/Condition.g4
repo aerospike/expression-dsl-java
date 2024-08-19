@@ -156,16 +156,16 @@ mapKey
     ;
 
 mapKeyRange
-    : invertedKeyRange
-    | keyRange
+    : standardMapKeyRange
+    | invertedMapKeyRange
     ;
 
-invertedKeyRange
-    : '{!' keyRangeIdentifier '}'
-    ;
-
-keyRange
+standardMapKeyRange
     : '{' keyRangeIdentifier '}'
+    ;
+
+invertedMapKeyRange
+    : '{!' keyRangeIdentifier '}'
     ;
 
 keyRangeIdentifier
@@ -174,16 +174,16 @@ keyRangeIdentifier
     ;
 
 mapKeyList
-    : invertedKeyList
-    | keyList
+    : standardMapKeyList
+    | invertedMapKeyList
     ;
 
-invertedKeyList
-    : '{!' keyListIdentifier '}'
-    ;
-
-keyList
+standardMapKeyList
     : '{' keyListIdentifier '}'
+    ;
+
+invertedMapKeyList
+    : '{!' keyListIdentifier '}'
     ;
 
 keyListIdentifier
@@ -191,16 +191,16 @@ keyListIdentifier
     ;
 
 mapIndexRange
-    : invertedIndexRange
-    | indexRange
+    : standardMapIndexRange
+    | invertedMapIndexRange
     ;
 
-invertedIndexRange
-    : '{!' indexRangeIdentifier '}'
-    ;
-
-indexRange
+standardMapIndexRange
     : '{' indexRangeIdentifier '}'
+    ;
+
+invertedMapIndexRange
+    : '{!' indexRangeIdentifier '}'
     ;
 
 indexRangeIdentifier
@@ -212,29 +212,29 @@ start: INT | '-' INT;
 count: INT | '-' INT;
 
 mapValueList
-    : invertedValueList
-    | valueList
+    : standardMapValueList
+    | invertedMapValueList
     ;
 
-invertedValueList
-    : '{!=' valueListIdentifier '}'
-    ;
-
-valueList
+standardMapValueList
     : '{=' valueListIdentifier '}'
     ;
 
+invertedMapValueList
+    : '{!=' valueListIdentifier '}'
+    ;
+
 mapValueRange
-    : invertedValueRange
-    | valueRange
+    : standardMapValueRange
+    | invertedMapValueRange
     ;
 
-invertedValueRange
-    : '{!=' valueRangeIdentifier '}'
-    ;
-
-valueRange
+standardMapValueRange
     : '{=' valueRangeIdentifier '}'
+    ;
+
+invertedMapValueRange
+    : '{!=' valueRangeIdentifier '}'
     ;
 
 valueRangeIdentifier
@@ -243,16 +243,16 @@ valueRangeIdentifier
     ;
 
 mapRankRange
-    : invertedRankRange
-    | rankRange
+    : standardMapRankRange
+    | invertedMapRankRange
     ;
 
-invertedRankRange
-    : '{!#' rankRangeIdentifier '}'
-    ;
-
-rankRange
+standardMapRankRange
     : '{#' rankRangeIdentifier '}'
+    ;
+
+invertedMapRankRange
+    : '{!#' rankRangeIdentifier '}'
     ;
 
 rankRangeIdentifier

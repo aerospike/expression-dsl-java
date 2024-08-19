@@ -717,8 +717,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         if (ctx.mapKeyRange() != null) {
-            ConditionParser.KeyRangeContext keyRange = ctx.mapKeyRange().keyRange();
-            ConditionParser.InvertedKeyRangeContext invertedKeyRange = ctx.mapKeyRange().invertedKeyRange();
+            ConditionParser.StandardMapKeyRangeContext keyRange = ctx.mapKeyRange().standardMapKeyRange();
+            ConditionParser.InvertedMapKeyRangeContext invertedKeyRange = ctx.mapKeyRange().invertedMapKeyRange();
 
             if (keyRange != null || invertedKeyRange != null) {
                 ConditionParser.KeyRangeIdentifierContext range =
@@ -742,8 +742,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         if (ctx.mapKeyList() != null) {
-            ConditionParser.KeyListContext keyList = ctx.mapKeyList().keyList();
-            ConditionParser.InvertedKeyListContext invertedKeyList = ctx.mapKeyList().invertedKeyList();
+            ConditionParser.StandardMapKeyListContext keyList = ctx.mapKeyList().standardMapKeyList();
+            ConditionParser.InvertedMapKeyListContext invertedKeyList = ctx.mapKeyList().invertedMapKeyList();
 
             if (keyList != null || invertedKeyList != null) {
                 ConditionParser.KeyListIdentifierContext list =
@@ -767,8 +767,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         if (ctx.mapIndexRange() != null) {
-            ConditionParser.IndexRangeContext indexRange = ctx.mapIndexRange().indexRange();
-            ConditionParser.InvertedIndexRangeContext invertedIndexRange = ctx.mapIndexRange().invertedIndexRange();
+            ConditionParser.StandardMapIndexRangeContext indexRange = ctx.mapIndexRange().standardMapIndexRange();
+            ConditionParser.InvertedMapIndexRangeContext invertedIndexRange = ctx.mapIndexRange().invertedMapIndexRange();
 
             if (indexRange != null || invertedIndexRange != null) {
                 ConditionParser.IndexRangeIdentifierContext range =
@@ -788,8 +788,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         if (ctx.mapValueList() != null) {
-            ConditionParser.ValueListContext valueList = ctx.mapValueList().valueList();
-            ConditionParser.InvertedValueListContext invertedValueList = ctx.mapValueList().invertedValueList();
+            ConditionParser.StandardMapValueListContext valueList = ctx.mapValueList().standardMapValueList();
+            ConditionParser.InvertedMapValueListContext invertedValueList = ctx.mapValueList().invertedMapValueList();
 
             if (valueList != null || invertedValueList != null) {
                 ConditionParser.ValueListIdentifierContext list =
@@ -815,8 +815,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         if (ctx.mapValueRange() != null) {
-            ConditionParser.ValueRangeContext valueRange = ctx.mapValueRange().valueRange();
-            ConditionParser.InvertedValueRangeContext invertedValueRange = ctx.mapValueRange().invertedValueRange();
+            ConditionParser.StandardMapValueRangeContext valueRange = ctx.mapValueRange().standardMapValueRange();
+            ConditionParser.InvertedMapValueRangeContext invertedValueRange = ctx.mapValueRange().invertedMapValueRange();
 
             if (valueRange != null || invertedValueRange != null) {
                 ConditionParser.ValueRangeIdentifierContext range =
@@ -839,34 +839,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             }
         }
 
-        if (ctx.mapValueRange() != null) {
-            ConditionParser.ValueRangeContext valueRange = ctx.mapValueRange().valueRange();
-            ConditionParser.InvertedValueRangeContext invertedValueRange = ctx.mapValueRange().invertedValueRange();
-
-            if (valueRange != null || invertedValueRange != null) {
-                ConditionParser.ValueRangeIdentifierContext range =
-                        valueRange != null ? valueRange.valueRangeIdentifier() : invertedValueRange.valueRangeIdentifier();
-                boolean isInverted = valueRange == null;
-
-                Integer startValue = Integer.parseInt(range.valueIdentifier(0).INT().getText());
-
-                Integer endValue = null;
-
-                if (range.valueIdentifier(1) != null) {
-                    if (range.valueIdentifier(1).INT() != null) {
-                        endValue = Integer.parseInt(range.valueIdentifier(1).INT().getText());
-                    }
-                }
-
-                return MapPart.builder()
-                        .setMapRankRange(isInverted, startValue, endValue)
-                        .build();
-            }
-        }
-
         if (ctx.mapRankRange() != null) {
-            ConditionParser.RankRangeContext rankRange = ctx.mapRankRange().rankRange();
-            ConditionParser.InvertedRankRangeContext invertedRankRange = ctx.mapRankRange().invertedRankRange();
+            ConditionParser.StandardMapRankRangeContext rankRange = ctx.mapRankRange().standardMapRankRange();
+            ConditionParser.InvertedMapRankRangeContext invertedRankRange = ctx.mapRankRange().invertedMapRankRange();
 
             if (rankRange != null || invertedRankRange != null) {
                 ConditionParser.RankRangeIdentifierContext range =
