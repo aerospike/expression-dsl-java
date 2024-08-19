@@ -1,5 +1,6 @@
 package com.aerospike.dsl.model.cdt.map;
 
+import com.aerospike.client.Value;
 import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
@@ -22,6 +23,11 @@ public class MapValue extends MapPart {
         Exp value = getExpVal(valueType, getValue());
         return MapExp.getByValue(cdtReturnType, value, Exp.bin(basePath.getBinPart().getBinName(),
                 basePath.getBinType()), context);
+    }
+
+    @Override
+    public CTX getContext() {
+        return CTX.mapValue(Value.get(getValue()));
     }
 
     public static MapValue constructFromCTX(ConditionParser.MapValueContext ctx) {

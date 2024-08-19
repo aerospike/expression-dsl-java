@@ -22,6 +22,11 @@ public class ListIndex extends ListPart {
                 Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
     }
 
+    @Override
+    public CTX getContext() {
+        return CTX.listIndex(getIndex());
+    }
+
     public static ListIndex constructFromCTX(ConditionParser.ListIndexContext ctx) {
         return new ListIndex(Integer.parseInt(ctx.INT().getText()));
     }

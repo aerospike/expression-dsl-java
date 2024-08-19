@@ -22,6 +22,11 @@ public class MapIndex extends MapPart {
                 Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
     }
 
+    @Override
+    public CTX getContext() {
+        return CTX.mapIndex(getIndex());
+    }
+
     public static MapIndex constructFromCTX(ConditionParser.MapIndexContext ctx) {
         return new MapIndex(Integer.parseInt(ctx.INT().getText()));
     }

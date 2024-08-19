@@ -22,6 +22,11 @@ public class ListRank extends ListPart {
                 Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
     }
 
+    @Override
+    public CTX getContext() {
+        return CTX.listRank(getRank());
+    }
+
     public static ListRank constructFromCTX(ConditionParser.ListRankContext ctx) {
         return new ListRank(Integer.parseInt(ctx.INT().getText()));
     }

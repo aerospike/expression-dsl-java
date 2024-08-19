@@ -1,5 +1,6 @@
 package com.aerospike.dsl.model.cdt.list;
 
+import com.aerospike.client.Value;
 import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
@@ -22,6 +23,11 @@ public class ListValue extends ListPart {
         Exp value = getExpVal(valueType, getValue());
         return ListExp.getByValue(cdtReturnType, value, Exp.bin(basePath.getBinPart().getBinName(),
                 basePath.getBinType()), context);
+    }
+
+    @Override
+    public CTX getContext() {
+        return CTX.listValue(Value.get(getValue()));
     }
 
     public static ListValue constructFromCTX(ConditionParser.ListValueContext ctx) {

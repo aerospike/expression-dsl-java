@@ -1,6 +1,5 @@
 package com.aerospike.dsl.model;
 
-import com.aerospike.client.Value;
 import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
@@ -8,16 +7,9 @@ import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.cdt.CdtPart;
-import com.aerospike.dsl.model.cdt.list.ListIndex;
 import com.aerospike.dsl.model.cdt.list.ListPart;
-import com.aerospike.dsl.model.cdt.list.ListRank;
-import com.aerospike.dsl.model.cdt.list.ListValue;
 import com.aerospike.dsl.model.cdt.map.MapBin;
-import com.aerospike.dsl.model.cdt.map.MapIndex;
-import com.aerospike.dsl.model.cdt.map.MapKey;
 import com.aerospike.dsl.model.cdt.map.MapPart;
-import com.aerospike.dsl.model.cdt.map.MapRank;
-import com.aerospike.dsl.model.cdt.map.MapValue;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -100,27 +92,7 @@ public class PathOperand extends AbstractPart {
                 continue;
             }
             AbstractPart part = basePath.getParts().get(i);
-            switch (part.getPartType()) {
-                case LIST_PART -> {
-                    ListPart listPart = (ListPart) part;
-                    switch (listPart.getListPartType()) {
-                        case INDEX -> context.add(CTX.listIndex(((ListIndex) listPart).getIndex()));
-                        case VALUE -> context.add(CTX.listValue(Value.get(((ListValue) listPart).getValue())));
-                        case RANK -> context.add(CTX.listRank(((ListRank) listPart).getRank()));
-                        default -> throw new AerospikeDSLException("Unsupported List Part in Context: %s."
-                                .formatted(listPart.getListPartType()));
-                    }
-                }
-                case MAP_PART -> {
-                    MapPart mapPart = (MapPart) part;
-                    switch (mapPart.getMapPartType()) {
-                        case KEY -> context.add(CTX.mapKey(Value.get(((MapKey) mapPart).getKey())));
-                        case INDEX -> context.add(CTX.mapIndex(((MapIndex) mapPart).getIndex()));
-                        case VALUE -> context.add(CTX.mapValue(Value.get(((MapValue) mapPart).getValue())));
-                        case RANK -> context.add(CTX.mapRank(((MapRank) mapPart).getRank()));
-                    }
-                }
-            }
+            context.add(((CdtPart) part).getContext());
         }
         return context.toArray(new CTX[0]);
     }

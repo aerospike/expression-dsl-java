@@ -22,6 +22,11 @@ public class MapRank extends MapPart {
                 Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
     }
 
+    @Override
+    public CTX getContext() {
+        return CTX.mapRank(getRank());
+    }
+
     public static MapRank constructFromCTX(ConditionParser.MapRankContext ctx) {
         return new MapRank(Integer.parseInt(ctx.INT().getText()));
     }
