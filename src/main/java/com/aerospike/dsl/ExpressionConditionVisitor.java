@@ -3,9 +3,8 @@ package com.aerospike.dsl;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
-import com.aerospike.dsl.model.list.ListPart;
+import com.aerospike.dsl.model.list.*;
 import com.aerospike.dsl.model.map.*;
-import com.aerospike.dsl.util.ParsingUtils;
 import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -619,134 +618,15 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitListPart(ConditionParser.ListPartContext ctx) {
-        if (ctx.LIST_BIN() != null) {
-            return ListPart.builder()
-                    .setListBin(true)
-                    .build();
-        }
-
-        if (ctx.listIndex() != null) {
-            return ListPart.builder()
-                    .setListIndex(Integer.parseInt(ctx.listIndex().INT().getText()))
-                    .build();
-        }
-
-        if (ctx.listValue() != null) {
-            Object listValue = null;
-            if (ctx.listValue().valueIdentifier().NAME_IDENTIFIER() != null) {
-                listValue = ctx.listValue().valueIdentifier().NAME_IDENTIFIER().getText();
-            } else if (ctx.listValue().valueIdentifier().QUOTED_STRING() != null) {
-                listValue = ParsingUtils.getWithoutQuotes(ctx.listValue().valueIdentifier().QUOTED_STRING().getText());
-            } else if (ctx.listValue().valueIdentifier().INT() != null) {
-                listValue = Integer.parseInt(ctx.listValue().valueIdentifier().INT().getText());
-            }
-            return ListPart.builder()
-                    .setListValue(listValue)
-                    .build();
-        }
-
-        if (ctx.listRank() != null) {
-            String listRank = ctx.listRank().INT().getText();
-            return ListPart.builder()
-                    .setListRank(Integer.parseInt(listRank))
-                    .build();
-        }
-
-        if (ctx.listIndexRange() != null) {
-            ConditionParser.StandardListIndexRangeContext indexRange = ctx.listIndexRange().standardListIndexRange();
-            ConditionParser.InvertedListIndexRangeContext invertedIndexRange = ctx.listIndexRange().invertedListIndexRange();
-
-            if (indexRange != null || invertedIndexRange != null) {
-                ConditionParser.IndexRangeIdentifierContext range =
-                        indexRange != null ? indexRange.indexRangeIdentifier() : invertedIndexRange.indexRangeIdentifier();
-                boolean isInverted = indexRange == null;
-
-                Integer start = Integer.parseInt(range.start().INT().getText());
-                Integer count = null;
-                if (range.count() != null) {
-                    count = Integer.parseInt(range.count().INT().getText());
-                }
-
-                return ListPart.builder()
-                        .setListIndexRange(isInverted, start, count)
-                        .build();
-            }
-        }
-
-        if (ctx.listValueList() != null) {
-            ConditionParser.StandardListValueListContext valueList = ctx.listValueList().standardListValueList();
-            ConditionParser.InvertedListValueListContext invertedValueList = ctx.listValueList().invertedListValueList();
-
-            if (valueList != null || invertedValueList != null) {
-                ConditionParser.ValueListIdentifierContext list =
-                        valueList != null ? valueList.valueListIdentifier() : invertedValueList.valueListIdentifier();
-                boolean isInverted = valueList == null;
-
-                List<?> valueListObjects = list.valueIdentifier().stream().map(
-                        listValue -> {
-                            if (listValue.NAME_IDENTIFIER() != null) {
-                                return listValue.NAME_IDENTIFIER().getText();
-                            } else if (listValue.QUOTED_STRING() != null) {
-                                return getWithoutQuotes(listValue.QUOTED_STRING().getText());
-                            } else {
-                                return Integer.parseInt(listValue.INT().getText());
-                            }
-                        }
-                ).toList();
-
-                return ListPart.builder()
-                        .setListValueList(isInverted, valueListObjects)
-                        .build();
-            }
-        }
-
-        if (ctx.listValueRange() != null) {
-            ConditionParser.StandardListValueRangeContext valueRange = ctx.listValueRange().standardListValueRange();
-            ConditionParser.InvertedListValueRangeContext invertedValueRange = ctx.listValueRange().invertedListValueRange();
-
-            if (valueRange != null || invertedValueRange != null) {
-                ConditionParser.ValueRangeIdentifierContext range =
-                        valueRange != null ? valueRange.valueRangeIdentifier() : invertedValueRange.valueRangeIdentifier();
-                boolean isInverted = valueRange == null;
-
-                Integer startValue = Integer.parseInt(range.valueIdentifier(0).INT().getText());
-
-                Integer endValue = null;
-
-                if (range.valueIdentifier(1) != null) {
-                    if (range.valueIdentifier(1).INT() != null) {
-                        endValue = Integer.parseInt(range.valueIdentifier(1).INT().getText());
-                    }
-                }
-
-                return ListPart.builder()
-                        .setListValueRange(isInverted, startValue, endValue)
-                        .build();
-            }
-        }
-
-        if (ctx.listRankRange() != null) {
-            ConditionParser.StandardListRankRangeContext rankRange = ctx.listRankRange().standardListRankRange();
-            ConditionParser.InvertedListRankRangeContext invertedRankRange = ctx.listRankRange().invertedListRankRange();
-
-            if (rankRange != null || invertedRankRange != null) {
-                ConditionParser.RankRangeIdentifierContext range =
-                        rankRange != null ? rankRange.rankRangeIdentifier() : invertedRankRange.rankRangeIdentifier();
-                boolean isInverted = rankRange == null;
-
-                Integer start = Integer.parseInt(range.start().INT().getText());
-                Integer count = null;
-                if (range.count() != null) {
-                    count = Integer.parseInt(range.count().INT().getText());
-                }
-
-                return ListPart.builder()
-                        .setListRankRange(isInverted, start, count)
-                        .build();
-            }
-        }
-
-        throw new AerospikeDSLException("Unexpected path type in a List: %s".formatted(ctx.getText()));
+        if (ctx.LIST_BIN() != null) return new ListBin();
+        if (ctx.listIndex() != null) return ListIndex.constructFromCTX(ctx.listIndex());
+        if (ctx.listValue() != null) return ListValue.constructFromCTX(ctx.listValue());
+        if (ctx.listRank() != null) return ListRank.constructFromCTX(ctx.listRank());
+        if (ctx.listIndexRange() != null) return ListIndexRange.constructFromCTX(ctx.listIndexRange());
+        if (ctx.listValueList() != null) return ListValueList.constructFromCTX(ctx.listValueList());
+        if (ctx.listValueRange() != null) return ListValueRange.constructFromCTX(ctx.listValueRange());
+        if (ctx.listRankRange() != null) return ListRankRange.constructFromCTX(ctx.listRankRange());
+        throw new AerospikeDSLException("Unexpected list part: %s".formatted(ctx.getText()));
     }
 
     @Override

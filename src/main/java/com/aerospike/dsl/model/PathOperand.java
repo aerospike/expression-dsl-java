@@ -8,7 +8,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
-import com.aerospike.dsl.model.list.ListPart;
+import com.aerospike.dsl.model.list.*;
 import com.aerospike.dsl.model.map.*;
 import lombok.Getter;
 
@@ -86,23 +86,25 @@ public class PathOperand extends AbstractPart {
 
             return switch (listLastPart.getListPartType()) {
                 case BIN -> Exp.listBin(bin.getBinName());
-                case INDEX -> ListExp.getByIndex(cdtReturnType, valueType, Exp.val(listLastPart.getListIndex()),
-                        Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                case INDEX ->
+                        ListExp.getByIndex(cdtReturnType, valueType, Exp.val(((ListIndex) listLastPart).getIndex()),
+                                Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 case VALUE -> {
-                    Exp value = getExpVal(valueType, listLastPart.getListValue());
+                    Exp value = getExpVal(valueType, ((ListValue) listLastPart).getValue());
                     yield ListExp.getByValue(cdtReturnType, value, Exp.bin(bin.getBinName(),
                             getBinType(basePath)), context);
                 }
-                case RANK -> ListExp.getByRank(cdtReturnType, valueType, Exp.val(listLastPart.getListRank()),
+                case RANK -> ListExp.getByRank(cdtReturnType, valueType, Exp.val(((ListRank) listLastPart).getRank()),
                         Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 case INDEX_RANGE -> {
-                    if (listLastPart.getListIndexRange().isInverted()) {
+                    ListIndexRange listIndexRange = (ListIndexRange) listLastPart;
+                    if (listIndexRange.isInverted()) {
                         cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
                     }
-                    Exp start = Exp.val(listLastPart.getListIndexRange().getStart());
+                    Exp start = Exp.val(listIndexRange.getStart());
                     Exp count = null;
-                    if (listLastPart.getListIndexRange().getCount() != null) {
-                        count = Exp.val(listLastPart.getListIndexRange().getCount());
+                    if (listIndexRange.getCount() != null) {
+                        count = Exp.val(listIndexRange.getCount());
                     }
                     if (count == null) {
                         yield ListExp.getByIndexRange(cdtReturnType, start, Exp.bin(bin.getBinName(),
@@ -113,34 +115,37 @@ public class PathOperand extends AbstractPart {
                     }
                 }
                 case VALUE_LIST -> {
-                    if (listLastPart.getListValueList().isInverted()) {
+                    ListValueList listValueList = (ListValueList) listLastPart;
+                    if (listValueList.isInverted()) {
                         cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
                     }
-                    yield ListExp.getByValueList(cdtReturnType, Exp.val(listLastPart.getListValueList().getValueList()),
+                    yield ListExp.getByValueList(cdtReturnType, Exp.val(listValueList.getValueList()),
                             Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 }
                 case VALUE_RANGE -> {
-                    if (listLastPart.getListValueRange().isInverted()) {
+                    ListValueRange listValueRange = (ListValueRange) listLastPart;
+                    if (listValueRange.isInverted()) {
                         cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
                     }
 
-                    Exp start = Exp.val(listLastPart.getListValueRange().getStart());
+                    Exp start = Exp.val(listValueRange.getStart());
                     Exp end = null;
 
-                    if (listLastPart.getListValueRange().getEnd() != null) {
-                        end = Exp.val(listLastPart.getListValueRange().getEnd());
+                    if (listValueRange.getEnd() != null) {
+                        end = Exp.val(listValueRange.getEnd());
                     }
                     yield ListExp.getByValueRange(cdtReturnType, start, end, Exp.bin(bin.getBinName(),
                             getBinType(basePath)), context);
                 }
                 case RANK_RANGE -> {
-                    if (listLastPart.getListRankRange().isInverted()) {
+                    ListRankRange listRankRange = (ListRankRange) listLastPart;
+                    if (listRankRange.isInverted()) {
                         cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
                     }
-                    Exp start = Exp.val(listLastPart.getListRankRange().getStart());
+                    Exp start = Exp.val(listRankRange.getStart());
                     Exp count = null;
-                    if (listLastPart.getListRankRange().getCount() != null) {
-                        count = Exp.val(listLastPart.getListRankRange().getCount());
+                    if (listRankRange.getCount() != null) {
+                        count = Exp.val(listRankRange.getCount());
                     }
                     if (count == null) {
                         yield ListExp.getByRankRange(cdtReturnType, start, Exp.bin(bin.getBinName(),
@@ -267,9 +272,9 @@ public class PathOperand extends AbstractPart {
                 case LIST_PART -> {
                     ListPart listPart = (ListPart) part;
                     switch (listPart.getListPartType()) {
-                        case INDEX -> context.add(CTX.listIndex(listPart.getListIndex()));
-                        case VALUE -> context.add(CTX.listValue(Value.get(listPart.getListValue())));
-                        case RANK -> context.add(CTX.listRank(listPart.getListRank()));
+                        case INDEX -> context.add(CTX.listIndex(((ListIndex) listPart).getIndex()));
+                        case VALUE -> context.add(CTX.listValue(Value.get(((ListValue) listPart).getValue())));
+                        case RANK -> context.add(CTX.listRank(((ListRank) listPart).getRank()));
                         default -> throw new AerospikeDSLException("Unsupported List Part in Context: %s."
                                 .formatted(listPart.getListPartType()));
                     }
