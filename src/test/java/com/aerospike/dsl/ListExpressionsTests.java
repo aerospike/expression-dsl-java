@@ -320,5 +320,13 @@ class ListExpressionsTests {
                 Exp.val(-3),
                 Exp.listBin("listBin1"));
         translateAndCompare("$.listBin1.[#-3:]", expected);
+
+        // From start till the end with context
+        expected = ListExp.getByRankRange(
+                ListReturnType.VALUE,
+                Exp.val(-3),
+                Exp.listBin("listBin1"),
+                CTX.listIndex(5));
+        translateAndCompare("$.listBin1.[5].[#-3:]", expected);
     }
 }

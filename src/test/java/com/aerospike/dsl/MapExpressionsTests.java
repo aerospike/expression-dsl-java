@@ -383,5 +383,13 @@ public class MapExpressionsTests {
                 Exp.val(-3),
                 Exp.mapBin("mapBin1"));
         translateAndCompare("$.mapBin1.{#-3:}", expected);
+
+        // From start till the end with context
+        expected = MapExp.getByRankRange(
+                MapReturnType.VALUE,
+                Exp.val(-3),
+                Exp.mapBin("mapBin1"),
+                CTX.mapIndex(5));
+        translateAndCompare("$.mapBin1.{5}.{#-3:}", expected);
     }
 }
