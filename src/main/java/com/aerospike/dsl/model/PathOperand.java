@@ -12,9 +12,9 @@ import com.aerospike.dsl.model.cdt.list.ListIndex;
 import com.aerospike.dsl.model.cdt.list.ListPart;
 import com.aerospike.dsl.model.cdt.list.ListRank;
 import com.aerospike.dsl.model.cdt.list.ListValue;
+import com.aerospike.dsl.model.cdt.map.MapBin;
 import com.aerospike.dsl.model.cdt.map.MapIndex;
 import com.aerospike.dsl.model.cdt.map.MapKey;
-import com.aerospike.dsl.model.cdt.map.MapKeyBin;
 import com.aerospike.dsl.model.cdt.map.MapPart;
 import com.aerospike.dsl.model.cdt.map.MapRank;
 import com.aerospike.dsl.model.cdt.map.MapValue;
@@ -57,7 +57,7 @@ public class PathOperand extends AbstractPart {
                 // For cases like map.size() -> we don't know that it is a map (in lists we have [] for list bins)
                 // No parts but with pathFunction (e.g. size()), in this case we will create synthetic Map part
                 // Key doesn't matter in this case, we look at the base part
-                lastPathPart = new MapKeyBin(basePath.getBinPart().getBinName());
+                lastPathPart = new MapBin();
                 basePath.getParts().add(lastPathPart);
             }
 
