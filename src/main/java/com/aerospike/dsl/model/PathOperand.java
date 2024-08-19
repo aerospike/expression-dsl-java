@@ -9,7 +9,7 @@ import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.list.ListPart;
-import com.aerospike.dsl.model.map.MapPart;
+import com.aerospike.dsl.model.map.*;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public class PathOperand extends AbstractPart {
                 // For cases like map.size() -> we don't know that it is a map (in lists we have [] for list bins)
                 // No parts but with pathFunction (e.g. size()), in this case we will create synthetic Map part
                 // Key doesn't matter in this case, we look at the base part
-                lastPathPart = MapPart.builder().setMapKeyBin(basePath.getBinPart().getBinName()).build();
+                lastPathPart = new MapKeyBin(basePath.getBinPart().getBinName());
                 basePath.getParts().add(lastPathPart);
             }
 
@@ -157,43 +157,46 @@ public class PathOperand extends AbstractPart {
             return switch (mapLastPart.getMapPartType()) {
                 case BIN -> Exp.mapBin(bin.getBinName());
                 case KEY -> MapExp.getByKey(cdtReturnType, valueType,
-                        Exp.val(mapLastPart.getMapKey()), Exp.bin(bin.getBinName(), getBinType(basePath)), context);
-                case INDEX -> MapExp.getByIndex(cdtReturnType, valueType, Exp.val(mapLastPart.getMapIndex()),
+                        Exp.val(((MapKey) mapLastPart).getKey()), Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                case INDEX -> MapExp.getByIndex(cdtReturnType, valueType, Exp.val(((MapIndex) mapLastPart).getIndex()),
                         Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 case VALUE -> {
-                    Exp value = getExpVal(valueType, mapLastPart.getMapValue());
+                    Exp value = getExpVal(valueType, ((MapValue) mapLastPart).getValue());
                     yield MapExp.getByValue(cdtReturnType, value, Exp.bin(bin.getBinName(),
                             getBinType(basePath)), context);
                 }
-                case RANK -> MapExp.getByRank(cdtReturnType, valueType, Exp.val(mapLastPart.getMapRank()),
+                case RANK -> MapExp.getByRank(cdtReturnType, valueType, Exp.val(((MapRank) mapLastPart).getRank()),
                         Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 case KEY_RANGE -> {
-                    if (mapLastPart.getMapKeyRange().isInverted()) {
+                    MapKeyRange mapKeyRange = (MapKeyRange) mapLastPart;
+                    if (mapKeyRange.isInverted()) {
                         cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
                     }
-                    Exp start = Exp.val(mapLastPart.getMapKeyRange().getStart());
+                    Exp start = Exp.val(mapKeyRange.getStart());
                     Exp end = null;
-                    if (mapLastPart.getMapKeyRange().getEnd() != null) {
-                        end = Exp.val(mapLastPart.getMapKeyRange().getEnd());
+                    if (mapKeyRange.getEnd() != null) {
+                        end = Exp.val(mapKeyRange.getEnd());
                     }
                     yield MapExp.getByKeyRange(cdtReturnType, start, end, Exp.bin(bin.getBinName(),
                             getBinType(basePath)), context);
                 }
                 case KEY_LIST -> {
-                    if (mapLastPart.getMapKeyList().isInverted()) {
+                    MapKeyList mapKeyList = (MapKeyList) mapLastPart;
+                    if (mapKeyList.isInverted()) {
                         cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
                     }
-                    yield MapExp.getByKeyList(cdtReturnType, Exp.val(mapLastPart.getMapKeyList().getKeyList()),
+                    yield MapExp.getByKeyList(cdtReturnType, Exp.val(mapKeyList.getKeyList()),
                             Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 }
                 case INDEX_RANGE -> {
-                    if (mapLastPart.getMapIndexRange().isInverted()) {
+                    MapIndexRange mapIndexRange = (MapIndexRange) mapLastPart;
+                    if (mapIndexRange.isInverted()) {
                         cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
                     }
-                    Exp start = Exp.val(mapLastPart.getMapIndexRange().getStart());
+                    Exp start = Exp.val(mapIndexRange.getStart());
                     Exp count = null;
-                    if (mapLastPart.getMapIndexRange().getCount() != null) {
-                        count = Exp.val(mapLastPart.getMapIndexRange().getCount());
+                    if (mapIndexRange.getCount() != null) {
+                        count = Exp.val(mapIndexRange.getCount());
                     }
                     if (count == null) {
                         yield MapExp.getByIndexRange(cdtReturnType, start, Exp.bin(bin.getBinName(),
@@ -204,34 +207,37 @@ public class PathOperand extends AbstractPart {
                     }
                 }
                 case VALUE_LIST -> {
-                    if (mapLastPart.getMapValueList().isInverted()) {
+                    MapValueList mapValueList = (MapValueList) mapLastPart;
+                    if (mapValueList.isInverted()) {
                         cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
                     }
-                    yield MapExp.getByValueList(cdtReturnType, Exp.val(mapLastPart.getMapValueList().getValueList()),
+                    yield MapExp.getByValueList(cdtReturnType, Exp.val(mapValueList.getValueList()),
                             Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 }
                 case VALUE_RANGE -> {
-                    if (mapLastPart.getMapValueRange().isInverted()) {
+                    MapValueRange mapValueRange = (MapValueRange) mapLastPart;
+                    if (mapValueRange.isInverted()) {
                         cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
                     }
 
-                    Exp start = Exp.val(mapLastPart.getMapValueRange().getStart());
+                    Exp start = Exp.val(mapValueRange.getStart());
                     Exp end = null;
 
-                    if (mapLastPart.getMapValueRange().getEnd() != null) {
-                        end = Exp.val(mapLastPart.getMapValueRange().getEnd());
+                    if (mapValueRange.getEnd() != null) {
+                        end = Exp.val(mapValueRange.getEnd());
                     }
                     yield MapExp.getByValueRange(cdtReturnType, start, end, Exp.bin(bin.getBinName(),
                             getBinType(basePath)), context);
                 }
                 case RANK_RANGE -> {
-                    if (mapLastPart.getMapRankRange().isInverted()) {
+                    MapRankRange mapRankRange = (MapRankRange) mapLastPart;
+                    if (mapRankRange.isInverted()) {
                         cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
                     }
-                    Exp start = Exp.val(mapLastPart.getMapRankRange().getStart());
+                    Exp start = Exp.val(mapRankRange.getStart());
                     Exp count = null;
-                    if (mapLastPart.getMapRankRange().getCount() != null) {
-                        count = Exp.val(mapLastPart.getMapRankRange().getCount());
+                    if (mapRankRange.getCount() != null) {
+                        count = Exp.val(mapRankRange.getCount());
                     }
                     if (count == null) {
                         yield MapExp.getByRankRange(cdtReturnType, start, Exp.bin(bin.getBinName(),
@@ -271,10 +277,10 @@ public class PathOperand extends AbstractPart {
                 case MAP_PART -> {
                     MapPart mapPart = (MapPart) part;
                     switch (mapPart.getMapPartType()) {
-                        case KEY -> context.add(CTX.mapKey(Value.get(mapPart.getMapKey())));
-                        case INDEX -> context.add(CTX.mapIndex(mapPart.getMapIndex()));
-                        case VALUE -> context.add(CTX.mapValue(Value.get(mapPart.getMapValue())));
-                        case RANK -> context.add(CTX.mapRank(mapPart.getMapRank()));
+                        case KEY -> context.add(CTX.mapKey(Value.get(((MapKey) mapPart).getKey())));
+                        case INDEX -> context.add(CTX.mapIndex(((MapIndex) mapPart).getIndex()));
+                        case VALUE -> context.add(CTX.mapValue(Value.get(((MapValue) mapPart).getValue())));
+                        case RANK -> context.add(CTX.mapRank(((MapRank) mapPart).getRank()));
                     }
                 }
             }

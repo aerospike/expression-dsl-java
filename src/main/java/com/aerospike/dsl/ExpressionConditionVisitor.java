@@ -4,7 +4,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
 import com.aerospike.dsl.model.list.ListPart;
-import com.aerospike.dsl.model.map.MapPart;
+import com.aerospike.dsl.model.map.*;
 import com.aerospike.dsl.util.ParsingUtils;
 import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -751,192 +751,17 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitMapPart(ConditionParser.MapPartContext ctx) {
-        if (ctx.mapKey() != null) {
-            if (ctx.mapKey().QUOTED_STRING() != null) {
-                return MapPart.builder()
-                        .setMapKey(ParsingUtils.getWithoutQuotes(ctx.mapKey().QUOTED_STRING().getText()))
-                        .build();
-            }
-            if (ctx.mapKey().NAME_IDENTIFIER() != null) {
-                return MapPart.builder()
-                        .setMapKey(ctx.mapKey().NAME_IDENTIFIER().getText())
-                        .build();
-            }
-        }
-
-        if (ctx.mapIndex() != null) {
-            return MapPart.builder()
-                    .setMapIndex(Integer.parseInt(ctx.mapIndex().INT().getText()))
-                    .build();
-        }
-
-        if (ctx.mapValue() != null) {
-            Object mapValue = null;
-            if (ctx.mapValue().valueIdentifier().NAME_IDENTIFIER() != null) {
-                mapValue = ctx.mapValue().valueIdentifier().NAME_IDENTIFIER().getText();
-            } else if (ctx.mapValue().valueIdentifier().QUOTED_STRING() != null) {
-                mapValue = ParsingUtils.getWithoutQuotes(ctx.mapValue().valueIdentifier().QUOTED_STRING().getText());
-            } else if (ctx.mapValue().valueIdentifier().INT() != null) {
-                mapValue = Integer.parseInt(ctx.mapValue().valueIdentifier().INT().getText());
-            }
-
-            return MapPart.builder()
-                    .setMapValue(mapValue)
-                    .build();
-        }
-
-        if (ctx.mapRank() != null) {
-            String mapRank = ctx.mapRank().INT().getText();
-            return MapPart.builder()
-                    .setMapRank(Integer.parseInt(mapRank))
-                    .build();
-        }
-
-        if (ctx.mapKeyRange() != null) {
-            ConditionParser.StandardMapKeyRangeContext keyRange = ctx.mapKeyRange().standardMapKeyRange();
-            ConditionParser.InvertedMapKeyRangeContext invertedKeyRange = ctx.mapKeyRange().invertedMapKeyRange();
-
-            if (keyRange != null || invertedKeyRange != null) {
-                ConditionParser.KeyRangeIdentifierContext range =
-                        keyRange != null ? keyRange.keyRangeIdentifier() : invertedKeyRange.keyRangeIdentifier();
-                boolean isInverted = keyRange == null;
-
-                String startKey = range.mapKey(0).NAME_IDENTIFIER() != null
-                        ? range.mapKey(0).NAME_IDENTIFIER().getText()
-                        : ParsingUtils.getWithoutQuotes(range.mapKey(0).QUOTED_STRING().getText());
-
-                String endKey = range.mapKey(1) != null
-                        ? (range.mapKey(1).NAME_IDENTIFIER() != null
-                        ? range.mapKey(1).NAME_IDENTIFIER().getText()
-                        : ParsingUtils.getWithoutQuotes(range.mapKey(1).QUOTED_STRING().getText()))
-                        : null;
-
-                return MapPart.builder()
-                        .setMapKeyRange(isInverted, startKey, endKey)
-                        .build();
-            }
-        }
-
-        if (ctx.mapKeyList() != null) {
-            ConditionParser.StandardMapKeyListContext keyList = ctx.mapKeyList().standardMapKeyList();
-            ConditionParser.InvertedMapKeyListContext invertedKeyList = ctx.mapKeyList().invertedMapKeyList();
-
-            if (keyList != null || invertedKeyList != null) {
-                ConditionParser.KeyListIdentifierContext list =
-                        keyList != null ? keyList.keyListIdentifier() : invertedKeyList.keyListIdentifier();
-                boolean isInverted = keyList == null;
-
-                List<String> keyListStrings = list.mapKey().stream().map(
-                        mapKey -> {
-                            if (mapKey.NAME_IDENTIFIER() != null) {
-                                return mapKey.NAME_IDENTIFIER().getText();
-                            } else {
-                                return ParsingUtils.getWithoutQuotes(mapKey.QUOTED_STRING().getText());
-                            }
-                        }
-                ).toList();
-
-                return MapPart.builder()
-                        .setMapKeyList(isInverted, keyListStrings)
-                        .build();
-            }
-        }
-
-        if (ctx.mapIndexRange() != null) {
-            ConditionParser.StandardMapIndexRangeContext indexRange = ctx.mapIndexRange().standardMapIndexRange();
-            ConditionParser.InvertedMapIndexRangeContext invertedIndexRange = ctx.mapIndexRange().invertedMapIndexRange();
-
-            if (indexRange != null || invertedIndexRange != null) {
-                ConditionParser.IndexRangeIdentifierContext range =
-                        indexRange != null ? indexRange.indexRangeIdentifier() : invertedIndexRange.indexRangeIdentifier();
-                boolean isInverted = indexRange == null;
-
-                Integer start = Integer.parseInt(range.start().INT().getText());
-                Integer count = null;
-                if (range.count() != null) {
-                    count = Integer.parseInt(range.count().INT().getText());
-                }
-
-                return MapPart.builder()
-                        .setMapIndexRange(isInverted, start, count)
-                        .build();
-            }
-        }
-
-        if (ctx.mapValueList() != null) {
-            ConditionParser.StandardMapValueListContext valueList = ctx.mapValueList().standardMapValueList();
-            ConditionParser.InvertedMapValueListContext invertedValueList = ctx.mapValueList().invertedMapValueList();
-
-            if (valueList != null || invertedValueList != null) {
-                ConditionParser.ValueListIdentifierContext list =
-                        valueList != null ? valueList.valueListIdentifier() : invertedValueList.valueListIdentifier();
-                boolean isInverted = valueList == null;
-
-                List<?> valueListObjects = list.valueIdentifier().stream().map(
-                        listValue -> {
-                            if (listValue.NAME_IDENTIFIER() != null) {
-                                return listValue.NAME_IDENTIFIER().getText();
-                            } else if (listValue.QUOTED_STRING() != null) {
-                                return getWithoutQuotes(listValue.QUOTED_STRING().getText());
-                            } else {
-                                return Integer.parseInt(listValue.INT().getText());
-                            }
-                        }
-                ).toList();
-
-                return MapPart.builder()
-                        .setMapValueList(isInverted, valueListObjects)
-                        .build();
-            }
-        }
-
-        if (ctx.mapValueRange() != null) {
-            ConditionParser.StandardMapValueRangeContext valueRange = ctx.mapValueRange().standardMapValueRange();
-            ConditionParser.InvertedMapValueRangeContext invertedValueRange = ctx.mapValueRange().invertedMapValueRange();
-
-            if (valueRange != null || invertedValueRange != null) {
-                ConditionParser.ValueRangeIdentifierContext range =
-                        valueRange != null ? valueRange.valueRangeIdentifier() : invertedValueRange.valueRangeIdentifier();
-                boolean isInverted = valueRange == null;
-
-                Integer startValue = Integer.parseInt(range.valueIdentifier(0).INT().getText());
-
-                Integer endValue = null;
-
-                if (range.valueIdentifier(1) != null) {
-                    if (range.valueIdentifier(1).INT() != null) {
-                        endValue = Integer.parseInt(range.valueIdentifier(1).INT().getText());
-                    }
-                }
-
-                return MapPart.builder()
-                        .setMapValueRange(isInverted, startValue, endValue)
-                        .build();
-            }
-        }
-
-        if (ctx.mapRankRange() != null) {
-            ConditionParser.StandardMapRankRangeContext rankRange = ctx.mapRankRange().standardMapRankRange();
-            ConditionParser.InvertedMapRankRangeContext invertedRankRange = ctx.mapRankRange().invertedMapRankRange();
-
-            if (rankRange != null || invertedRankRange != null) {
-                ConditionParser.RankRangeIdentifierContext range =
-                        rankRange != null ? rankRange.rankRangeIdentifier() : invertedRankRange.rankRangeIdentifier();
-                boolean isInverted = rankRange == null;
-
-                Integer start = Integer.parseInt(range.start().INT().getText());
-                Integer count = null;
-                if (range.count() != null) {
-                    count = Integer.parseInt(range.count().INT().getText());
-                }
-
-                return MapPart.builder()
-                        .setMapRankRange(isInverted, start, count)
-                        .build();
-            }
-        }
-
-        throw new AerospikeDSLException("Unexpected path type in a Map: %s".formatted(ctx.getText()));
+        if (ctx.mapKey() != null) return MapKey.constructFromCTX(ctx.mapKey());
+        if (ctx.mapIndex() != null) return MapIndex.constructFromCTX(ctx.mapIndex());
+        if (ctx.mapValue() != null) return MapValue.constructFromCTX(ctx.mapValue());
+        if (ctx.mapRank() != null) return MapRank.constructFromCTX(ctx.mapRank());
+        if (ctx.mapKeyRange() != null) return MapKeyRange.constructFromCTX(ctx.mapKeyRange());
+        if (ctx.mapKeyList() != null) return MapKeyList.constructFromCTX(ctx.mapKeyList());
+        if (ctx.mapIndexRange() != null) return MapIndexRange.constructFromCTX(ctx.mapIndexRange());
+        if (ctx.mapValueList() != null) return MapValueList.constructFromCTX(ctx.mapValueList());
+        if (ctx.mapValueRange() != null) return MapValueRange.constructFromCTX(ctx.mapValueRange());
+        if (ctx.mapRankRange() != null) return MapRankRange.constructFromCTX(ctx.mapRankRange());
+        throw new AerospikeDSLException("Unexpected map part: %s".formatted(ctx.getText()));
     }
 
     @Override
