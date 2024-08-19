@@ -5,19 +5,19 @@ import lombok.Getter;
 @Getter
 public class ListPart extends AbstractPart {
 
+    private final ListPartType listPartType;
     private final int listIndex;
-    private final String listValue;
+    private final Object listValue;
     private final int listRank;
     private final boolean listBin;
-    private final ListPartType listPartType;
 
     private ListPart(Builder builder) {
         super(PartType.LIST_PART);
+        this.listPartType = builder.listPartType;
         this.listIndex = builder.listIndex;
         this.listValue = builder.listValue;
         this.listRank = builder.listRank;
         this.listBin = builder.listBin;
-        this.listPartType = builder.listPartType;
     }
 
     public static Builder builder() {
@@ -25,36 +25,36 @@ public class ListPart extends AbstractPart {
     }
 
     public static class Builder {
+        private ListPartType listPartType;
         private int listIndex;
-        private String listValue;
+        private Object listValue;
         private int listRank;
         private boolean listBin;
-        private ListPartType listPartType;
 
         public Builder() {
         }
 
         public Builder setListIndex(int listIndex) {
-            this.listIndex = listIndex;
             this.listPartType = ListPartType.INDEX;
+            this.listIndex = listIndex;
             return this;
         }
 
-        public Builder setListValue(String listValue) {
-            this.listValue = listValue;
+        public Builder setListValue(Object listValue) {
             this.listPartType = ListPartType.VALUE;
+            this.listValue = listValue;
             return this;
         }
 
         public Builder setListRank(int listRank) {
-            this.listRank = listRank;
             this.listPartType = ListPartType.RANK;
+            this.listRank = listRank;
             return this;
         }
 
         public Builder setListBin(boolean listBin) {
-            this.listBin = listBin;
             this.listPartType = ListPartType.BIN;
+            this.listBin = listBin;
             return this;
         }
 

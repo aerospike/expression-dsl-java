@@ -630,16 +630,23 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
 
         if (ctx.listValue() != null) {
-            String listValue = ctx.listValue().VALUE_IDENTIFIER().getText();
+            Object listValue = null;
+            if (ctx.listValue().valueIdentifier().NAME_IDENTIFIER() != null) {
+                listValue = ctx.listValue().valueIdentifier().NAME_IDENTIFIER().getText();
+            } else if (ctx.listValue().valueIdentifier().QUOTED_STRING() != null) {
+                listValue = ParsingUtils.getWithoutQuotes(ctx.listValue().valueIdentifier().QUOTED_STRING().getText());
+            } else if (ctx.listValue().valueIdentifier().INT() != null) {
+                listValue = Integer.parseInt(ctx.listValue().valueIdentifier().INT().getText());
+            }
             return ListPart.builder()
-                    .setListValue(listValue.substring(1))
+                    .setListValue(listValue)
                     .build();
         }
 
         if (ctx.listRank() != null) {
-            String listRank = ctx.listRank().RANK_IDENTIFIER().getText();
+            String listRank = ctx.listRank().INT().getText();
             return ListPart.builder()
-                    .setListRank(Integer.parseInt(listRank.substring(1)))
+                    .setListRank(Integer.parseInt(listRank))
                     .build();
         }
         throw new AerospikeDSLException("Unexpected path type in a List: %s".formatted(ctx.getText()));
@@ -658,6 +665,34 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         .setMapKey(ctx.mapKey().NAME_IDENTIFIER().getText())
                         .build();
             }
+        }
+
+        if (ctx.mapIndex() != null) {
+            return MapPart.builder()
+                    .setMapIndex(Integer.parseInt(ctx.mapIndex().INT().getText()))
+                    .build();
+        }
+
+        if (ctx.mapValue() != null) {
+            Object mapValue = null;
+            if (ctx.mapValue().valueIdentifier().NAME_IDENTIFIER() != null) {
+                mapValue = ctx.mapValue().valueIdentifier().NAME_IDENTIFIER().getText();
+            } else if (ctx.mapValue().valueIdentifier().QUOTED_STRING() != null) {
+                mapValue = ParsingUtils.getWithoutQuotes(ctx.mapValue().valueIdentifier().QUOTED_STRING().getText());
+            } else if (ctx.mapValue().valueIdentifier().INT() != null) {
+                mapValue = Integer.parseInt(ctx.mapValue().valueIdentifier().INT().getText());
+            }
+
+            return MapPart.builder()
+                    .setMapValue(mapValue)
+                    .build();
+        }
+
+        if (ctx.mapRank() != null) {
+            String mapRank = ctx.mapRank().INT().getText();
+            return MapPart.builder()
+                    .setMapRank(Integer.parseInt(mapRank))
+                    .build();
         }
 
         if (ctx.mapKeyRange() != null) {
@@ -731,25 +766,104 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             }
         }
 
-        if (ctx.mapIndex() != null) {
-            return MapPart.builder()
-                    .setMapIndex(Integer.parseInt(ctx.mapIndex().INT().getText()))
-                    .build();
+        if (ctx.mapValueList() != null) {
+            ConditionParser.ValueListContext valueList = ctx.mapValueList().valueList();
+            ConditionParser.InvertedValueListContext invertedValueList = ctx.mapValueList().invertedValueList();
+
+            if (valueList != null || invertedValueList != null) {
+                ConditionParser.ValueListIdentifierContext list =
+                        valueList != null ? valueList.valueListIdentifier() : invertedValueList.valueListIdentifier();
+                boolean isInverted = valueList == null;
+
+                List<?> valueListObjects = list.valueIdentifier().stream().map(
+                        listValue -> {
+                            if (listValue.NAME_IDENTIFIER() != null) {
+                                return listValue.NAME_IDENTIFIER().getText();
+                            } else if (listValue.QUOTED_STRING() != null) {
+                                return getWithoutQuotes(listValue.QUOTED_STRING().getText());
+                            } else {
+                                return Integer.parseInt(listValue.INT().getText());
+                            }
+                        }
+                ).toList();
+
+                return MapPart.builder()
+                        .setMapValueList(isInverted, valueListObjects)
+                        .build();
+            }
         }
 
-        if (ctx.mapValue() != null) {
-            String mapValue = ctx.mapValue().VALUE_IDENTIFIER().getText();
-            return MapPart.builder()
-                    .setMapValue(mapValue.substring(1))
-                    .build();
+        if (ctx.mapValueRange() != null) {
+            ConditionParser.ValueRangeContext valueRange = ctx.mapValueRange().valueRange();
+            ConditionParser.InvertedValueRangeContext invertedValueRange = ctx.mapValueRange().invertedValueRange();
+
+            if (valueRange != null || invertedValueRange != null) {
+                ConditionParser.ValueRangeIdentifierContext range =
+                        valueRange != null ? valueRange.valueRangeIdentifier() : invertedValueRange.valueRangeIdentifier();
+                boolean isInverted = valueRange == null;
+
+                Integer startValue = Integer.parseInt(range.valueIdentifier(0).INT().getText());
+
+                Integer endValue = null;
+
+                if (range.valueIdentifier(1) != null) {
+                    if (range.valueIdentifier(1).INT() != null) {
+                        endValue = Integer.parseInt(range.valueIdentifier(1).INT().getText());
+                    }
+                }
+
+                return MapPart.builder()
+                        .setMapValueRange(isInverted, startValue, endValue)
+                        .build();
+            }
         }
 
-        if (ctx.mapRank() != null) {
-            String mapRank = ctx.mapRank().RANK_IDENTIFIER().getText();
-            return MapPart.builder()
-                    .setMapRank(Integer.parseInt(mapRank.substring(1)))
-                    .build();
+        if (ctx.mapValueRange() != null) {
+            ConditionParser.ValueRangeContext valueRange = ctx.mapValueRange().valueRange();
+            ConditionParser.InvertedValueRangeContext invertedValueRange = ctx.mapValueRange().invertedValueRange();
+
+            if (valueRange != null || invertedValueRange != null) {
+                ConditionParser.ValueRangeIdentifierContext range =
+                        valueRange != null ? valueRange.valueRangeIdentifier() : invertedValueRange.valueRangeIdentifier();
+                boolean isInverted = valueRange == null;
+
+                Integer startValue = Integer.parseInt(range.valueIdentifier(0).INT().getText());
+
+                Integer endValue = null;
+
+                if (range.valueIdentifier(1) != null) {
+                    if (range.valueIdentifier(1).INT() != null) {
+                        endValue = Integer.parseInt(range.valueIdentifier(1).INT().getText());
+                    }
+                }
+
+                return MapPart.builder()
+                        .setMapRankRange(isInverted, startValue, endValue)
+                        .build();
+            }
         }
+
+        if (ctx.mapRankRange() != null) {
+            ConditionParser.RankRangeContext rankRange = ctx.mapRankRange().rankRange();
+            ConditionParser.InvertedRankRangeContext invertedRankRange = ctx.mapRankRange().invertedRankRange();
+
+            if (rankRange != null || invertedRankRange != null) {
+                ConditionParser.RankRangeIdentifierContext range =
+                        rankRange != null ? rankRange.rankRangeIdentifier() : invertedRankRange.rankRangeIdentifier();
+                boolean isInverted = rankRange == null;
+
+                Integer start = Integer.parseInt(range.start().INT().getText());
+                Integer count = null;
+                if (range.count() != null) {
+                    count = Integer.parseInt(range.count().INT().getText());
+                }
+
+                return MapPart.builder()
+                        .setMapRankRange(isInverted, start, count)
+                        .build();
+            }
+        }
+
         throw new AerospikeDSLException("Unexpected path type in a Map: %s".formatted(ctx.getText()));
     }
 

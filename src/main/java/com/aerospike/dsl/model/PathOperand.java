@@ -101,6 +101,15 @@ public class PathOperand extends AbstractPart {
                 case BIN -> Exp.mapBin(bin.getBinName());
                 case KEY -> MapExp.getByKey(cdtReturnType, valueType,
                         Exp.val(mapLastPart.getMapKey()), Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                case INDEX -> MapExp.getByIndex(cdtReturnType, valueType, Exp.val(mapLastPart.getMapIndex()),
+                        Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                case VALUE -> {
+                    Exp value = getExpVal(valueType, mapLastPart.getMapValue());
+                    yield MapExp.getByValue(cdtReturnType, value, Exp.bin(bin.getBinName(),
+                            getBinType(basePath)), context);
+                }
+                case RANK -> MapExp.getByRank(cdtReturnType, valueType, Exp.val(mapLastPart.getMapRank()),
+                        Exp.bin(bin.getBinName(), getBinType(basePath)), context);
                 case KEY_RANGE -> {
                     if (mapLastPart.getMapKeyRange().isInverted()) {
                         cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
@@ -137,15 +146,44 @@ public class PathOperand extends AbstractPart {
                                 getBinType(basePath)), context);
                     }
                 }
-                case INDEX -> MapExp.getByIndex(cdtReturnType, valueType, Exp.val(mapLastPart.getMapIndex()),
-                        Exp.bin(bin.getBinName(), getBinType(basePath)), context);
-                case VALUE -> {
-                    Exp value = getExpVal(valueType, mapLastPart.getMapValue());
-                    yield MapExp.getByValue(cdtReturnType, value, Exp.bin(bin.getBinName(),
+                case VALUE_LIST -> {
+                    if (mapLastPart.getMapValueList().isInverted()) {
+                        cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+                    }
+                    yield MapExp.getByValueList(cdtReturnType, Exp.val(mapLastPart.getMapValueList().getValueList()),
+                            Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                }
+                case VALUE_RANGE -> {
+                    if (mapLastPart.getMapValueRange().isInverted()) {
+                        cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+                    }
+
+                    Exp start = Exp.val(mapLastPart.getMapValueRange().getStart());
+                    Exp end = null;
+
+                    if (mapLastPart.getMapValueRange().getEnd() != null) {
+                        end = Exp.val(mapLastPart.getMapValueRange().getEnd());
+                    }
+                    yield MapExp.getByValueRange(cdtReturnType, start, end, Exp.bin(bin.getBinName(),
                             getBinType(basePath)), context);
                 }
-                case RANK -> MapExp.getByRank(cdtReturnType, valueType, Exp.val(mapLastPart.getMapRank()),
-                        Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                case RANK_RANGE -> {
+                    if (mapLastPart.getMapRankRange().isInverted()) {
+                        cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+                    }
+                    Exp start = Exp.val(mapLastPart.getMapRankRange().getStart());
+                    Exp count = null;
+                    if (mapLastPart.getMapRankRange().getCount() != null) {
+                        count = Exp.val(mapLastPart.getMapRankRange().getCount());
+                    }
+                    if (count == null) {
+                        yield MapExp.getByRankRange(cdtReturnType, start, Exp.bin(bin.getBinName(),
+                                getBinType(basePath)), context);
+                    } else {
+                        yield MapExp.getByRankRange(cdtReturnType, start, count, Exp.bin(bin.getBinName(),
+                                getBinType(basePath)), context);
+                    }
+                }
             };
         } else {
             return null; // TODO
@@ -187,12 +225,12 @@ public class PathOperand extends AbstractPart {
         return context.toArray(new CTX[0]);
     }
 
-    private static Exp getExpVal(Exp.Type valueType, String cdtValue) {
+    private static Exp getExpVal(Exp.Type valueType, Object cdtValue) {
         return switch (valueType) {
-            case BOOL -> Exp.val(Boolean.parseBoolean(cdtValue));
-            case INT -> Exp.val(Integer.parseInt(cdtValue));
-            case STRING -> Exp.val(cdtValue);
-            case FLOAT -> Exp.val(Float.parseFloat(cdtValue));
+            case BOOL -> Exp.val((Boolean) cdtValue);
+            case INT -> Exp.val((Integer) cdtValue);
+            case STRING -> Exp.val((String) cdtValue);
+            case FLOAT -> Exp.val((Float) cdtValue);
             default -> throw new IllegalStateException(
                     "Get by value from a CDT: unexpected value '%s'".formatted(valueType));
         };

@@ -142,6 +142,9 @@ mapPart
     | mapKeyRange
     | mapKeyList
     | mapIndexRange
+    | mapValueList
+    | mapValueRange
+    | mapRankRange
     | mapValue
     | mapRank
     | mapIndex
@@ -158,7 +161,7 @@ mapKeyRange
     ;
 
 invertedKeyRange
-    : '{' '!' keyRangeIdentifier '}'
+    : '{!' keyRangeIdentifier '}'
     ;
 
 keyRange
@@ -176,7 +179,7 @@ mapKeyList
     ;
 
 invertedKeyList
-    : '{' '!' keyListIdentifier '}'
+    : '{!' keyListIdentifier '}'
     ;
 
 keyList
@@ -193,7 +196,7 @@ mapIndexRange
     ;
 
 invertedIndexRange
-    : '{' '!' indexRangeIdentifier '}'
+    : '{!' indexRangeIdentifier '}'
     ;
 
 indexRange
@@ -206,12 +209,60 @@ indexRangeIdentifier
     ;
 
 start: INT | '-' INT;
-
 count: INT | '-' INT;
 
-mapValue: '{' VALUE_IDENTIFIER '}';
+mapValueList
+    : invertedValueList
+    | valueList
+    ;
 
-mapRank: '{' RANK_IDENTIFIER '}';
+invertedValueList
+    : '{!=' valueListIdentifier '}'
+    ;
+
+valueList
+    : '{=' valueListIdentifier '}'
+    ;
+
+mapValueRange
+    : invertedValueRange
+    | valueRange
+    ;
+
+invertedValueRange
+    : '{!=' valueRangeIdentifier '}'
+    ;
+
+valueRange
+    : '{=' valueRangeIdentifier '}'
+    ;
+
+valueRangeIdentifier
+    : valueIdentifier ':' valueIdentifier
+    | valueIdentifier ':'
+    ;
+
+mapRankRange
+    : invertedRankRange
+    | rankRange
+    ;
+
+invertedRankRange
+    : '{!#' rankRangeIdentifier '}'
+    ;
+
+rankRange
+    : '{#' rankRangeIdentifier '}'
+    ;
+
+rankRangeIdentifier
+    : start ':' count
+    | start ':'
+    ;
+
+mapValue: '{=' valueIdentifier '}';
+
+mapRank: '{#' INT '}';
 
 mapIndex: '{' INT '}';
 
@@ -222,17 +273,22 @@ listPart
     | listRank
     ;
 
-listValue: '[' VALUE_IDENTIFIER ']';
+listValue: '[=' valueIdentifier ']';
 
-listRank: '[' RANK_IDENTIFIER ']';
+listRank: '[#' INT ']';
 
 listIndex: '[' INT ']';
 
 LIST_BIN: '[]';
 
-VALUE_IDENTIFIER: '=' NAME_IDENTIFIER;
+valueIdentifier
+    : NAME_IDENTIFIER
+    | QUOTED_STRING
+    | INT
+    | '-' INT
+    ;
 
-RANK_IDENTIFIER: '#' INT;
+valueListIdentifier: valueIdentifier ',' valueIdentifier (',' valueIdentifier)*;
 
 pathFunction
     : pathFunctionCast
