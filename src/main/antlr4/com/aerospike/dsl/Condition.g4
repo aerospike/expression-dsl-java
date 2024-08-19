@@ -139,21 +139,27 @@ binPart: NAME_IDENTIFIER;
 
 mapPart
     : mapKey
+    | mapValue
+    | mapRank
+    | mapIndex
     | mapKeyRange
     | mapKeyList
     | mapIndexRange
     | mapValueList
     | mapValueRange
     | mapRankRange
-    | mapValue
-    | mapRank
-    | mapIndex
     ;
 
 mapKey
     : NAME_IDENTIFIER
     | QUOTED_STRING
     ;
+
+mapValue: '{=' valueIdentifier '}';
+
+mapRank: '{#' INT '}';
+
+mapIndex: '{' INT '}';
 
 mapKeyRange
     : standardMapKeyRange
@@ -260,12 +266,6 @@ rankRangeIdentifier
     | start ':'
     ;
 
-mapValue: '{=' valueIdentifier '}';
-
-mapRank: '{#' INT '}';
-
-mapIndex: '{' INT '}';
-
 listPart
     : LIST_BIN
     | listIndex
@@ -273,6 +273,14 @@ listPart
     | listRank
     | listIndexRange
     ;
+
+LIST_BIN: '[]';
+
+listIndex: '[' INT ']';
+
+listValue: '[=' valueIdentifier ']';
+
+listRank: '[#' INT ']';
 
 listIndexRange
     : standardListIndexRange
@@ -286,14 +294,6 @@ standardListIndexRange
 invertedListIndexRange
     : '[!' indexRangeIdentifier ']'
     ;
-
-listValue: '[=' valueIdentifier ']';
-
-listRank: '[#' INT ']';
-
-listIndex: '[' INT ']';
-
-LIST_BIN: '[]';
 
 valueIdentifier
     : NAME_IDENTIFIER
