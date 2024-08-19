@@ -670,6 +670,59 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         .build();
             }
         }
+
+        if (ctx.listValueList() != null) {
+            ConditionParser.StandardListValueListContext valueList = ctx.listValueList().standardListValueList();
+            ConditionParser.InvertedListValueListContext invertedValueList = ctx.listValueList().invertedListValueList();
+
+            if (valueList != null || invertedValueList != null) {
+                ConditionParser.ValueListIdentifierContext list =
+                        valueList != null ? valueList.valueListIdentifier() : invertedValueList.valueListIdentifier();
+                boolean isInverted = valueList == null;
+
+                List<?> valueListObjects = list.valueIdentifier().stream().map(
+                        listValue -> {
+                            if (listValue.NAME_IDENTIFIER() != null) {
+                                return listValue.NAME_IDENTIFIER().getText();
+                            } else if (listValue.QUOTED_STRING() != null) {
+                                return getWithoutQuotes(listValue.QUOTED_STRING().getText());
+                            } else {
+                                return Integer.parseInt(listValue.INT().getText());
+                            }
+                        }
+                ).toList();
+
+                return ListPart.builder()
+                        .setListValueList(isInverted, valueListObjects)
+                        .build();
+            }
+        }
+
+        if (ctx.listValueRange() != null) {
+            ConditionParser.StandardListValueRangeContext valueRange = ctx.listValueRange().standardListValueRange();
+            ConditionParser.InvertedListValueRangeContext invertedValueRange = ctx.listValueRange().invertedListValueRange();
+
+            if (valueRange != null || invertedValueRange != null) {
+                ConditionParser.ValueRangeIdentifierContext range =
+                        valueRange != null ? valueRange.valueRangeIdentifier() : invertedValueRange.valueRangeIdentifier();
+                boolean isInverted = valueRange == null;
+
+                Integer startValue = Integer.parseInt(range.valueIdentifier(0).INT().getText());
+
+                Integer endValue = null;
+
+                if (range.valueIdentifier(1) != null) {
+                    if (range.valueIdentifier(1).INT() != null) {
+                        endValue = Integer.parseInt(range.valueIdentifier(1).INT().getText());
+                    }
+                }
+
+                return ListPart.builder()
+                        .setListValueRange(isInverted, startValue, endValue)
+                        .build();
+            }
+        }
+
         throw new AerospikeDSLException("Unexpected path type in a List: %s".formatted(ctx.getText()));
     }
 

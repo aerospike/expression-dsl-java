@@ -6,6 +6,8 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static com.aerospike.dsl.util.TestUtils.translate;
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -242,5 +244,56 @@ class ListExpressionsTests {
                 Exp.val(1),
                 Exp.listBin("listBin1"));
         translateAndCompare("$.listBin1.[1:]", expected);
+    }
+
+    @Test
+    void listValueList() {
+        Exp expected = ListExp.getByValueList(
+                ListReturnType.VALUE,
+                Exp.val(List.of("a", "b", "c")),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[=a,b,c]", expected);
+        translateAndCompare("$.listBin1.[=\"a\",\"b\",\"c\"]", expected);
+
+        // Integer
+        expected = ListExp.getByValueList(
+                ListReturnType.VALUE,
+                Exp.val(List.of(1, 2, 3)),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[=1,2,3]", expected);
+
+        // Inverted
+        expected = ListExp.getByValueList(
+                ListReturnType.VALUE | ListReturnType.INVERTED,
+                Exp.val(List.of("a", "b", "c")),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[!=a,b,c]", expected);
+        translateAndCompare("$.listBin1.[!=\"a\",\"b\",\"c\"]", expected);
+    }
+
+    @Test
+    void listValueRange() {
+        Exp expected = ListExp.getByValueRange(
+                ListReturnType.VALUE,
+                Exp.val(111),
+                Exp.val(334),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[=111:334]", expected);
+
+        // Inverted
+        expected = ListExp.getByValueRange(
+                ListReturnType.VALUE | ListReturnType.INVERTED,
+                Exp.val(10),
+                Exp.val(20),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[!=10:20]", expected);
+
+        // From start till the end
+        expected = ListExp.getByValueRange(
+                ListReturnType.VALUE,
+                Exp.val(111),
+                null,
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[=111:]", expected);
     }
 }

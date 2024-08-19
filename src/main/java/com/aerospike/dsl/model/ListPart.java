@@ -2,6 +2,8 @@ package com.aerospike.dsl.model;
 
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 public class ListPart extends AbstractPart {
 
@@ -11,6 +13,8 @@ public class ListPart extends AbstractPart {
     private final int listRank;
     private final boolean listBin;
     private final ListIndexRange listIndexRange;
+    private final ListValueList listValueList;
+    private final ListValueRange listValueRange;
 
     private ListPart(Builder builder) {
         super(PartType.LIST_PART);
@@ -20,6 +24,8 @@ public class ListPart extends AbstractPart {
         this.listRank = builder.listRank;
         this.listBin = builder.listBin;
         this.listIndexRange = builder.listIndexRange;
+        this.listValueList = builder.listValueList;
+        this.listValueRange = builder.listValueRange;
     }
 
     public static Builder builder() {
@@ -33,6 +39,8 @@ public class ListPart extends AbstractPart {
         private int listRank;
         private boolean listBin;
         private ListIndexRange listIndexRange;
+        private ListValueList listValueList;
+        private ListValueRange listValueRange;
 
         public Builder() {
         }
@@ -67,6 +75,18 @@ public class ListPart extends AbstractPart {
             return this;
         }
 
+        public Builder setListValueList(boolean inverted, List<?> valueList) {
+            this.listPartType = ListPartType.VALUE_LIST;
+            this.listValueList = new ListValueList(inverted, valueList);
+            return this;
+        }
+
+        public Builder setListValueRange(boolean inverted, Integer start, Integer end) {
+            this.listPartType = ListPartType.VALUE_RANGE;
+            this.listValueRange = new ListValueRange(inverted, start, end);
+            return this;
+        }
+
         public ListPart build() {
             return new ListPart(this);
         }
@@ -77,6 +97,8 @@ public class ListPart extends AbstractPart {
         INDEX,
         VALUE,
         RANK,
-        INDEX_RANGE
+        INDEX_RANGE,
+        VALUE_LIST,
+        VALUE_RANGE
     }
 }

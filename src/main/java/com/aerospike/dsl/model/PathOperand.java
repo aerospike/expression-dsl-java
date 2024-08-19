@@ -110,6 +110,27 @@ public class PathOperand extends AbstractPart {
                                 getBinType(basePath)), context);
                     }
                 }
+                case VALUE_LIST -> {
+                    if (listLastPart.getListValueList().isInverted()) {
+                        cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
+                    }
+                    yield ListExp.getByValueList(cdtReturnType, Exp.val(listLastPart.getListValueList().getValueList()),
+                            Exp.bin(bin.getBinName(), getBinType(basePath)), context);
+                }
+                case VALUE_RANGE -> {
+                    if (listLastPart.getListValueRange().isInverted()) {
+                        cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
+                    }
+
+                    Exp start = Exp.val(listLastPart.getListValueRange().getStart());
+                    Exp end = null;
+
+                    if (listLastPart.getListValueRange().getEnd() != null) {
+                        end = Exp.val(listLastPart.getListValueRange().getEnd());
+                    }
+                    yield ListExp.getByValueRange(cdtReturnType, start, end, Exp.bin(bin.getBinName(),
+                            getBinType(basePath)), context);
+                }
             };
         } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
             MapPart mapLastPart = (MapPart) lastPathPart;

@@ -272,6 +272,8 @@ listPart
     | listValue
     | listRank
     | listIndexRange
+    | listValueList
+    | listValueRange
     ;
 
 LIST_BIN: '[]';
@@ -293,6 +295,32 @@ standardListIndexRange
 
 invertedListIndexRange
     : '[!' indexRangeIdentifier ']'
+    ;
+
+listValueList
+    : standardListValueList
+    | invertedListValueList
+    ;
+
+standardListValueList
+    : '[=' valueListIdentifier ']'
+    ;
+
+invertedListValueList
+    : '[!=' valueListIdentifier ']'
+    ;
+
+listValueRange
+    : standardListValueRange
+    | invertedListValueRange
+    ;
+
+standardListValueRange
+    : '[=' valueRangeIdentifier ']'
+    ;
+
+invertedListValueRange
+    : '[!=' valueRangeIdentifier ']'
     ;
 
 valueIdentifier
