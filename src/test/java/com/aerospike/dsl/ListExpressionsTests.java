@@ -296,4 +296,29 @@ class ListExpressionsTests {
                 Exp.listBin("listBin1"));
         translateAndCompare("$.listBin1.[=111:]", expected);
     }
+
+    @Test
+    void listRankRange() {
+        Exp expected = ListExp.getByRankRange(
+                ListReturnType.VALUE,
+                Exp.val(0),
+                Exp.val(3),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[#0:3]", expected);
+
+        // Inverted
+        expected = ListExp.getByRankRange(
+                ListReturnType.VALUE | ListReturnType.INVERTED,
+                Exp.val(0),
+                Exp.val(3),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[!#0:3]", expected);
+
+        // From start till the end
+        expected = ListExp.getByRankRange(
+                ListReturnType.VALUE,
+                Exp.val(-3),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[#-3:]", expected);
+    }
 }

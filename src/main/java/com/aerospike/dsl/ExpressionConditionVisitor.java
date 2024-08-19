@@ -723,6 +723,27 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             }
         }
 
+        if (ctx.listRankRange() != null) {
+            ConditionParser.StandardListRankRangeContext rankRange = ctx.listRankRange().standardListRankRange();
+            ConditionParser.InvertedListRankRangeContext invertedRankRange = ctx.listRankRange().invertedListRankRange();
+
+            if (rankRange != null || invertedRankRange != null) {
+                ConditionParser.RankRangeIdentifierContext range =
+                        rankRange != null ? rankRange.rankRangeIdentifier() : invertedRankRange.rankRangeIdentifier();
+                boolean isInverted = rankRange == null;
+
+                Integer start = Integer.parseInt(range.start().INT().getText());
+                Integer count = null;
+                if (range.count() != null) {
+                    count = Integer.parseInt(range.count().INT().getText());
+                }
+
+                return ListPart.builder()
+                        .setListRankRange(isInverted, start, count)
+                        .build();
+            }
+        }
+
         throw new AerospikeDSLException("Unexpected path type in a List: %s".formatted(ctx.getText()));
     }
 
