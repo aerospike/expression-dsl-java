@@ -1,12 +1,12 @@
-package com.aerospike.dsl.model;
+package com.aerospike.dsl.model.list;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class MapIndexRange {
+public class ListValueRange {
     private boolean inverted;
     private Integer start;
-    private Integer count;
+    private Integer end;
 }

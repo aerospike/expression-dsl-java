@@ -1,4 +1,4 @@
-package com.aerospike.dsl.model;
+package com.aerospike.dsl.model.map;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

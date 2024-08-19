@@ -1,5 +1,6 @@
-package com.aerospike.dsl.model;
+package com.aerospike.dsl.model.map;
 
+import com.aerospike.dsl.model.AbstractPart;
 import lombok.Getter;
 
 import java.util.List;

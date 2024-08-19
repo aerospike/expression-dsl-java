@@ -8,6 +8,8 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.model.list.ListPart;
+import com.aerospike.dsl.model.map.MapPart;
 import lombok.Getter;
 
 import java.util.ArrayList;
