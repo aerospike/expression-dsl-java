@@ -271,6 +271,20 @@ listPart
     | listIndex
     | listValue
     | listRank
+    | listIndexRange
+    ;
+
+listIndexRange
+    : standardListIndexRange
+    | invertedListIndexRange
+    ;
+
+standardListIndexRange
+    : '[' indexRangeIdentifier ']'
+    ;
+
+invertedListIndexRange
+    : '[!' indexRangeIdentifier ']'
     ;
 
 listValue: '[=' valueIdentifier ']';

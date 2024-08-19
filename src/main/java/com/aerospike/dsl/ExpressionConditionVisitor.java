@@ -649,6 +649,27 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     .setListRank(Integer.parseInt(listRank))
                     .build();
         }
+
+        if (ctx.listIndexRange() != null) {
+            ConditionParser.StandardListIndexRangeContext indexRange = ctx.listIndexRange().standardListIndexRange();
+            ConditionParser.InvertedListIndexRangeContext invertedIndexRange = ctx.listIndexRange().invertedListIndexRange();
+
+            if (indexRange != null || invertedIndexRange != null) {
+                ConditionParser.IndexRangeIdentifierContext range =
+                        indexRange != null ? indexRange.indexRangeIdentifier() : invertedIndexRange.indexRangeIdentifier();
+                boolean isInverted = indexRange == null;
+
+                Integer start = Integer.parseInt(range.start().INT().getText());
+                Integer count = null;
+                if (range.count() != null) {
+                    count = Integer.parseInt(range.count().INT().getText());
+                }
+
+                return ListPart.builder()
+                        .setListIndexRange(isInverted, start, count)
+                        .build();
+            }
+        }
         throw new AerospikeDSLException("Unexpected path type in a List: %s".formatted(ctx.getText()));
     }
 

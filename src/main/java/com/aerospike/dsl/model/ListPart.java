@@ -10,6 +10,7 @@ public class ListPart extends AbstractPart {
     private final Object listValue;
     private final int listRank;
     private final boolean listBin;
+    private final ListIndexRange listIndexRange;
 
     private ListPart(Builder builder) {
         super(PartType.LIST_PART);
@@ -18,6 +19,7 @@ public class ListPart extends AbstractPart {
         this.listValue = builder.listValue;
         this.listRank = builder.listRank;
         this.listBin = builder.listBin;
+        this.listIndexRange = builder.listIndexRange;
     }
 
     public static Builder builder() {
@@ -30,6 +32,7 @@ public class ListPart extends AbstractPart {
         private Object listValue;
         private int listRank;
         private boolean listBin;
+        private ListIndexRange listIndexRange;
 
         public Builder() {
         }
@@ -58,6 +61,12 @@ public class ListPart extends AbstractPart {
             return this;
         }
 
+        public Builder setListIndexRange(boolean inverted, Integer start, Integer count) {
+            this.listPartType = ListPartType.INDEX_RANGE;
+            this.listIndexRange = new ListIndexRange(inverted, start, count);
+            return this;
+        }
+
         public ListPart build() {
             return new ListPart(this);
         }
@@ -67,6 +76,7 @@ public class ListPart extends AbstractPart {
         BIN,
         INDEX,
         VALUE,
-        RANK
+        RANK,
+        INDEX_RANGE
     }
 }

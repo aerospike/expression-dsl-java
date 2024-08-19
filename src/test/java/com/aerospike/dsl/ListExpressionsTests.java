@@ -210,4 +210,37 @@ class ListExpressionsTests {
         assertThatThrownBy(() -> translate("$.listBin1.[#-1].get(type: INT) == \"stringValue\""))
                 .isInstanceOf(NullPointerException.class);
     }
+
+    @Test
+    void listIndexRange() {
+        Exp expected = ListExp.getByIndexRange(
+                ListReturnType.VALUE,
+                Exp.val(1),
+                Exp.val(3),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[1:3]", expected);
+
+        // Negative
+        expected = ListExp.getByIndexRange(
+                ListReturnType.VALUE,
+                Exp.val(-3),
+                Exp.val(1),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[-3:1]", expected);
+
+        // Inverted
+        expected = ListExp.getByIndexRange(
+                ListReturnType.VALUE | ListReturnType.INVERTED,
+                Exp.val(2),
+                Exp.val(4),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[!2:4]", expected);
+
+        // From start till the end
+        expected = ListExp.getByIndexRange(
+                ListReturnType.VALUE,
+                Exp.val(1),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[1:]", expected);
+    }
 }
