@@ -329,4 +329,32 @@ class ListExpressionsTests {
                 CTX.listIndex(5));
         translateAndCompare("$.listBin1.[5].[#-3:]", expected);
     }
+
+    @Test
+    void listRankRangeRelative() {
+        Exp expected = ListExp.getByValueRelativeRankRange(
+                ListReturnType.VALUE,
+                Exp.val(-3),
+                Exp.val("b"),
+                Exp.val(-1),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[#-3:-1~b]", expected);
+
+        // Inverted
+        expected = ListExp.getByValueRelativeRankRange(
+                ListReturnType.VALUE | ListReturnType.INVERTED,
+                Exp.val(-3),
+                Exp.val("b"),
+                Exp.val(-1),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[!#-3:-1~b]", expected);
+
+        // From start till the end
+        expected = ListExp.getByValueRelativeRankRange(
+                ListReturnType.VALUE,
+                Exp.val(-3),
+                Exp.val("b"),
+                Exp.listBin("listBin1"));
+        translateAndCompare("$.listBin1.[#-3:~b]", expected);
+    }
 }

@@ -626,6 +626,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         if (ctx.listValueList() != null) return ListValueList.constructFromCTX(ctx.listValueList());
         if (ctx.listValueRange() != null) return ListValueRange.constructFromCTX(ctx.listValueRange());
         if (ctx.listRankRange() != null) return ListRankRange.constructFromCTX(ctx.listRankRange());
+        if (ctx.listRankRangeRelative() != null)
+            return ListRankRangeRelative.constructFromCTX(ctx.listRankRangeRelative());
         throw new AerospikeDSLException("Unexpected list part: %s".formatted(ctx.getText()));
     }
 

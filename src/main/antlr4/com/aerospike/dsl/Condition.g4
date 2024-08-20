@@ -325,6 +325,7 @@ listPart
     | listValueList
     | listValueRange
     | listRankRange
+    | listRankRangeRelative
     ;
 
 LIST_BIN: '[]';
@@ -385,6 +386,19 @@ standardListRankRange
 
 invertedListRankRange
     : '[!#' rankRangeIdentifier ']'
+    ;
+
+listRankRangeRelative
+    : standardListRankRangeRelative
+    | invertedListRankRangeRelative
+    ;
+
+standardListRankRangeRelative
+    : '[#' rankRangeRelativeIdentifier ']'
+    ;
+
+invertedListRankRangeRelative
+    : '[!#' rankRangeRelativeIdentifier ']'
     ;
 
 valueIdentifier

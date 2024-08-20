@@ -1,9 +1,9 @@
-package com.aerospike.dsl.model.cdt.map;
+package com.aerospike.dsl.model.cdt.list;
 
 import com.aerospike.client.cdt.CTX;
-import com.aerospike.client.cdt.MapReturnType;
+import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.MapExp;
+import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
@@ -11,14 +11,14 @@ import com.aerospike.dsl.util.ParsingUtils;
 import lombok.Getter;
 
 @Getter
-public class MapRankRangeRelative extends MapPart {
+public class ListRankRangeRelative extends ListPart {
     private final boolean inverted;
     private final Integer start;
     private final Integer count;
     private final Object relative;
 
-    public MapRankRangeRelative(boolean inverted, Integer start, Integer count, Object relative) {
-        super(MapPartType.RANK_RANGE_RELATIVE);
+    public ListRankRangeRelative(boolean inverted, Integer start, Integer count, Object relative) {
+        super(ListPartType.RANK_RANGE_RELATIVE);
         this.inverted = inverted;
         this.start = start;
         this.count = count;
@@ -28,7 +28,7 @@ public class MapRankRangeRelative extends MapPart {
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
         if (isInverted()) {
-            cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+            cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
         }
         Exp relativeExp;
         if (getRelative() instanceof String) {
@@ -44,17 +44,17 @@ public class MapRankRangeRelative extends MapPart {
             count = Exp.val(getCount());
         }
         if (count == null) {
-            return MapExp.getByValueRelativeRankRange(cdtReturnType, start, relativeExp,
-                    Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
+            return ListExp.getByValueRelativeRankRange(cdtReturnType, start, relativeExp, Exp.bin(basePath.getBinPart().getBinName(),
+                    basePath.getBinType()), context);
         } else {
-            return MapExp.getByValueRelativeRankRange(cdtReturnType, start, relativeExp, count,
-                    Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
+            return ListExp.getByValueRelativeRankRange(cdtReturnType, start, relativeExp, count, Exp.bin(basePath.getBinPart().getBinName(),
+                    basePath.getBinType()), context);
         }
     }
 
-    public static MapRankRangeRelative constructFromCTX(ConditionParser.MapRankRangeRelativeContext ctx) {
-        ConditionParser.StandardMapRankRangeRelativeContext rankRangeRelative = ctx.standardMapRankRangeRelative();
-        ConditionParser.InvertedMapRankRangeRelativeContext invertedRankRangeRelative = ctx.invertedMapRankRangeRelative();
+    public static ListRankRangeRelative constructFromCTX(ConditionParser.ListRankRangeRelativeContext ctx) {
+        ConditionParser.StandardListRankRangeRelativeContext rankRangeRelative = ctx.standardListRankRangeRelative();
+        ConditionParser.InvertedListRankRangeRelativeContext invertedRankRangeRelative = ctx.invertedListRankRangeRelative();
 
         if (rankRangeRelative != null || invertedRankRangeRelative != null) {
             ConditionParser.RankRangeRelativeIdentifierContext range =
@@ -64,7 +64,6 @@ public class MapRankRangeRelative extends MapPart {
 
             Integer start = Integer.parseInt(range.start().INT().getText());
             Integer count = null;
-
             if (range.relativeRankEnd().count() != null) {
                 count = Integer.parseInt(range.relativeRankEnd().count().INT().getText());
             }
@@ -83,8 +82,8 @@ public class MapRankRangeRelative extends MapPart {
                 }
             }
 
-            return new MapRankRangeRelative(isInverted, start, count, relativeValue);
+            return new ListRankRangeRelative(isInverted, start, count, relativeValue);
         }
-        throw new AerospikeDSLException("Could not translate MapRankRangeRelative from ctx: %s".formatted(ctx));
+        throw new AerospikeDSLException("Could not translate ListRankRangeRelative from ctx: %s".formatted(ctx));
     }
 }
