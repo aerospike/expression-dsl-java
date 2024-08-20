@@ -420,4 +420,32 @@ public class MapExpressionsTests {
                 Exp.mapBin("mapBin1"));
         translateAndCompare("$.mapBin1.{#-2:~10}", expected);
     }
+
+    @Test
+    void mapIndexRangeRelative() {
+        Exp expected = MapExp.getByKeyRelativeIndexRange(
+                MapReturnType.VALUE,
+                Exp.val("a"),
+                Exp.val(0),
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{0:1~a}", expected);
+
+        // Inverted
+        expected = MapExp.getByKeyRelativeIndexRange(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val("a"),
+                Exp.val(0),
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!0:1~a}", expected);
+
+        // From start till the end
+        expected = MapExp.getByKeyRelativeIndexRange(
+                MapReturnType.VALUE,
+                Exp.val("a"),
+                Exp.val(0),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{0:~a}", expected);
+    }
 }

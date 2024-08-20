@@ -25,6 +25,7 @@ public abstract class MapPart extends CdtPart {
         VALUE_LIST,
         VALUE_RANGE,
         RANK_RANGE,
-        RANK_RANGE_RELATIVE
+        RANK_RANGE_RELATIVE,
+        INDEX_RANGE_RELATIVE
     }
 }
