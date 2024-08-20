@@ -148,6 +148,7 @@ mapPart
     | mapValueList
     | mapValueRange
     | mapRankRange
+    | mapRankRangeRelative
     ;
 
 mapKey
@@ -264,6 +265,32 @@ invertedMapRankRange
 rankRangeIdentifier
     : start ':' count
     | start ':'
+    ;
+
+mapRankRangeRelative
+    : standardMapRankRangeRelative
+    | invertedMapRankRangeRelative
+    ;
+
+standardMapRankRangeRelative
+    : '{#' rankRangeRelativeIdentifier '}'
+    ;
+
+invertedMapRankRangeRelative
+    : '{!#' rankRangeRelativeIdentifier '}'
+    ;
+
+rankRangeRelativeIdentifier
+    : start ':' relativeRankEnd
+    ;
+
+relativeRankEnd
+    : count relativeValue
+    | relativeValue
+    ;
+
+relativeValue
+    : '~' valueIdentifier
     ;
 
 listPart

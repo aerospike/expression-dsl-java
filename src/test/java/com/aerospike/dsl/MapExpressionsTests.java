@@ -392,4 +392,32 @@ public class MapExpressionsTests {
                 CTX.mapIndex(5));
         translateAndCompare("$.mapBin1.{5}.{#-3:}", expected);
     }
+
+    @Test
+    void mapRankRangeRelative() {
+        Exp expected = MapExp.getByValueRelativeRankRange(
+                MapReturnType.VALUE,
+                Exp.val(-1),
+                Exp.val(10),
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{#-1:1~10}", expected);
+
+        // Inverted
+        expected = MapExp.getByValueRelativeRankRange(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val(-1),
+                Exp.val(10),
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!#-1:1~10}", expected);
+
+        // From start till the end
+        expected = MapExp.getByValueRelativeRankRange(
+                MapReturnType.VALUE,
+                Exp.val(-2),
+                Exp.val(10),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{#-2:~10}", expected);
+    }
 }

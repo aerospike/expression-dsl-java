@@ -641,6 +641,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         if (ctx.mapValueList() != null) return MapValueList.constructFromCTX(ctx.mapValueList());
         if (ctx.mapValueRange() != null) return MapValueRange.constructFromCTX(ctx.mapValueRange());
         if (ctx.mapRankRange() != null) return MapRankRange.constructFromCTX(ctx.mapRankRange());
+        if (ctx.mapRankRangeRelative() != null)
+            return MapRankRangeRelative.constructFromCTX(ctx.mapRankRangeRelative());
         throw new AerospikeDSLException("Unexpected map part: %s".formatted(ctx.getText()));
     }
 
