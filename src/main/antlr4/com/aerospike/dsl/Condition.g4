@@ -137,27 +137,278 @@ PATH_FUNCTION_PARAM_RETURN_VALUE
 
 binPart: NAME_IDENTIFIER;
 
-mapPart: NAME_IDENTIFIER | QUOTED_STRING | mapValue | mapRank | mapIndex;
+mapPart
+    : mapKey
+    | mapValue
+    | mapRank
+    | mapIndex
+    | mapKeyRange
+    | mapKeyList
+    | mapIndexRange
+    | mapValueList
+    | mapValueRange
+    | mapRankRange
+    | mapRankRangeRelative
+    | mapIndexRangeRelative
+    ;
 
-mapValue: '{' VALUE_IDENTIFIER '}';
+mapKey
+    : NAME_IDENTIFIER
+    | QUOTED_STRING
+    ;
 
-mapRank: '{' RANK_IDENTIFIER '}';
+mapValue: '{=' valueIdentifier '}';
+
+mapRank: '{#' INT '}';
 
 mapIndex: '{' INT '}';
 
-listPart: LIST_BIN | listIndex | listValue | listRank;
+mapKeyRange
+    : standardMapKeyRange
+    | invertedMapKeyRange
+    ;
+
+standardMapKeyRange
+    : '{' keyRangeIdentifier '}'
+    ;
+
+invertedMapKeyRange
+    : '{!' keyRangeIdentifier '}'
+    ;
+
+keyRangeIdentifier
+    : mapKey '-' mapKey
+    | mapKey '-'
+    ;
+
+mapKeyList
+    : standardMapKeyList
+    | invertedMapKeyList
+    ;
+
+standardMapKeyList
+    : '{' keyListIdentifier '}'
+    ;
+
+invertedMapKeyList
+    : '{!' keyListIdentifier '}'
+    ;
+
+keyListIdentifier
+    : mapKey (',' mapKey)*
+    ;
+
+mapIndexRange
+    : standardMapIndexRange
+    | invertedMapIndexRange
+    ;
+
+standardMapIndexRange
+    : '{' indexRangeIdentifier '}'
+    ;
+
+invertedMapIndexRange
+    : '{!' indexRangeIdentifier '}'
+    ;
+
+indexRangeIdentifier
+    : start ':' count
+    | start ':'
+    ;
+
+start: INT | '-' INT;
+count: INT | '-' INT;
+
+mapValueList
+    : standardMapValueList
+    | invertedMapValueList
+    ;
+
+standardMapValueList
+    : '{=' valueListIdentifier '}'
+    ;
+
+invertedMapValueList
+    : '{!=' valueListIdentifier '}'
+    ;
+
+mapValueRange
+    : standardMapValueRange
+    | invertedMapValueRange
+    ;
+
+standardMapValueRange
+    : '{=' valueRangeIdentifier '}'
+    ;
+
+invertedMapValueRange
+    : '{!=' valueRangeIdentifier '}'
+    ;
+
+valueRangeIdentifier
+    : valueIdentifier ':' valueIdentifier
+    | valueIdentifier ':'
+    ;
+
+mapRankRange
+    : standardMapRankRange
+    | invertedMapRankRange
+    ;
+
+standardMapRankRange
+    : '{#' rankRangeIdentifier '}'
+    ;
+
+invertedMapRankRange
+    : '{!#' rankRangeIdentifier '}'
+    ;
+
+rankRangeIdentifier
+    : start ':' count
+    | start ':'
+    ;
+
+mapRankRangeRelative
+    : standardMapRankRangeRelative
+    | invertedMapRankRangeRelative
+    ;
+
+standardMapRankRangeRelative
+    : '{#' rankRangeRelativeIdentifier '}'
+    ;
+
+invertedMapRankRangeRelative
+    : '{!#' rankRangeRelativeIdentifier '}'
+    ;
+
+rankRangeRelativeIdentifier
+    : start ':' relativeRankEnd
+    ;
+
+relativeRankEnd
+    : count relativeValue
+    | relativeValue
+    ;
+
+relativeValue
+    : '~' valueIdentifier
+    ;
+
+mapIndexRangeRelative
+    : standardMapIndexRangeRelative
+    | invertedMapIndexRangeRelative
+    ;
+
+standardMapIndexRangeRelative
+    : '{' indexRangeRelativeIdentifier '}'
+    ;
+
+invertedMapIndexRangeRelative
+    : '{!' indexRangeRelativeIdentifier '}'
+    ;
+
+indexRangeRelativeIdentifier
+    : start ':' relativeKeyEnd
+    ;
+
+relativeKeyEnd
+    : count '~' mapKey
+    | '~' mapKey
+    ;
+
+listPart
+    : LIST_BIN
+    | listIndex
+    | listValue
+    | listRank
+    | listIndexRange
+    | listValueList
+    | listValueRange
+    | listRankRange
+    | listRankRangeRelative
+    ;
 
 LIST_BIN: '[]';
 
-listValue: '[' VALUE_IDENTIFIER ']';
-
-VALUE_IDENTIFIER: '=' NAME_IDENTIFIER;
-
-listRank: '[' RANK_IDENTIFIER ']';
-
-RANK_IDENTIFIER: '#' INT;
-
 listIndex: '[' INT ']';
+
+listValue: '[=' valueIdentifier ']';
+
+listRank: '[#' INT ']';
+
+listIndexRange
+    : standardListIndexRange
+    | invertedListIndexRange
+    ;
+
+standardListIndexRange
+    : '[' indexRangeIdentifier ']'
+    ;
+
+invertedListIndexRange
+    : '[!' indexRangeIdentifier ']'
+    ;
+
+listValueList
+    : standardListValueList
+    | invertedListValueList
+    ;
+
+standardListValueList
+    : '[=' valueListIdentifier ']'
+    ;
+
+invertedListValueList
+    : '[!=' valueListIdentifier ']'
+    ;
+
+listValueRange
+    : standardListValueRange
+    | invertedListValueRange
+    ;
+
+standardListValueRange
+    : '[=' valueRangeIdentifier ']'
+    ;
+
+invertedListValueRange
+    : '[!=' valueRangeIdentifier ']'
+    ;
+
+listRankRange
+    : standardListRankRange
+    | invertedListRankRange
+    ;
+
+standardListRankRange
+    : '[#' rankRangeIdentifier ']'
+    ;
+
+invertedListRankRange
+    : '[!#' rankRangeIdentifier ']'
+    ;
+
+listRankRangeRelative
+    : standardListRankRangeRelative
+    | invertedListRankRangeRelative
+    ;
+
+standardListRankRangeRelative
+    : '[#' rankRangeRelativeIdentifier ']'
+    ;
+
+invertedListRankRangeRelative
+    : '[!#' rankRangeRelativeIdentifier ']'
+    ;
+
+valueIdentifier
+    : NAME_IDENTIFIER
+    | QUOTED_STRING
+    | INT
+    | '-' INT
+    ;
+
+valueListIdentifier: valueIdentifier ',' valueIdentifier (',' valueIdentifier)*;
 
 pathFunction
     : pathFunctionCast

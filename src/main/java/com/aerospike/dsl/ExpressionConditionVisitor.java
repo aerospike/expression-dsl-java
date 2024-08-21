@@ -3,7 +3,8 @@ package com.aerospike.dsl;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
-import com.aerospike.dsl.util.ParsingUtils;
+import com.aerospike.dsl.model.cdt.list.*;
+import com.aerospike.dsl.model.cdt.map.*;
 import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -617,68 +618,36 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitListPart(ConditionParser.ListPartContext ctx) {
-        if (ctx.LIST_BIN() != null) {
-            return ListPart.builder()
-                    .setListBin(true)
-                    .build();
-        }
-
-        if (ctx.listIndex() != null) {
-            return ListPart.builder()
-                    .setListIndex(Integer.parseInt(ctx.listIndex().INT().getText()))
-                    .build();
-        }
-
-        if (ctx.listValue() != null) {
-            String listValue = ctx.listValue().VALUE_IDENTIFIER().getText();
-            return ListPart.builder()
-                    .setListValue(listValue.substring(1))
-                    .build();
-        }
-
-        if (ctx.listRank() != null) {
-            String listRank = ctx.listRank().RANK_IDENTIFIER().getText();
-            return ListPart.builder()
-                    .setListRank(Integer.parseInt(listRank.substring(1)))
-                    .build();
-        }
-        throw new AerospikeDSLException("Unexpected path type in a List: %s".formatted(ctx.getText()));
+        if (ctx.LIST_BIN() != null) return new ListBin();
+        if (ctx.listIndex() != null) return ListIndex.constructFromCTX(ctx.listIndex());
+        if (ctx.listValue() != null) return ListValue.constructFromCTX(ctx.listValue());
+        if (ctx.listRank() != null) return ListRank.constructFromCTX(ctx.listRank());
+        if (ctx.listIndexRange() != null) return ListIndexRange.constructFromCTX(ctx.listIndexRange());
+        if (ctx.listValueList() != null) return ListValueList.constructFromCTX(ctx.listValueList());
+        if (ctx.listValueRange() != null) return ListValueRange.constructFromCTX(ctx.listValueRange());
+        if (ctx.listRankRange() != null) return ListRankRange.constructFromCTX(ctx.listRankRange());
+        if (ctx.listRankRangeRelative() != null)
+            return ListRankRangeRelative.constructFromCTX(ctx.listRankRangeRelative());
+        throw new AerospikeDSLException("Unexpected list part: %s".formatted(ctx.getText()));
     }
 
     @Override
     public AbstractPart visitMapPart(ConditionParser.MapPartContext ctx) {
-        if (ctx.QUOTED_STRING() != null) {
-            return MapPart.builder()
-                    .setMapKey(ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()))
-                    .build();
-        }
-
-        if (ctx.NAME_IDENTIFIER() != null) {
-            return MapPart.builder()
-                    .setMapKey(ctx.NAME_IDENTIFIER().getText())
-                    .build();
-        }
-
-        if (ctx.mapIndex() != null) {
-            return MapPart.builder()
-                    .setMapIndex(Integer.parseInt(ctx.mapIndex().INT().getText()))
-                    .build();
-        }
-
-        if (ctx.mapValue() != null) {
-            String mapValue = ctx.mapValue().VALUE_IDENTIFIER().getText();
-            return MapPart.builder()
-                    .setMapValue(mapValue.substring(1))
-                    .build();
-        }
-
-        if (ctx.mapRank() != null) {
-            String mapRank = ctx.mapRank().RANK_IDENTIFIER().getText();
-            return MapPart.builder()
-                    .setMapRank(Integer.parseInt(mapRank.substring(1)))
-                    .build();
-        }
-        throw new AerospikeDSLException("Unexpected path type in a Map: %s".formatted(ctx.getText()));
+        if (ctx.mapKey() != null) return MapKey.constructFromCTX(ctx.mapKey());
+        if (ctx.mapIndex() != null) return MapIndex.constructFromCTX(ctx.mapIndex());
+        if (ctx.mapValue() != null) return MapValue.constructFromCTX(ctx.mapValue());
+        if (ctx.mapRank() != null) return MapRank.constructFromCTX(ctx.mapRank());
+        if (ctx.mapKeyRange() != null) return MapKeyRange.constructFromCTX(ctx.mapKeyRange());
+        if (ctx.mapKeyList() != null) return MapKeyList.constructFromCTX(ctx.mapKeyList());
+        if (ctx.mapIndexRange() != null) return MapIndexRange.constructFromCTX(ctx.mapIndexRange());
+        if (ctx.mapValueList() != null) return MapValueList.constructFromCTX(ctx.mapValueList());
+        if (ctx.mapValueRange() != null) return MapValueRange.constructFromCTX(ctx.mapValueRange());
+        if (ctx.mapRankRange() != null) return MapRankRange.constructFromCTX(ctx.mapRankRange());
+        if (ctx.mapRankRangeRelative() != null)
+            return MapRankRangeRelative.constructFromCTX(ctx.mapRankRangeRelative());
+        if (ctx.mapIndexRangeRelative() != null)
+            return MapIndexRangeRelative.constructFromCTX(ctx.mapIndexRangeRelative());
+        throw new AerospikeDSLException("Unexpected map part: %s".formatted(ctx.getText()));
     }
 
     @Override

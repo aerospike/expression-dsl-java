@@ -229,17 +229,223 @@ public class MapExpressionsTests {
         translateAndCompare("$.mapBin1.{5}.{#-1}.{=100} == 200", expected);
     }
 
-    // TODO: Plural leaf elements FMWK-476
-    //@Test
+    @Test
+    void mapKeyRange() {
+        Exp expected = MapExp.getByKeyRange(
+                MapReturnType.VALUE,
+                Exp.val("a"),
+                Exp.val("c"),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{a-c}", expected);
+        translateAndCompare("$.mapBin1.{\"a\"-\"c\"}", expected);
+
+        // Inverted
+        expected = MapExp.getByKeyRange(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val("a"),
+                Exp.val("c"),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!a-c}", expected);
+        translateAndCompare("$.mapBin1.{!\"a\"-\"c\"}", expected);
+
+        // From start till the end
+        expected = MapExp.getByKeyRange(
+                MapReturnType.VALUE,
+                Exp.val("a"),
+                null,
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{a-}", expected);
+        translateAndCompare("$.mapBin1.{\"a\"-}", expected);
+    }
+
+    @Test
     void mapKeyList() {
-        Exp expected = Exp.gt(
-                MapExp.size(
-                        MapExp.getByKeyList(
-                                MapReturnType.ORDERED_MAP,
-                                Exp.val(List.of(1, 2)),
-                                Exp.mapBin("mapBin1"))
-                ),
-                Exp.val(200));
-        translateAndCompare("$.mapBin1.{1,2}.size() > 200", expected);
+        Exp expected = MapExp.getByKeyList(
+                MapReturnType.VALUE,
+                Exp.val(List.of("a", "b", "c")),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{a,b,c}", expected);
+        translateAndCompare("$.mapBin1.{\"a\",\"b\",\"c\"}", expected);
+
+        // Inverted
+        expected = MapExp.getByKeyList(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val(List.of("a", "b", "c")),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!a,b,c}", expected);
+        translateAndCompare("$.mapBin1.{!\"a\",\"b\",\"c\"}", expected);
+    }
+
+    @Test
+    void mapIndexRange() {
+        Exp expected = MapExp.getByIndexRange(
+                MapReturnType.VALUE,
+                Exp.val(1),
+                Exp.val(3),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{1:3}", expected);
+
+        // Negative
+        expected = MapExp.getByIndexRange(
+                MapReturnType.VALUE,
+                Exp.val(-3),
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{-3:1}", expected);
+
+        // Inverted
+        expected = MapExp.getByIndexRange(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val(2),
+                Exp.val(4),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!2:4}", expected);
+
+        // From start till the end
+        expected = MapExp.getByIndexRange(
+                MapReturnType.VALUE,
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{1:}", expected);
+    }
+
+    @Test
+    void mapValueList() {
+        Exp expected = MapExp.getByValueList(
+                MapReturnType.VALUE,
+                Exp.val(List.of("a", "b", "c")),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{=a,b,c}", expected);
+        translateAndCompare("$.mapBin1.{=\"a\",\"b\",\"c\"}", expected);
+
+        // Integer
+        expected = MapExp.getByValueList(
+                MapReturnType.VALUE,
+                Exp.val(List.of(1, 2, 3)),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{=1,2,3}", expected);
+
+        // Inverted
+        expected = MapExp.getByValueList(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val(List.of("a", "b", "c")),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!=a,b,c}", expected);
+        translateAndCompare("$.mapBin1.{!=\"a\",\"b\",\"c\"}", expected);
+    }
+
+    @Test
+    void mapValueRange() {
+        Exp expected = MapExp.getByValueRange(
+                MapReturnType.VALUE,
+                Exp.val(111),
+                Exp.val(334),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{=111:334}", expected);
+
+        // Inverted
+        expected = MapExp.getByValueRange(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val(10),
+                Exp.val(20),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!=10:20}", expected);
+
+        // From start till the end
+        expected = MapExp.getByValueRange(
+                MapReturnType.VALUE,
+                Exp.val(111),
+                null,
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{=111:}", expected);
+    }
+
+    @Test
+    void mapRankRange() {
+        Exp expected = MapExp.getByRankRange(
+                MapReturnType.VALUE,
+                Exp.val(0),
+                Exp.val(3),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{#0:3}", expected);
+
+        // Inverted
+        expected = MapExp.getByRankRange(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val(0),
+                Exp.val(3),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!#0:3}", expected);
+
+        // From start till the end
+        expected = MapExp.getByRankRange(
+                MapReturnType.VALUE,
+                Exp.val(-3),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{#-3:}", expected);
+
+        // From start till the end with context
+        expected = MapExp.getByRankRange(
+                MapReturnType.VALUE,
+                Exp.val(-3),
+                Exp.mapBin("mapBin1"),
+                CTX.mapIndex(5));
+        translateAndCompare("$.mapBin1.{5}.{#-3:}", expected);
+    }
+
+    @Test
+    void mapRankRangeRelative() {
+        Exp expected = MapExp.getByValueRelativeRankRange(
+                MapReturnType.VALUE,
+                Exp.val(-1),
+                Exp.val(10),
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{#-1:1~10}", expected);
+
+        // Inverted
+        expected = MapExp.getByValueRelativeRankRange(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val(-1),
+                Exp.val(10),
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!#-1:1~10}", expected);
+
+        // From start till the end
+        expected = MapExp.getByValueRelativeRankRange(
+                MapReturnType.VALUE,
+                Exp.val(-2),
+                Exp.val(10),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{#-2:~10}", expected);
+    }
+
+    @Test
+    void mapIndexRangeRelative() {
+        Exp expected = MapExp.getByKeyRelativeIndexRange(
+                MapReturnType.VALUE,
+                Exp.val("a"),
+                Exp.val(0),
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{0:1~a}", expected);
+
+        // Inverted
+        expected = MapExp.getByKeyRelativeIndexRange(
+                MapReturnType.VALUE | MapReturnType.INVERTED,
+                Exp.val("a"),
+                Exp.val(0),
+                Exp.val(1),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{!0:1~a}", expected);
+
+        // From start till the end
+        expected = MapExp.getByKeyRelativeIndexRange(
+                MapReturnType.VALUE,
+                Exp.val("a"),
+                Exp.val(0),
+                Exp.mapBin("mapBin1"));
+        translateAndCompare("$.mapBin1.{0:~a}", expected);
     }
 }
