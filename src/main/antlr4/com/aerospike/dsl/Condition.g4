@@ -115,9 +115,9 @@ PATH_FUNCTION_PARAM_TYPE: 'type';
 
 PATH_FUNCTION_PARAM_RETURN: 'return';
 
-pathFunctionParamValue: PATH_FUNCTION_PARAM_TYPE_VALUE | PATH_FUNCTION_PARAM_RETURN_VALUE;
+pathFunctionParamValue: pathFunctionGetType | pathFunctionReturnType;
 
-PATH_FUNCTION_PARAM_TYPE_VALUE
+pathFunctionGetType
     : 'INT'
     | 'STRING'
     | 'HLL'
@@ -129,10 +129,35 @@ PATH_FUNCTION_PARAM_TYPE_VALUE
     | 'GEO'
     ;
 
-PATH_FUNCTION_PARAM_RETURN_VALUE
+pathFunctionReturnType
+    : PATH_FUNCTION_LIST_RETURN_TYPE
+    | PATH_FUNCTION_MAP_RETURN_TYPE
+    ;
+
+PATH_FUNCTION_LIST_RETURN_TYPE
     : 'VALUE'
+    | 'INDEX'
+    | 'RANK'
     | 'COUNT'
     | 'NONE'
+    | 'EXISTS'
+    | 'REVERSE_INDEX'
+    | 'REVERSE_RANK'
+    ;
+
+PATH_FUNCTION_MAP_RETURN_TYPE
+    : 'VALUE'
+    | 'KEY_VALUE'
+    | 'UNORDERED_MAP'
+    | 'ORDERED_MAP'
+    | 'KEY'
+    | 'INDEX'
+    | 'RANK'
+    | 'COUNT'
+    | 'NONE'
+    | 'EXISTS'
+    | 'REVERSE_INDEX'
+    | 'REVERSE_RANK'
     ;
 
 binPart: NAME_IDENTIFIER;

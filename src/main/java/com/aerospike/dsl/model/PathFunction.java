@@ -19,8 +19,17 @@ public class PathFunction extends AbstractPart {
 
     public enum ReturnParam {
         VALUE,
+        INDEX,
+        RANK,
         COUNT,
-        NONE
+        NONE,
+        EXISTS,
+        REVERSE_INDEX,
+        REVERSE_RANK,
+        KEY_VALUE,
+        UNORDERED_MAP,
+        ORDERED_MAP,
+        KEY
     }
 
     public enum PathFunctionType {
@@ -39,7 +48,6 @@ public class PathFunction extends AbstractPart {
         return switch (castType) {
             case INT -> Exp.Type.INT;
             case FLOAT -> Exp.Type.FLOAT;
-            default -> throw new IllegalArgumentException("Unknown cast type: " + castType);
         };
     }
 }

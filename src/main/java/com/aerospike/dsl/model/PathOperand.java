@@ -1,7 +1,6 @@
 package com.aerospike.dsl.model;
 
 import com.aerospike.client.cdt.CTX;
-import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
@@ -35,11 +34,6 @@ public class PathOperand extends AbstractPart {
             if (pathFunction.getPathFunctionType() != null) pathFunctionType = pathFunction.getPathFunctionType();
         }
 
-        int cdtReturnType = switch (returnParam) {
-            case VALUE -> ListReturnType.VALUE; // same as MapReturnType.VALUE
-            case COUNT, NONE -> ListReturnType.COUNT; // same as MapReturnType.COUNT
-        };
-
         List<AbstractPart> parts = basePath.getParts();
         AbstractPart lastPathPart;
         if (!parts.isEmpty() || pathFunction != null) {
@@ -52,6 +46,8 @@ public class PathOperand extends AbstractPart {
                 lastPathPart = new MapBin();
                 basePath.getParts().add(lastPathPart);
             }
+
+            int cdtReturnType = ((CdtPart) lastPathPart).getReturnType(returnParam);
 
             return switch (pathFunctionType) {
                 // CAST is the same as get with a different type

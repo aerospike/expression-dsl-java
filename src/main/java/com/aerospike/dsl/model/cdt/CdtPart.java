@@ -5,6 +5,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.AbstractPart;
 import com.aerospike.dsl.model.BasePath;
+import com.aerospike.dsl.model.PathFunction;
 
 public abstract class CdtPart extends AbstractPart {
 
@@ -29,4 +30,6 @@ public abstract class CdtPart extends AbstractPart {
                     "Get by value from a CDT: unexpected value '%s'".formatted(valueType));
         };
     }
+
+    public abstract int getReturnType(PathFunction.ReturnParam returnParam);
 }
