@@ -448,4 +448,38 @@ public class MapExpressionsTests {
                 Exp.mapBin("mapBin1"));
         translateAndCompare("$.mapBin1.{0:~a}", expected);
     }
+
+    @Test
+    void mapReturnTypes() {
+        Exp expected = Exp.eq(
+                MapExp.getByKey(
+                        MapReturnType.COUNT,
+                        Exp.Type.INT,
+                        Exp.val("a"),
+                        Exp.mapBin("mapBin1")
+                ),
+                Exp.val(5));
+        // Implicit detect as Int
+        translateAndCompare("$.mapBin1.a.get(return: COUNT) == 5", expected);
+
+        expected = MapExp.getByKey(
+                MapReturnType.ORDERED_MAP,
+                Exp.Type.INT,
+                Exp.val("a"),
+                Exp.mapBin("mapBin1")
+        );
+        // Implicit detect as Int
+        translateAndCompare("$.mapBin1.a.get(return: ORDERED_MAP)", expected);
+
+        expected = Exp.eq(
+                MapExp.getByKey(
+                        MapReturnType.RANK,
+                        Exp.Type.INT,
+                        Exp.val("a"),
+                        Exp.mapBin("mapBin1")
+                ),
+                Exp.val(5));
+        // Implicit detect as Int
+        translateAndCompare("$.mapBin1.a.get(return: RANK) == 5", expected);
+    }
 }

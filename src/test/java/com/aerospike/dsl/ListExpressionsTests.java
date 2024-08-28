@@ -357,4 +357,40 @@ class ListExpressionsTests {
                 Exp.listBin("listBin1"));
         translateAndCompare("$.listBin1.[#-3:~b]", expected);
     }
+
+    @Test
+    void listReturnTypes() {
+        Exp expected = Exp.eq(
+                ListExp.getByIndex(
+                        ListReturnType.COUNT,
+                        Exp.Type.INT,
+                        Exp.val(0),
+                        Exp.listBin("listBin1")
+                ),
+                Exp.val(5));
+        // Implicit detect as Int
+        translateAndCompare("$.listBin1.[0].get(return: COUNT) == 5", expected);
+
+        expected = Exp.eq(
+                ListExp.getByIndex(
+                        ListReturnType.EXISTS,
+                        Exp.Type.INT,
+                        Exp.val(0),
+                        Exp.listBin("listBin1")
+                ),
+                Exp.val(true));
+        // Implicit detect as Int
+        translateAndCompare("$.listBin1.[0].get(return: EXISTS) == true", expected);
+
+        expected = Exp.eq(
+                ListExp.getByIndex(
+                        ListReturnType.INDEX,
+                        Exp.Type.INT,
+                        Exp.val(0),
+                        Exp.listBin("listBin1")
+                ),
+                Exp.val(1));
+        // Implicit detect as Int
+        translateAndCompare("$.listBin1.[0].get(return: INDEX) == 1", expected);
+    }
 }
