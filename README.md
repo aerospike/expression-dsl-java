@@ -1,7 +1,7 @@
 # Aerospike Expression DSL
 [![Build project](https://github.com/citrusleaf/expression-dsl-java/actions/workflows/build.yml/badge.svg)](https://github.com/citrusleaf/expression-dsl-java/actions/workflows/build.yml)
 
-Aerospike Expression DSL is a Java library that allows translating a canonical Aerospike Expression DSL query string into an Aerospike Expression.
+Aerospike Expression DSL is a Java library that allows translating a canonical Aerospike Expression DSL string into an Aerospike Expression.
 
 [Aerospike Expressions](https://aerospike.com/docs/server/guide/expressions) is a functional language for applying predicates to bin data and record metadata.  
 Expressions are essential to different areas of server functionality:
@@ -11,14 +11,14 @@ Expressions are essential to different areas of server functionality:
 * Operation Expressions (introduced in Aerospike Database 5.6)
 
 ## Why DSL
-A filter expression is created by combining the expression predicate classes using Polish notation, compiling it, and then attaching it to the query.
+A filter expression is created by combining the expression predicate classes using Polish notation, compiling it, and then attaching it to the operation.
 This approach has several limitations, including a difficult developer experience.
 
-Expressions require the use of native language clients. As a result, filter expressions cannot be used in places that only accept a query written in text.
+Expressions require the use of native language clients. As a result, filter expressions cannot be used in places that only accept a filter written in text.
 As a workaround, expressions can be created separately using a native client and exported as a base64-encoded string.
 
 A text-based DSL can be converted into Expressions and be used across frameworks, connectors, gateways, data browsers, IDE plug-ins, and all language-native clients.
-Having a standard way to describe query filters is easy to document and makes it accessible to developers regardless of their language preferences.
+Having a standard way to describe filters is easy to document and makes it accessible to developers regardless of their language preferences.
 
 ## Prerequisites
 * Java 17 or later

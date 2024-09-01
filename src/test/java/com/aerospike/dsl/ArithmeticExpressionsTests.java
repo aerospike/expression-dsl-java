@@ -52,7 +52,7 @@ public class ArithmeticExpressionsTests {
         translateAndCompare("(33 / $.bananas) <= 10",
                 Exp.le(Exp.div(Exp.val(33), Exp.intBin("bananas")), Exp.val(10)));
         // Exp should be constructed and equal and therefore the test is passing
-        // but when actually triggered in a query will get divide by zero exception
+        // but when actually triggered server will throw divide by zero exception
         translateAndCompare("($.apples / 0) <= 10",
                 Exp.le(Exp.div(Exp.intBin("apples"), Exp.val(0)), Exp.val(10)));
     }
