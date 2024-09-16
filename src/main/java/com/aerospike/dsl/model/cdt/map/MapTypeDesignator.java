@@ -18,11 +18,11 @@ public class MapTypeDesignator extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        var partsUntilDesignator = basePath.getParts().subList(0, basePath.getParts().size() - 1);
-        BasePath basePathUntilDesignator = new BasePath(basePath.getBinPart(), partsUntilDesignator);
-        int partsUntilDesignatorSize = partsUntilDesignator.size();
-        if ((partsUntilDesignatorSize > 0)) {
-            return ((CdtPart) partsUntilDesignator.get(partsUntilDesignatorSize - 1))
+        var partsUpToDesignator = basePath.getParts().subList(0, basePath.getParts().size() - 1);
+        BasePath basePathUntilDesignator = new BasePath(basePath.getBinPart(), partsUpToDesignator);
+        int partsUpToDesignatorSize = partsUpToDesignator.size();
+        if ((partsUpToDesignatorSize > 0)) {
+            return ((CdtPart) partsUpToDesignator.get(partsUpToDesignatorSize - 1))
                     .constructExp(basePathUntilDesignator, valueType, cdtReturnType, context);
         } else {
             // only bin

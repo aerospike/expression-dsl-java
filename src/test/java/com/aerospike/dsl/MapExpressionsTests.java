@@ -136,7 +136,6 @@ public class MapExpressionsTests {
                 ),
                 Exp.val(200));
         translateAndCompare("$.mapBin1.a.{}.size() == 200", expected);
-        // TODO: with context?
 
         // the default behaviour for size() without List '[]' or Map '{}' designators is List
         Exp expected2 = Exp.eq(

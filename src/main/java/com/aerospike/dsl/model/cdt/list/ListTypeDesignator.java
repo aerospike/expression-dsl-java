@@ -20,12 +20,12 @@ public class ListTypeDesignator extends ListPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        List<AbstractPart> partsUntilDesignator = !basePath.getParts().isEmpty()
+        List<AbstractPart> partsUpToDesignator = !basePath.getParts().isEmpty()
                 ? basePath.getParts().subList(0, basePath.getParts().size() - 1)
                 : new ArrayList<>();
-        BasePath basePathUntilDesignator = new BasePath(basePath.getBinPart(), partsUntilDesignator);
-        if ((!partsUntilDesignator.isEmpty())) {
-            return ((CdtPart) partsUntilDesignator.get(partsUntilDesignator.size() - 1))
+        BasePath basePathUntilDesignator = new BasePath(basePath.getBinPart(), partsUpToDesignator);
+        if ((!partsUpToDesignator.isEmpty())) {
+            return ((CdtPart) partsUpToDesignator.get(partsUpToDesignator.size() - 1))
                     .constructExp(basePathUntilDesignator, valueType, cdtReturnType, context);
         } else {
             // only bin
@@ -33,7 +33,7 @@ public class ListTypeDesignator extends ListPart {
         }
     }
 
-     public static ListTypeDesignator constructFromCTX() {
+    public static ListTypeDesignator constructFromCTX() {
         return new ListTypeDesignator();
     }
 }
