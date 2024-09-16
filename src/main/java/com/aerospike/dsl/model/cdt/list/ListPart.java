@@ -17,7 +17,8 @@ public abstract class ListPart extends CdtPart {
     }
 
     public enum ListPartType {
-        BIN,
+        LIST_TYPE_DESIGNATOR,
+        LIST_BIN,
         INDEX,
         VALUE,
         RANK,

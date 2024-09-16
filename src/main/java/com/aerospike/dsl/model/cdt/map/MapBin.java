@@ -5,10 +5,6 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.model.BasePath;
 import lombok.Getter;
 
-/**
- * Acts as a synthetic Map bin part, used for map.size() scenarios when we don't have any parts.
- * This is not needed in lists because list have [] for list bins.
- */
 @Getter
 public class MapBin extends MapPart {
 

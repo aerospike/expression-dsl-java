@@ -16,6 +16,7 @@ public abstract class MapPart extends CdtPart {
     }
 
     public enum MapPartType {
+        MAP_TYPE_DESIGNATOR,
         BIN,
         KEY,
         INDEX,

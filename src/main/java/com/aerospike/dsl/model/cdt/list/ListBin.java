@@ -7,7 +7,7 @@ import com.aerospike.dsl.model.BasePath;
 public class ListBin extends ListPart {
 
     public ListBin() {
-        super(ListPartType.BIN);
+        super(ListPartType.LIST_BIN);
     }
 
     @Override

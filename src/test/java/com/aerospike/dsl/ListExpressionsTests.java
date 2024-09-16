@@ -122,17 +122,31 @@ class ListExpressionsTests {
 
     @Test
     void listSize() {
-        // Without Context
         Exp expected = Exp.eq(
                 ListExp.size(Exp.listBin("listBin1")),
                 Exp.val(1));
         translateAndCompare("$.listBin1.[].size() == 1", expected);
 
-        // With Context
-        expected = Exp.eq(
-                ListExp.size(Exp.listBin("listBin1"), CTX.listIndex(2)),
-                Exp.val(1));
-        translateAndCompare("$.listBin1.[2].size() == 1", expected);
+        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        translateAndCompare("$.listBin1.size() == 1", expected);
+    }
+
+    @Test
+    void nestedListSize() {
+        // Without Context
+        Exp expected = Exp.eq(
+                ListExp.size(
+                        ListExp.getByIndex(ListReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val(1),
+                                Exp.listBin("listBin1"))
+                ),
+                Exp.val(100));
+        translateAndCompare("$.listBin1.[1].[].size() == 100", expected);
+        // TODO: with context?
+
+        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        translateAndCompare("$.listBin1.[1].size() == 100", expected);
     }
 
     @Test
