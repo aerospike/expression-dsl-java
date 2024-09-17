@@ -2,8 +2,10 @@ package com.aerospike.dsl;
 
 import com.aerospike.client.Value;
 import com.aerospike.client.cdt.CTX;
+import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
 import org.junit.jupiter.api.Test;
 
@@ -106,22 +108,72 @@ public class MapExpressionsTests {
 
     @Test
     void mapSize() {
-        // Without Context
         Exp expected = Exp.gt(
                 MapExp.size(
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.size() > 200", expected);
+        translateAndCompare("$.mapBin1.{}.size() > 200", expected);
 
-        // With Context
-        expected = Exp.gt(
-                MapExp.size(
-                        Exp.mapBin("mapBin1"),
-                        CTX.mapKey(Value.get("a"))
+        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        Exp expected2 = Exp.gt(
+                ListExp.size(
+                        Exp.listBin("mapBin1")
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.a.size() > 200", expected);
+        translateAndCompare("$.mapBin1.size() > 200", expected2);
+    }
+
+    @Test
+    void nestedMapSize() {
+        // Without Context
+        Exp expected = Exp.eq(
+                MapExp.size(
+                        MapExp.getByKey(ListReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val("a"),
+                                Exp.mapBin("mapBin1"))
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.a.{}.size() == 200", expected);
+
+        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        Exp expected2 = Exp.eq(
+                ListExp.size(
+                        MapExp.getByKey(MapReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val("a"),
+                                Exp.mapBin("mapBin1"))
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.a.size() == 200", expected2);
+    }
+
+    @Test
+    void nestedMapSizeWithContext() {
+        // With Context
+        Exp expected = Exp.eq(
+                MapExp.size(
+                        MapExp.getByKey(ListReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val("b"),
+                                Exp.mapBin("mapBin1"),
+                                CTX.mapKey(Value.get("a")))
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.a.b.{}.size() == 200", expected);
+
+        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        Exp expected2 = Exp.eq(
+                ListExp.size(
+                        MapExp.getByKey(MapReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val("b"),
+                                Exp.mapBin("mapBin1"),
+                                CTX.mapKey(Value.get("a")))
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.a.b.size() == 200", expected2);
     }
 
     @Test

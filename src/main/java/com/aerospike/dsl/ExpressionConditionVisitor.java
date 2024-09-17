@@ -618,7 +618,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitListPart(ConditionParser.ListPartContext ctx) {
-        if (ctx.LIST_BIN() != null) return new ListBin();
+        if (ctx.LIST_TYPE_DESIGNATOR() != null) return ListTypeDesignator.constructFromCTX();
         if (ctx.listIndex() != null) return ListIndex.constructFromCTX(ctx.listIndex());
         if (ctx.listValue() != null) return ListValue.constructFromCTX(ctx.listValue());
         if (ctx.listRank() != null) return ListRank.constructFromCTX(ctx.listRank());
@@ -633,6 +633,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitMapPart(ConditionParser.MapPartContext ctx) {
+        if (ctx.MAP_TYPE_DESIGNATOR() != null) return MapTypeDesignator.constructFromCTX();
         if (ctx.mapKey() != null) return MapKey.constructFromCTX(ctx.mapKey());
         if (ctx.mapIndex() != null) return MapIndex.constructFromCTX(ctx.mapIndex());
         if (ctx.mapValue() != null) return MapValue.constructFromCTX(ctx.mapValue());

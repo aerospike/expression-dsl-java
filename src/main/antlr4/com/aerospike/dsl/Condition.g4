@@ -163,7 +163,8 @@ PATH_FUNCTION_MAP_RETURN_TYPE
 binPart: NAME_IDENTIFIER;
 
 mapPart
-    : mapKey
+    : MAP_TYPE_DESIGNATOR
+    | mapKey
     | mapValue
     | mapRank
     | mapIndex
@@ -176,6 +177,8 @@ mapPart
     | mapRankRangeRelative
     | mapIndexRangeRelative
     ;
+
+MAP_TYPE_DESIGNATOR: '{}';
 
 mapKey
     : NAME_IDENTIFIER
@@ -342,7 +345,7 @@ relativeKeyEnd
     ;
 
 listPart
-    : LIST_BIN
+    : LIST_TYPE_DESIGNATOR
     | listIndex
     | listValue
     | listRank
@@ -353,7 +356,7 @@ listPart
     | listRankRangeRelative
     ;
 
-LIST_BIN: '[]';
+LIST_TYPE_DESIGNATOR: '[]';
 
 listIndex: '[' INT ']';
 

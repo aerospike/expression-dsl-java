@@ -122,17 +122,48 @@ class ListExpressionsTests {
 
     @Test
     void listSize() {
-        // Without Context
         Exp expected = Exp.eq(
                 ListExp.size(Exp.listBin("listBin1")),
                 Exp.val(1));
         translateAndCompare("$.listBin1.[].size() == 1", expected);
 
+        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        translateAndCompare("$.listBin1.size() == 1", expected);
+    }
+
+    @Test
+    void nestedListSize() {
+        // Without Context
+        Exp expected = Exp.eq(
+                ListExp.size(
+                        ListExp.getByIndex(ListReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val(1),
+                                Exp.listBin("listBin1"))
+                ),
+                Exp.val(100));
+        translateAndCompare("$.listBin1.[1].[].size() == 100", expected);
+
+        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        translateAndCompare("$.listBin1.[1].size() == 100", expected);
+    }
+
+    @Test
+    void nestedListSizeWithContext() {
         // With Context
-        expected = Exp.eq(
-                ListExp.size(Exp.listBin("listBin1"), CTX.listIndex(2)),
-                Exp.val(1));
-        translateAndCompare("$.listBin1.[2].size() == 1", expected);
+        Exp expected = Exp.eq(
+                ListExp.size(
+                        ListExp.getByIndex(ListReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val(2),
+                                Exp.listBin("listBin1"),
+                                CTX.listIndex(1))
+                ),
+                Exp.val(100));
+        translateAndCompare("$.listBin1.[1].[2].[].size() == 100", expected);
+
+        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        translateAndCompare("$.listBin1.[1].[2].size() == 100", expected);
     }
 
     @Test
@@ -179,20 +210,19 @@ class ListExpressionsTests {
         translateAndCompare("$.listBin1.[5].[#-1].[=100] == 200", expected);
     }
 
-//    @Test
-//    void listBinElementCount() {
-//        Exp expected = Exp.eq(
-//                ListExp.getByIndex(
-//                        ListReturnType.COUNT,
-//                        Exp.Type.LIST, // TODO: how to determine the type of $.listBin1.[0]? could be list/map
-//                        Exp.val(0),
-//                        Exp.listBin("listBin1")
-//                ),
-//                Exp.val(100));
-//        translateAndCompare("$.listBin1.[0].count() == 1", expected);
-//        translateAndCompare("$.listBin1.[0].get(return: COUNT) == 1", expected);
-//        translateAndCompare("$.listBin1.[0].get(type: INT, return: COUNT) == 1", expected);
-//    }
+    @Test
+    void listBinElementCount() {
+        Exp expected = Exp.eq(
+                ListExp.getByIndex(
+                        ListReturnType.COUNT,
+                        Exp.Type.LIST,
+                        Exp.val(0),
+                        Exp.listBin("listBin1")
+                ),
+                Exp.val(100));
+        translateAndCompare("$.listBin1.[0].count() == 100", expected);
+        translateAndCompare("$.listBin1.[0].[].count() == 100", expected);
+    }
 
     //@Test
     void negativeSyntaxList() {
