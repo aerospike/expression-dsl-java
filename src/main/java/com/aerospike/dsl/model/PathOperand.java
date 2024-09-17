@@ -65,7 +65,8 @@ public class PathOperand extends AbstractPart {
         }
         if (lastPart instanceof ListPart listPart) { // check that lastPart is CDT List
             // check relevant types
-            return List.of(ListPart.ListPartType.INDEX, ListPart.ListPartType.RANK).contains(listPart.getListPartType());
+            return List.of(ListPart.ListPartType.INDEX, ListPart.ListPartType.RANK)
+                    .contains(listPart.getListPartType());
         }
         return false;
     }
@@ -159,7 +160,7 @@ public class PathOperand extends AbstractPart {
                                                  List<AbstractPart> parts) {
         // if existing path function type is SIZE or COUNT,
         // or if path function type is GET with return type COUNT
-        // and parts are empty (only bin) or previous CDT part is ambiguous (index or rank)
+        // and parts are empty (only bin) or previous CDT part is ambiguous (index, rank or map key)
         return pathFunction != null
                 && (List.of(SIZE, COUNT).contains(pathFunction.getPathFunctionType())
                 || pathFunctionIsGetWithCount(pathFunction))

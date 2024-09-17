@@ -149,6 +149,24 @@ class ListExpressionsTests {
     }
 
     @Test
+    void nestedListSizeWithContext() {
+        // With Context
+        Exp expected = Exp.eq(
+                ListExp.size(
+                        ListExp.getByIndex(ListReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val(2),
+                                Exp.listBin("listBin1"),
+                                CTX.listIndex(1))
+                ),
+                Exp.val(100));
+        translateAndCompare("$.listBin1.[1].[2].[].size() == 100", expected);
+
+        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        translateAndCompare("$.listBin1.[1].[2].size() == 100", expected);
+    }
+
+    @Test
     void nestedLists() {
         Exp expected = Exp.eq(
                 ListExp.getByIndex(

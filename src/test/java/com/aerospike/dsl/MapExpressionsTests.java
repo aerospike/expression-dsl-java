@@ -150,6 +150,33 @@ public class MapExpressionsTests {
     }
 
     @Test
+    void nestedMapSizeWithContext() {
+        // With Context
+        Exp expected = Exp.eq(
+                MapExp.size(
+                        MapExp.getByKey(ListReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val("b"),
+                                Exp.mapBin("mapBin1"),
+                                CTX.mapKey(Value.get("a")))
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.a.b.{}.size() == 200", expected);
+
+        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        Exp expected2 = Exp.eq(
+                ListExp.size(
+                        MapExp.getByKey(MapReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val("b"),
+                                Exp.mapBin("mapBin1"),
+                                CTX.mapKey(Value.get("a")))
+                ),
+                Exp.val(200));
+        translateAndCompare("$.mapBin1.a.b.size() == 200", expected2);
+    }
+
+    @Test
     void mapByIndex() {
         Exp expected = Exp.eq(
                 MapExp.getByIndex(

@@ -97,6 +97,24 @@ public class MapAndListExpressionsTests {
     }
 
     @Test
+    void listMapListSize() {
+        Exp expected = Exp.eq(
+                ListExp.size(
+                        ListExp.getByIndex(
+                                ListReturnType.VALUE,
+                                Exp.Type.INT,
+                                Exp.val(0),
+                                Exp.listBin("listBin1"),
+                                CTX.listIndex(1),
+                                CTX.mapKey(Value.get("a"))
+                        )
+                ),
+                Exp.val(100));
+        translateAndCompare("$.listBin1.[1].a.[0].size() == 100", expected);
+        translateAndCompare("$.listBin1.[1].a.[0].[].size() == 100", expected);
+    }
+
+    @Test
     void mapListMap() {
         Exp expected = Exp.gt(
                 MapExp.getByKey(
