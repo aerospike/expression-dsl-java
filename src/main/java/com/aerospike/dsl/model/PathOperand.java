@@ -74,7 +74,7 @@ public class PathOperand extends AbstractPart {
 
     private static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int cdtReturnType,
                                   PathFunction pathFunction) {
-        if (lastPathPart != null) {
+        if (lastPathPart != null) { // if there are other parts except bin
             if (lastPathPart.getPartType() == PartType.LIST_PART) {
                 return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, pathFunction, (ListPart) lastPathPart);
             } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
@@ -82,11 +82,7 @@ public class PathOperand extends AbstractPart {
             }
             return null;
         } else {
-            // Context can be empty
-            CTX[] context = getContextArray(basePath.getParts(), false);
-            valueType = findValueTypeIfNull(valueType, lastPathPart, pathFunction);
-            BinPart binPart = basePath.getBinPart();
-            return Exp.bin(binPart.getBinName(), basePath.getBinType());
+            return null;
         }
     }
 
