@@ -91,6 +91,9 @@ public class ExplicitTypesTests {
         translateAndCompare("$.listBin1.get(type: LIST) == [100]",
                 Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of(100))));
 
+        translateAndCompare("$.listBin1.[] == [100]",
+                Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of(100))));
+
         // integer values are read as long
         translateAndCompare("$.listBin1.get(type: LIST) == [100, 200, 300, 400]",
                 Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of(100, 200, 300, 400))));
@@ -101,6 +104,9 @@ public class ExplicitTypesTests {
 
         translateAndCompare("$.listBin1.get(type: LIST) == ['yes']",
                 Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of("yes"))));
+
+        translateAndCompare("$.listBin1.get(type: LIST) == ['yes', 'of course']",
+                Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of("yes", "of course"))));
 
         translateAndCompare("$.listBin1.get(type: LIST) == [\"yes\"]",
                 Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of("yes"))));
@@ -125,6 +131,9 @@ public class ExplicitTypesTests {
         translateAndCompare("[100] == $.listBin1.get(type: LIST)",
                 Exp.eq(Exp.val(List.of(100)), Exp.listBin("listBin1")));
 
+        translateAndCompare("[100] == $.listBin1.[]",
+                Exp.eq(Exp.val(List.of(100)), Exp.listBin("listBin1")));
+
         // integer values are read as long
         translateAndCompare("[100, 200, 300, 400] == $.listBin1.get(type: LIST)",
                 Exp.eq(Exp.val(List.of(100, 200, 300, 400)), Exp.listBin("listBin1")));
@@ -135,6 +144,9 @@ public class ExplicitTypesTests {
 
         translateAndCompare("['yes'] == $.listBin1.get(type: LIST)",
                 Exp.eq(Exp.val(List.of("yes")), Exp.listBin("listBin1")));
+
+        translateAndCompare("['yes', 'of course'] == $.listBin1.get(type: LIST)",
+                Exp.eq(Exp.val(List.of("yes", "of course")), Exp.listBin("listBin1")));
 
         translateAndCompare("[\"yes\"] == $.listBin1.get(type: LIST)",
                 Exp.eq(Exp.val(List.of("yes")), Exp.listBin("listBin1")));
@@ -172,25 +184,28 @@ public class ExplicitTypesTests {
 
     @Test
     void mapComparison_constantOnRightSide() {
-        // Only ordered maps can be compared with ordered map constants
-        translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {100:100}",
+        // Only ordered maps can be compared
+        translateAndCompare("$.mapBin1.get(type: MAP) == {100:100}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100, 100))));
+
+        translateAndCompare("$.mapBin1.{} == {100:100}",
                 Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100, 100))));
 
         // integer values are read as long
-        translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {100:200, 300:400}",
+        translateAndCompare("$.mapBin1.get(type: MAP) == {100:200, 300:400}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100L, 200L, 300L, 400L))));
+
+        translateAndCompare("$.mapBin1.get(type: MAP) == {100:200, 300:400}",
                 Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100, 200, 300, 400))));
 
-        translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {100:200, 300:400}",
-                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100, 200, 300, 400))));
-
-        translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {'yes?':'yes!'}",
+        translateAndCompare("$.mapBin1.get(type: MAP) == {'yes?':'yes!'}",
                 Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes?", "yes!"))));
 
-        translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {\"yes\" : \"yes\"}",
+        translateAndCompare("$.mapBin1.get(type: MAP) == {\"yes\" : \"yes\"}",
                 Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes", "yes"))));
 
         translateAndCompare(
-                "$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {\"yes of course\" : \"yes of course\"}",
+                "$.mapBin1.get(type: MAP) == {\"yes of course\" : \"yes of course\"}",
                 Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes of course", "yes of course"))));
     }
 
@@ -198,34 +213,44 @@ public class ExplicitTypesTests {
     void mapComparison_constantOnRightSide_NegativeTest() {
         // A String constant must be quoted
         assertThatThrownBy(() ->
-                translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {yes, of course}",
+                translateAndCompare("$.mapBin1.get(type: MAP) == {yes, of course}",
                         Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes", "of course"))))
         )
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessage("Unable to parse map operand");
+
+        assertThatThrownBy(() ->
+                translateAndCompare("$.mapBin1.get(type: MAP) == ['yes', 'of course']",
+                        Exp.eq(Exp.mapBin("mapBin1"), Exp.val(List.of("yes", "of course"))))
+        )
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessage("Cannot compare MAP to LIST");
     }
 
     @Test
     void mapComparison_constantOnLeftSide() {
-        // Only ordered maps can be compared with ordered map constants
-        translateAndCompare("{100:100} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+        // Only ordered maps can be compared
+        translateAndCompare("{100:100} == $.mapBin1.get(type: MAP)",
+                Exp.eq(Exp.val(treeMapOf(100, 100)), Exp.mapBin("mapBin1")));
+
+        translateAndCompare("{100:100} == $.mapBin1.{}",
                 Exp.eq(Exp.val(treeMapOf(100, 100)), Exp.mapBin("mapBin1")));
 
         // integer values are read as long
-        translateAndCompare("{100:200, 300:400} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+        translateAndCompare("{100:200, 300:400} == $.mapBin1.get(type: MAP)",
+                Exp.eq(Exp.val(treeMapOf(100L, 200L, 300L, 400L)), Exp.mapBin("mapBin1")));
+
+        translateAndCompare("{100:200, 300:400} == $.mapBin1.get(type: MAP)",
                 Exp.eq(Exp.val(treeMapOf(100, 200, 300, 400)), Exp.mapBin("mapBin1")));
 
-        translateAndCompare("{100:200, 300:400} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
-                Exp.eq(Exp.val(treeMapOf(100, 200, 300, 400)), Exp.mapBin("mapBin1")));
-
-        translateAndCompare("{'yes?':'yes!'} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+        translateAndCompare("{'yes?':'yes!'} == $.mapBin1.get(type: MAP)",
                 Exp.eq(Exp.val(treeMapOf("yes?", "yes!")), Exp.mapBin("mapBin1")));
 
-        translateAndCompare("{\"yes\" : \"yes\"} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+        translateAndCompare("{\"yes\" : \"yes\"} == $.mapBin1.get(type: MAP)",
                 Exp.eq(Exp.val(treeMapOf("yes", "yes")), Exp.mapBin("mapBin1")));
 
         translateAndCompare(
-                "{\"yes of course\" : \"yes of course\"} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+                "{\"yes of course\" : \"yes of course\"} == $.mapBin1.get(type: MAP)",
                 Exp.eq(Exp.val(treeMapOf("yes of course", "yes of course")), Exp.mapBin("mapBin1")));
     }
 
@@ -233,11 +258,18 @@ public class ExplicitTypesTests {
     void mapComparison_constantOnLeftSide_NegativeTest() {
         // A String constant must be quoted
         assertThatThrownBy(() ->
-                translateAndCompare("{yes, of course} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+                translateAndCompare("{yes, of course} == $.mapBin1.get(type: MAP)",
                         Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("of course", "yes"))))
         )
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessage("Could not parse given input, wrong syntax");
+
+        assertThatThrownBy(() ->
+                translateAndCompare("['yes', 'of course'] == $.mapBin1.get(type: MAP)", // incorrect format: must be {}
+                        Exp.eq(Exp.val(List.of("yes", "of course")), Exp.mapBin("mapBin1")))
+        )
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessage("Cannot compare LIST to MAP");
     }
 
     @Test

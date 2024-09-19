@@ -319,7 +319,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 ValidationUtils.validateComparableTypes(left.getExpType(), right.getExpType());
                 yield operator.apply(left.getExp(), right.getExp());
             }
-            case LIST_OPERAND, MAP_OPERAND -> operator.apply(left.getExp(), right.getExp());
+            case LIST_OPERAND -> {
+                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.LIST);
+                yield operator.apply(left.getExp(), right.getExp());
+            }
+            case MAP_OPERAND -> {
+                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.MAP);
+                yield operator.apply(left.getExp(), right.getExp());
+            }
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
         };
     }
@@ -364,7 +371,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             case EXPR, PATH_OPERAND ->
                     operator.apply(left.getExp(), right.getExp()); // Can't validate with Expr on one side
             // No need for 2 BIN_OPERAND handling since it's covered in the left condition
-            case LIST_OPERAND, MAP_OPERAND -> operator.apply(left.getExp(), right.getExp());
+            case LIST_OPERAND -> {
+                ValidationUtils.validateComparableTypes(Exp.Type.LIST, right.getExpType());
+                yield operator.apply(left.getExp(), right.getExp());
+            }
+            case MAP_OPERAND -> {
+                ValidationUtils.validateComparableTypes(Exp.Type.MAP, right.getExpType());
+                yield operator.apply(left.getExp(), right.getExp());
+            }
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
         };
     }

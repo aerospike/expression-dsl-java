@@ -14,7 +14,7 @@ public class ValidationUtils {
                             (leftType.equals(Exp.Type.FLOAT) && rightType.equals(Exp.Type.INT));
 
             if (!leftType.equals(rightType) && !isIntAndFloat) {
-                throw new AerospikeDSLException("Cannot compare %s to %s.".formatted(leftType, rightType));
+                throw new AerospikeDSLException("Cannot compare %s to %s".formatted(leftType, rightType));
             }
         }
     }
