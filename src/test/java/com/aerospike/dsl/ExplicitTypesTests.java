@@ -5,6 +5,8 @@ import com.aerospike.dsl.exception.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
+import java.util.List;
+import java.util.TreeMap;
 
 import static com.aerospike.dsl.util.TestUtils.translate;
 import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
@@ -17,12 +19,34 @@ public class ExplicitTypesTests {
     void integerComparison() {
         translateAndCompare("$.intBin1.get(type: INT) > 5",
                 Exp.gt(Exp.intBin("intBin1"), Exp.val(5)));
+
+        translateAndCompare("5 < $.intBin1.get(type: INT)",
+                Exp.lt(Exp.val(5), Exp.intBin("intBin1")));
     }
 
     @Test
     void stringComparison() {
+        // A String constant must contain quoted Strings
         translateAndCompare("$.stringBin1.get(type: STRING) == \"yes\"",
                 Exp.eq(Exp.stringBin("stringBin1"), Exp.val("yes")));
+
+        translateAndCompare("$.stringBin1.get(type: STRING) == 'yes'",
+                Exp.eq(Exp.stringBin("stringBin1"), Exp.val("yes")));
+
+        translateAndCompare("\"yes\" == $.stringBin1.get(type: STRING)",
+                Exp.eq(Exp.val("yes"), Exp.stringBin("stringBin1")));
+
+        translateAndCompare("'yes' == $.stringBin1.get(type: STRING)",
+                Exp.eq(Exp.val("yes"), Exp.stringBin("stringBin1")));
+    }
+
+    @Test
+    void stringComparisonNegativeTest() {
+        // A String constant must be quoted
+        assertThatThrownBy(() -> translateAndCompare("$.stringBin1.get(type: STRING) == yes",
+                Exp.eq(Exp.stringBin("stringBin1"), Exp.val("yes"))))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessage("Unable to parse right operand");
     }
 
     @Test
@@ -41,12 +65,18 @@ public class ExplicitTypesTests {
     void floatComparison() {
         translateAndCompare("$.floatBin1.get(type: FLOAT) == 1.5",
                 Exp.eq(Exp.floatBin("floatBin1"), Exp.val(1.5)));
+
+        translateAndCompare("1.5 == $.floatBin1.get(type: FLOAT)",
+                Exp.eq(Exp.val(1.5), Exp.floatBin("floatBin1")));
     }
 
     @Test
     void booleanComparison() {
         translateAndCompare("$.boolBin1.get(type: BOOL) == true",
                 Exp.eq(Exp.boolBin("boolBin1"), Exp.val(true)));
+
+        translateAndCompare("true == $.boolBin1.get(type: BOOL)",
+                Exp.eq(Exp.val(true), Exp.boolBin("boolBin1")));
     }
 
     @Test
@@ -54,6 +84,160 @@ public class ExplicitTypesTests {
         assertThatThrownBy(() -> translate("$.boolBin1.get(type: BOOL) == 5"))
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("Cannot compare BOOL to INT");
+    }
+
+    @Test
+    void listComparison_constantOnRightSide() {
+        translateAndCompare("$.listBin1.get(type: LIST) == [100]",
+                Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of(100))));
+
+        // integer values are read as long
+        translateAndCompare("$.listBin1.get(type: LIST) == [100, 200, 300, 400]",
+                Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of(100, 200, 300, 400))));
+
+        // integer values are read as long
+        translateAndCompare("$.listBin1.get(type: LIST) == [100, 200, 300, 400]",
+                Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of(100L, 200L, 300L, 400L))));
+
+        translateAndCompare("$.listBin1.get(type: LIST) == ['yes']",
+                Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of("yes"))));
+
+        translateAndCompare("$.listBin1.get(type: LIST) == [\"yes\"]",
+                Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of("yes"))));
+
+        translateAndCompare("$.listBin1.get(type: LIST) == [\"yes\", \"of course\"]",
+                Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of("yes", "of course"))));
+    }
+
+    @Test
+    void listComparison_constantOnRightSide_NegativeTest() {
+        // A String constant must be quoted
+        assertThatThrownBy(() ->
+                translateAndCompare("$.listBin1.get(type: LIST) == [yes, of course]",
+                        Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of("yes", "of course"))))
+        )
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessage("Unable to parse list operand");
+    }
+
+    @Test
+    void listComparison_constantOnLeftSide() {
+        translateAndCompare("[100] == $.listBin1.get(type: LIST)",
+                Exp.eq(Exp.val(List.of(100)), Exp.listBin("listBin1")));
+
+        // integer values are read as long
+        translateAndCompare("[100, 200, 300, 400] == $.listBin1.get(type: LIST)",
+                Exp.eq(Exp.val(List.of(100, 200, 300, 400)), Exp.listBin("listBin1")));
+
+        // integer values are read as long
+        translateAndCompare("[100, 200, 300, 400] == $.listBin1.get(type: LIST)",
+                Exp.eq(Exp.val(List.of(100L, 200L, 300L, 400L)), Exp.listBin("listBin1")));
+
+        translateAndCompare("['yes'] == $.listBin1.get(type: LIST)",
+                Exp.eq(Exp.val(List.of("yes")), Exp.listBin("listBin1")));
+
+        translateAndCompare("[\"yes\"] == $.listBin1.get(type: LIST)",
+                Exp.eq(Exp.val(List.of("yes")), Exp.listBin("listBin1")));
+
+        translateAndCompare("[\"yes\", \"of course\"] == $.listBin1.get(type: LIST)",
+                Exp.eq(Exp.val(List.of("yes", "of course")), Exp.listBin("listBin1")));
+    }
+
+    @Test
+    void listComparison_constantOnLeftSide_NegativeTest() {
+        // A String constant must be quoted
+        assertThatThrownBy(() ->
+                translateAndCompare("[yes, of course] == $.listBin1.get(type: LIST)",
+                        Exp.eq(Exp.val(List.of("yes", "of course")), Exp.listBin("listBin1")))
+        )
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessage("Could not parse given input, wrong syntax");
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> TreeMap<K, V> treeMapOf(Object... entries) {
+        TreeMap<K, V> map = new TreeMap<>();
+
+        if (entries.length % 2 != 0) {
+            throw new IllegalArgumentException("You must provide an even number of arguments.");
+        }
+
+        for (int i = 0; i < entries.length; i += 2) {
+            K key = (K) entries[i];
+            V value = (V) entries[i + 1];
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    @Test
+    void mapComparison_constantOnRightSide() {
+        // Only ordered maps can be compared with ordered map constants
+        translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {100:100}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100, 100))));
+
+        // integer values are read as long
+        translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {100:200, 300:400}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100, 200, 300, 400))));
+
+        translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {100:200, 300:400}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100, 200, 300, 400))));
+
+        translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {'yes?':'yes!'}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes?", "yes!"))));
+
+        translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {\"yes\" : \"yes\"}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes", "yes"))));
+
+        translateAndCompare(
+                "$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {\"yes of course\" : \"yes of course\"}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes of course", "yes of course"))));
+    }
+
+    @Test
+    void mapComparison_constantOnRightSide_NegativeTest() {
+        // A String constant must be quoted
+        assertThatThrownBy(() ->
+                translateAndCompare("$.mapBin1.get(type: MAP, return: ORDERED_MAP) == {yes, of course}",
+                        Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes", "of course"))))
+        )
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessage("Unable to parse map operand");
+    }
+
+    @Test
+    void mapComparison_constantOnLeftSide() {
+        // Only ordered maps can be compared with ordered map constants
+        translateAndCompare("{100:100} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+                Exp.eq(Exp.val(treeMapOf(100, 100)), Exp.mapBin("mapBin1")));
+
+        // integer values are read as long
+        translateAndCompare("{100:200, 300:400} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+                Exp.eq(Exp.val(treeMapOf(100, 200, 300, 400)), Exp.mapBin("mapBin1")));
+
+        translateAndCompare("{100:200, 300:400} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+                Exp.eq(Exp.val(treeMapOf(100, 200, 300, 400)), Exp.mapBin("mapBin1")));
+
+        translateAndCompare("{'yes?':'yes!'} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+                Exp.eq(Exp.val(treeMapOf("yes?", "yes!")), Exp.mapBin("mapBin1")));
+
+        translateAndCompare("{\"yes\" : \"yes\"} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+                Exp.eq(Exp.val(treeMapOf("yes", "yes")), Exp.mapBin("mapBin1")));
+
+        translateAndCompare(
+                "{\"yes of course\" : \"yes of course\"} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+                Exp.eq(Exp.val(treeMapOf("yes of course", "yes of course")), Exp.mapBin("mapBin1")));
+    }
+
+    @Test
+    void mapComparison_constantOnLeftSide_NegativeTest() {
+        // A String constant must be quoted
+        assertThatThrownBy(() ->
+                translateAndCompare("{yes, of course} == $.mapBin1.get(type: MAP, return: ORDERED_MAP)",
+                        Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("of course", "yes"))))
+        )
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessage("Could not parse given input, wrong syntax");
     }
 
     @Test

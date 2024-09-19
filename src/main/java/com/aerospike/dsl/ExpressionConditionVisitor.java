@@ -7,10 +7,9 @@ import com.aerospike.dsl.model.cdt.list.*;
 import com.aerospike.dsl.model.cdt.map.*;
 import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.RuleNode;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
@@ -295,7 +294,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         left.getExpType().equals(Exp.Type.BLOB)) {
                     // Base64 Blob
                     ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BLOB);
-                    String base64String = ((StringOperand) right).getString();
+                    String base64String = ((StringOperand) right).getValue();
                     byte[] value = Base64.getDecoder().decode(base64String);
                     yield operator.apply(left.getExp(), Exp.val(value));
                 } else {
@@ -320,6 +319,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 ValidationUtils.validateComparableTypes(left.getExpType(), right.getExpType());
                 yield operator.apply(left.getExp(), right.getExp());
             }
+            case LIST_OPERAND, MAP_OPERAND -> operator.apply(left.getExp(), right.getExp());
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
         };
     }
@@ -344,7 +344,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         right.getExpType().equals(Exp.Type.BLOB)) {
                     // Base64 Blob
                     ValidationUtils.validateComparableTypes(Exp.Type.BLOB, right.getExpType());
-                    String base64String = ((StringOperand) left).getString();
+                    String base64String = ((StringOperand) left).getValue();
                     byte[] value = Base64.getDecoder().decode(base64String);
                     yield operator.apply(Exp.val(value), right.getExp());
                 } else {
@@ -364,6 +364,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             case EXPR, PATH_OPERAND ->
                     operator.apply(left.getExp(), right.getExp()); // Can't validate with Expr on one side
             // No need for 2 BIN_OPERAND handling since it's covered in the left condition
+            case LIST_OPERAND, MAP_OPERAND -> operator.apply(left.getExp(), right.getExp());
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
         };
     }
@@ -467,13 +468,94 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
+    public AbstractPart visitBinPart(ConditionParser.BinPartContext ctx) {
+        return new BinPart(ctx.NAME_IDENTIFIER().getText());
+    }
+
+    @Override
     public AbstractPart visitOperandExpression(ConditionParser.OperandExpressionContext ctx) {
         return visit(ctx.operand());
     }
 
     @Override
-    public AbstractPart visitBinPart(ConditionParser.BinPartContext ctx) {
-        return new BinPart(ctx.NAME_IDENTIFIER().getText());
+    public AbstractPart visitListOperand(ConditionParser.ListOperandContext ctx) {
+        return readChildrenIntoListOperand(ctx);
+    }
+
+    public ListOperand readChildrenIntoListOperand(RuleNode listNode) {
+        int size = listNode.getChildCount();
+        List<Object> list = new ArrayList<>();
+        for (int i=0; i<size; i++) {
+            ParseTree child = listNode.getChild(i);
+            if (!shouldVisitListElement(i, size, child)) {
+                continue;
+            }
+
+            AbstractPart operand = visit(child); // delegate to a dedicated visitor
+            if (operand == null) {
+                throw new AerospikeDSLException("Unable to parse list operand");
+            }
+
+            try {
+                list.add(((ParsedOperand) operand).getValue());
+            } catch (ClassCastException e) {
+                throw new AerospikeDSLException("List constant contains elements of different type");
+            }
+        }
+
+        return new ListOperand(list);
+    }
+
+    private boolean shouldVisitListElement(int i, int size, ParseTree child) {
+        return size > 0 // size is not 0
+                && i != 0 // not the first element ('[')
+                && i != size - 1 // not the last element (']')
+                && !child.getText().equals(","); // not a comma (list elements separator)
+    }
+
+    @Override
+    public AbstractPart visitOrderedMapOperand(ConditionParser.OrderedMapOperandContext ctx) {
+        return readChildrenIntoMapOperand(ctx);
+    }
+
+    public TreeMap<Object, Object> getOrderedMapPair(ParseTree ctx) {
+        if (ctx.getChild(0) == null || ctx.getChild(2) == null) {
+            throw new AerospikeDSLException("Unable to parse map operand");
+        }
+        Object key = ((ParsedOperand) visit(ctx.getChild(0))).getValue();
+        Object value = ((ParsedOperand) visit(ctx.getChild(2))).getValue();
+        TreeMap<Object, Object> map = new TreeMap<>();
+        map.put(key, value);
+        return map;
+    }
+
+    public MapOperand readChildrenIntoMapOperand(RuleNode mapNode) {
+        int size = mapNode.getChildCount();
+        TreeMap<Object, Object> map = new TreeMap<>();
+        for (int i=0; i<size; i++) {
+            ParseTree child = mapNode.getChild(i);
+            if (!shouldVisitMapElement(i, size, child)) {
+                continue;
+            }
+
+            TreeMap<Object, Object> mapOfPair = getOrderedMapPair(child); // delegate to a dedicated visitor
+
+            try {
+                 mapOfPair.forEach(map::putIfAbsent); // put contents of the current map pair to the resulting map
+            } catch (ClassCastException e) {
+                throw new AerospikeDSLException("Map constant contains elements of different type");
+            }
+        }
+
+        return new MapOperand(map);
+    }
+
+    private boolean shouldVisitMapElement(int i, int size, ParseTree child) {
+        return size > 0 // size is not 0
+                && i != 0 // not the first element ('{')
+                && i != size - 1 // not the last element ('}')
+                && !child.getText().equals(":") // not a colon (map key and value separator)
+                && !child.getText().equals(","); // not a comma (map pairs separator)
     }
 
     @Override
@@ -607,7 +689,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         List<AbstractPart> parts = basePath.getParts();
 
         // if there are other parts except bin, get a corresponding Exp
-        if (!parts.isEmpty() || ctx.pathFunction() != null && ctx.pathFunction().pathFunctionSize() != null) {
+        if (!parts.isEmpty() || ctx.pathFunction() != null && ctx.pathFunction().getChildCount() > 0) {
             Exp exp = PathOperand.processPath(basePath, ctx.pathFunction() == null
                     ? null
                     : (PathFunction) visit(ctx.pathFunction()));

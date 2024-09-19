@@ -27,6 +27,8 @@ public abstract class AbstractPart {
         FLOAT_OPERAND,
         BOOL_OPERAND,
         STRING_OPERAND,
+        LIST_OPERAND,
+        MAP_OPERAND,
         BASE_PATH,
         BIN_PART,
         LIST_PART,

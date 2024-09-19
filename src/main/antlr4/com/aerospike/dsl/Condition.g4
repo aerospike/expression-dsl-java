@@ -50,12 +50,20 @@ operand
     : numberOperand
     | booleanOperand
     | stringOperand
+    | listOperand
+    | orderedMapOperand
     | variable
     | '$.' pathOrMetadata
     | '(' expression ')'
     ;
 
 numberOperand: intOperand | floatOperand;
+
+listOperand: '[' operand? (',' operand)* ']';
+
+orderedMapOperand: '{' orderedMapPair? (',' orderedMapPair)* '}';
+
+orderedMapPair: (operand ':' operand);
 
 intOperand: INT;
 floatOperand: FLOAT;

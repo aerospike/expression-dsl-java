@@ -4,12 +4,12 @@ import com.aerospike.client.exp.Exp;
 import lombok.Getter;
 
 @Getter
-public class StringOperand extends AbstractPart {
+public class StringOperand extends AbstractPart implements ParsedOperand {
 
-    private final String string;
+    private final String value;
 
     public StringOperand(String string) {
         super(PartType.STRING_OPERAND, Exp.val(string));
-        this.string = string;
+        this.value = string;
     }
 }

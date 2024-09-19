@@ -44,9 +44,10 @@ public class PathOperand extends AbstractPart {
         List<AbstractPart> parts = basePath.getParts();
         if (!parts.isEmpty() || pathFunction != null) {
             basePath = updateWithCdtTypeDesignator(basePath, pathFunction);
-            AbstractPart lastPathPart = basePath.getParts().get(basePath.getParts().size() - 1);
+            AbstractPart lastPathPart = !parts.isEmpty() ? parts.get(parts.size() - 1) : null;
 
-            int cdtReturnType = ((CdtPart) lastPathPart).getReturnType(returnParam);
+            int cdtReturnType = 0;
+            if (lastPathPart instanceof CdtPart) cdtReturnType = ((CdtPart) lastPathPart).getReturnType(returnParam);
 
             return switch (pathFunctionType) {
                 // CAST is the same as get with a different type
@@ -73,17 +74,24 @@ public class PathOperand extends AbstractPart {
 
     private static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int cdtReturnType,
                                   PathFunction pathFunction) {
-        if (lastPathPart.getPartType() == PartType.LIST_PART) {
-            return doProcessGet(basePath, lastPathPart, valueType, cdtReturnType, pathFunction, (ListPart) lastPathPart);
-        } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
-            return doProcessGet(basePath, lastPathPart, valueType, cdtReturnType, pathFunction, (MapPart) lastPathPart);
-        } else {
+        if (lastPathPart != null) {
+            if (lastPathPart.getPartType() == PartType.LIST_PART) {
+                return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, pathFunction, (ListPart) lastPathPart);
+            } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
+                return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, pathFunction, (MapPart) lastPathPart);
+            }
             return null;
+        } else {
+            // Context can be empty
+            CTX[] context = getContextArray(basePath.getParts(), false);
+            valueType = findValueTypeIfNull(valueType, lastPathPart, pathFunction);
+            BinPart binPart = basePath.getBinPart();
+            return Exp.bin(binPart.getBinName(), basePath.getBinType());
         }
     }
 
-    private static Exp doProcessGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int cdtReturnType,
-                                    PathFunction pathFunction, CdtPart cdtPart) {
+    private static Exp doProcessCdtGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int cdtReturnType,
+                                       PathFunction pathFunction, CdtPart cdtPart) {
         // list type designator "[]" can be either after bin name or after path
         if (isListTypeDesignator(cdtPart) || isMapTypeDesignator(cdtPart)) {
             return constructCdtExp(basePath, lastPathPart, valueType, cdtReturnType, pathFunction);
