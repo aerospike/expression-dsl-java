@@ -10,6 +10,7 @@ import com.aerospike.dsl.model.cdt.list.ListPart;
 import com.aerospike.dsl.model.cdt.list.ListTypeDesignator;
 import com.aerospike.dsl.model.cdt.map.MapPart;
 import com.aerospike.dsl.model.cdt.map.MapTypeDesignator;
+import com.aerospike.dsl.util.TypeUtils;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -208,7 +209,7 @@ public class PathOperand extends AbstractPart {
             } else if (pathFunction.getPathFunctionType() == COUNT) {
                 return getValueTypeForCount(lastPathPart);
             } else {
-                return Exp.Type.INT;
+                return TypeUtils.getDefaultType(lastPathPart);
             }
         }
         return valueType;
@@ -216,10 +217,10 @@ public class PathOperand extends AbstractPart {
 
     private static Exp.Type getValueTypeForCount(AbstractPart lastPathPart) {
         if (lastPathPart instanceof ListTypeDesignator) {
-                return Exp.Type.LIST;
-            } else if (lastPathPart instanceof MapTypeDesignator) {
-                return Exp.Type.MAP;
-            }
-        return Exp.Type.INT;
+            return Exp.Type.LIST;
+        } else if (lastPathPart instanceof MapTypeDesignator) {
+            return Exp.Type.MAP;
+        }
+        return TypeUtils.getDefaultType(lastPathPart);
     }
 }

@@ -512,11 +512,11 @@ public class MapExpressionsTests {
                 ),
                 Exp.val(5));
         // Implicit detect as Int
-        translateAndCompare("$.mapBin1.a.get(return: COUNT) == 5", expected);
+        translateAndCompare("$.mapBin1.a.get(type: INT, return: COUNT) == 5", expected);
 
         expected = MapExp.getByKey(
                 MapReturnType.ORDERED_MAP,
-                Exp.Type.INT,
+                Exp.Type.STRING,
                 Exp.val("a"),
                 Exp.mapBin("mapBin1")
         );
@@ -532,6 +532,6 @@ public class MapExpressionsTests {
                 ),
                 Exp.val(5));
         // Implicit detect as Int
-        translateAndCompare("$.mapBin1.a.get(return: RANK) == 5", expected);
+        translateAndCompare("$.mapBin1.a.get(type: INT, return: RANK) == 5", expected);
     }
 }
