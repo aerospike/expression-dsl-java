@@ -492,7 +492,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
-    public AbstractPart visitListOperand(ConditionParser.ListOperandContext ctx) {
+    public AbstractPart visitListConstant(ConditionParser.ListConstantContext ctx) {
         return readChildrenIntoListOperand(ctx);
     }
 
@@ -528,7 +528,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
-    public AbstractPart visitOrderedMapOperand(ConditionParser.OrderedMapOperandContext ctx) {
+    public AbstractPart visitOrderedMapConstant(ConditionParser.OrderedMapConstantContext ctx) {
         return readChildrenIntoMapOperand(ctx);
     }
 

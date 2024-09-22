@@ -184,12 +184,21 @@ public class ExplicitTypesTests {
 
     @Test
     void mapComparison_constantOnRightSide() {
-        // Only ordered maps can be compared
+        // Prerequisite for comparing maps: both sides must be ordered maps
         translateAndCompare("$.mapBin1.get(type: MAP) == {100:100}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100, 100))));
+
+        translateAndCompare("$.mapBin1.get(type: MAP) == {100 : 100}",
                 Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100, 100))));
 
         translateAndCompare("$.mapBin1.{} == {100:100}",
                 Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(100, 100))));
+
+        byte[] blobKey = new byte[]{1, 2, 3};
+        String encodedBlobKey = Base64.getEncoder().encodeToString(blobKey);
+        // encoded blob key must be quoted as it is a String
+        translateAndCompare("$.mapBin1.{} == {'" + encodedBlobKey + "':100}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf(encodedBlobKey, 100))));
 
         // integer values are read as long
         translateAndCompare("$.mapBin1.get(type: MAP) == {100:200, 300:400}",
@@ -207,6 +216,9 @@ public class ExplicitTypesTests {
         translateAndCompare(
                 "$.mapBin1.get(type: MAP) == {\"yes of course\" : \"yes of course\"}",
                 Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes of course", "yes of course"))));
+
+        translateAndCompare("$.mapBin1.get(type: MAP) == {\"yes\" : [\"yes\", \"of course\"]}",
+                Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes", List.of("yes",  "of course")))));
     }
 
     @Test
@@ -225,16 +237,33 @@ public class ExplicitTypesTests {
         )
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessage("Cannot compare MAP to LIST");
+
+        // Map key can only be integer or String
+        assertThatThrownBy(() ->
+                translateAndCompare("$.mapBin1.get(type: MAP) == {[100]:[100]}",
+                        Exp.eq(Exp.mapBin("mapBin1"), Exp.val(List.of("yes", "of course"))))
+        )
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessage("Unable to parse map operand");
     }
 
     @Test
     void mapComparison_constantOnLeftSide() {
-        // Only ordered maps can be compared
+        // Prerequisite for comparing maps: both sides must be ordered maps
         translateAndCompare("{100:100} == $.mapBin1.get(type: MAP)",
+                Exp.eq(Exp.val(treeMapOf(100, 100)), Exp.mapBin("mapBin1")));
+
+        translateAndCompare("{100 : 100} == $.mapBin1.get(type: MAP)",
                 Exp.eq(Exp.val(treeMapOf(100, 100)), Exp.mapBin("mapBin1")));
 
         translateAndCompare("{100:100} == $.mapBin1.{}",
                 Exp.eq(Exp.val(treeMapOf(100, 100)), Exp.mapBin("mapBin1")));
+
+        byte[] blobKey = new byte[]{1, 2, 3};
+        String encodedBlobKey = Base64.getEncoder().encodeToString(blobKey);
+        // encoded blob key must be quoted as it is a String
+        translateAndCompare("{'" + encodedBlobKey + "':100} == $.mapBin1.{}",
+                Exp.eq(Exp.val(treeMapOf(encodedBlobKey, 100)), Exp.mapBin("mapBin1")));
 
         // integer values are read as long
         translateAndCompare("{100:200, 300:400} == $.mapBin1.get(type: MAP)",
@@ -252,6 +281,9 @@ public class ExplicitTypesTests {
         translateAndCompare(
                 "{\"yes of course\" : \"yes of course\"} == $.mapBin1.get(type: MAP)",
                 Exp.eq(Exp.val(treeMapOf("yes of course", "yes of course")), Exp.mapBin("mapBin1")));
+
+        translateAndCompare("{\"yes\" : [\"yes\", \"of course\"]} == $.mapBin1.get(type: MAP)",
+                Exp.eq(Exp.val(treeMapOf("yes", List.of("yes",  "of course"))), Exp.mapBin("mapBin1")));
     }
 
     @Test
