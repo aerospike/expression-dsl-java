@@ -50,6 +50,8 @@ operand
     : numberOperand
     | booleanOperand
     | stringOperand
+    | listConstant
+    | orderedMapConstant
     | variable
     | '$.' pathOrMetadata
     | '(' expression ')'
@@ -71,6 +73,14 @@ FALSE: 'false';
 stringOperand: QUOTED_STRING;
 
 QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
+
+listConstant: '[' operand? (',' operand)* ']';
+
+orderedMapConstant: '{' mapPairConstant? (',' mapPairConstant)* '}';
+
+mapPairConstant: mapKeyOperand ':' operand;
+
+mapKeyOperand: intOperand | stringOperand;
 
 variable: VARIABLE_REFERENCE;
 

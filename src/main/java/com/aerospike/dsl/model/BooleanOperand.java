@@ -4,7 +4,7 @@ import com.aerospike.client.exp.Exp;
 import lombok.Getter;
 
 @Getter
-public class BooleanOperand extends AbstractPart {
+public class BooleanOperand extends AbstractPart implements ParsedOperand {
 
     private final Boolean value;
 

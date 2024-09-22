@@ -4,7 +4,7 @@ import com.aerospike.client.exp.Exp;
 import lombok.Getter;
 
 @Getter
-public class IntOperand extends AbstractPart {
+public class IntOperand extends AbstractPart implements ParsedOperand {
 
     private final Long value;
 
