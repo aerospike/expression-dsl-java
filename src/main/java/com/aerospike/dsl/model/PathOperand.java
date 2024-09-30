@@ -221,6 +221,6 @@ public class PathOperand extends AbstractPart {
         } else if (lastPathPart instanceof MapTypeDesignator) {
             return Exp.Type.MAP;
         }
-        return TypeUtils.getDefaultType(lastPathPart);
+        return TypeUtils.getDefaultTypeForCount();
     }
 }
