@@ -5,11 +5,15 @@ import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
 import com.aerospike.dsl.model.cdt.list.*;
 import com.aerospike.dsl.model.cdt.map.*;
+import com.aerospike.dsl.util.TypeUtils;
 import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.TreeMap;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
@@ -499,7 +503,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public ListOperand readChildrenIntoListOperand(RuleNode listNode) {
         int size = listNode.getChildCount();
         List<Object> list = new ArrayList<>();
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             ParseTree child = listNode.getChild(i);
             if (!shouldVisitListElement(i, size, child)) {
                 continue;
@@ -546,7 +550,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public MapOperand readChildrenIntoMapOperand(RuleNode mapNode) {
         int size = mapNode.getChildCount();
         TreeMap<Object, Object> map = new TreeMap<>();
-        for (int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             ParseTree child = mapNode.getChild(i);
             if (!shouldVisitMapElement(i, size, child)) {
                 continue;
@@ -555,7 +559,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             TreeMap<Object, Object> mapOfPair = getOrderedMapPair(child); // delegate to a dedicated visitor
 
             try {
-                 mapOfPair.forEach(map::putIfAbsent); // put contents of the current map pair to the resulting map
+                mapOfPair.forEach(map::putIfAbsent); // put contents of the current map pair to the resulting map
             } catch (ClassCastException e) {
                 throw new AerospikeDSLException("Map constant contains elements of different type");
             }
@@ -661,8 +665,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         } else { // Override using Implicit type detection
             Exp.Type implicitType = detectImplicitTypeFromUpperTree(ctx);
             if (part instanceof BinPart) {
+                if (implicitType == null) {
+                    implicitType = Exp.Type.INT;
+                }
                 ((BinPart) part).updateExp(implicitType);
             } else { // ListPart or MapPart
+                if (implicitType == null) {
+                    implicitType = TypeUtils.getDefaultType(part);
+                }
                 part.setExpType(implicitType);
             }
         }
@@ -693,8 +703,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 }
             }
         }
-        // Default INT
-        return Exp.Type.INT;
+        // Could not detect, return null and determine defaults later on
+        return null;
     }
 
     @Override
