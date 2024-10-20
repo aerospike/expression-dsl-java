@@ -113,15 +113,15 @@ public class MapExpressionsTests {
                         Exp.mapBin("mapBin1")
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.{}.size() > 200", expected);
+        translateAndCompare("$.mapBin1.{}.count() > 200", expected);
 
-        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        // the default behaviour for count() without List '[]' or Map '{}' designators is List
         Exp expected2 = Exp.gt(
                 ListExp.size(
                         Exp.listBin("mapBin1")
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.size() > 200", expected2);
+        translateAndCompare("$.mapBin1.count() > 200", expected2);
     }
 
     @Test
@@ -135,9 +135,9 @@ public class MapExpressionsTests {
                                 Exp.mapBin("mapBin1"))
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.a.{}.size() == 200", expected);
+        translateAndCompare("$.mapBin1.a.{}.count() == 200", expected);
 
-        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        // the default behaviour for count() without List '[]' or Map '{}' designators is List
         Exp expected2 = Exp.eq(
                 ListExp.size(
                         MapExp.getByKey(MapReturnType.VALUE,
@@ -146,7 +146,7 @@ public class MapExpressionsTests {
                                 Exp.mapBin("mapBin1"))
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.a.size() == 200", expected2);
+        translateAndCompare("$.mapBin1.a.count() == 200", expected2);
     }
 
     @Test
@@ -161,9 +161,9 @@ public class MapExpressionsTests {
                                 CTX.mapKey(Value.get("a")))
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.a.b.{}.size() == 200", expected);
+        translateAndCompare("$.mapBin1.a.b.{}.count() == 200", expected);
 
-        // the default behaviour for size() without List '[]' or Map '{}' designators is List
+        // the default behaviour for count() without List '[]' or Map '{}' designators is List
         Exp expected2 = Exp.eq(
                 ListExp.size(
                         MapExp.getByKey(MapReturnType.VALUE,
@@ -173,7 +173,7 @@ public class MapExpressionsTests {
                                 CTX.mapKey(Value.get("a")))
                 ),
                 Exp.val(200));
-        translateAndCompare("$.mapBin1.a.b.size() == 200", expected2);
+        translateAndCompare("$.mapBin1.a.b.count() == 200", expected2);
     }
 
     @Test
@@ -210,13 +210,20 @@ public class MapExpressionsTests {
     @Test
     void mapByValueCount() {
         Exp expected = Exp.gt(
-                MapExp.getByValue(
-                        MapReturnType.COUNT,
-                        Exp.val(100),
-                        Exp.mapBin("mapBin1")
-                ),
-                Exp.val(0));
+                MapExp.size(Exp.mapBin("mapBin1"), CTX.mapValue(Value.get(100))),
+                Exp.val(0)
+        );
         translateAndCompare("$.mapBin1.{=100}.count() > 0", expected);
+
+        Exp expected2 = Exp.gt(
+                MapExp.size(
+                        MapExp.getByValue(MapReturnType.VALUE,
+                                Exp.val(100),
+                                Exp.mapBin("mapBin1"))
+                ),
+                Exp.val(0)
+        );
+        translateAndCompare("$.mapBin1.{=100}.{}.count() > 0", expected2); // TODO: unify
     }
 
     @Test

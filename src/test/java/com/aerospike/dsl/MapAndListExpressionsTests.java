@@ -110,8 +110,8 @@ public class MapAndListExpressionsTests {
                         )
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[1].a.[0].size() == 100", expected);
-        translateAndCompare("$.listBin1.[1].a.[0].[].size() == 100", expected);
+        translateAndCompare("$.listBin1.[1].a.[0].count() == 100", expected);
+        translateAndCompare("$.listBin1.[1].a.[0].[].count() == 100", expected);
     }
 
     @Test

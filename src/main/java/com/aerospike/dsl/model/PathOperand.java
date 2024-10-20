@@ -17,9 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import static com.aerospike.dsl.model.AbstractPart.PartType.LIST_PART;
+import static com.aerospike.dsl.model.AbstractPart.PartType.MAP_PART;
 import static com.aerospike.dsl.model.PathFunction.PathFunctionType.COUNT;
 import static com.aerospike.dsl.model.PathFunction.PathFunctionType.SIZE;
-import static com.aerospike.dsl.model.cdt.list.ListPart.ListPartType.LIST_TYPE_DESIGNATOR;
+import static com.aerospike.dsl.model.cdt.list.ListPart.ListPartType.*;
 import static com.aerospike.dsl.model.cdt.map.MapPart.MapPartType.MAP_TYPE_DESIGNATOR;
 
 @Getter
@@ -30,6 +32,11 @@ public class PathOperand extends AbstractPart {
     }
 
     public static Exp processPath(BasePath basePath, PathFunction pathFunction) {
+        List<AbstractPart> parts = basePath.getParts();
+        basePath = updateWithCdtTypeDesignator(basePath, pathFunction);
+        AbstractPart lastPathPart = !parts.isEmpty() ? parts.get(parts.size() - 1) : null;
+        pathFunction = processPathFunction(basePath, lastPathPart, pathFunction);
+
         Exp.Type valueType = null;
         PathFunction.ReturnParam returnParam = PathFunction.ReturnParam.VALUE;
         PathFunction.PathFunctionType pathFunctionType = PathFunction.PathFunctionType.GET;
@@ -42,11 +49,7 @@ public class PathOperand extends AbstractPart {
             if (pathFunction.getPathFunctionType() != null) pathFunctionType = pathFunction.getPathFunctionType();
         }
 
-        List<AbstractPart> parts = basePath.getParts();
         if (!parts.isEmpty() || pathFunction != null) {
-            basePath = updateWithCdtTypeDesignator(basePath, pathFunction);
-            AbstractPart lastPathPart = !parts.isEmpty() ? parts.get(parts.size() - 1) : null;
-
             int cdtReturnType = 0;
             if (lastPathPart instanceof CdtPart) cdtReturnType = ((CdtPart) lastPathPart).getReturnType(returnParam);
 
@@ -57,6 +60,41 @@ public class PathOperand extends AbstractPart {
             };
         }
         throw new AerospikeDSLException("Expecting other parts of path except bin");
+    }
+
+    private static PathFunction processPathFunction(BasePath basePath, AbstractPart lastPathPart,
+                                                                     PathFunction pathFunction) {
+        if (pathFunction == null) return null;
+
+        if (pathFunction.getPathFunctionType() == COUNT) {
+            // Use size() when there is non-range List or Map count()
+            if (basePath.getParts().isEmpty() || containOnlyListDesignator(basePath.getParts())) {
+                PathFunction.PathFunctionType type = basePath.getBinType() == Exp.Type.LIST ? SIZE : COUNT;
+                return new PathFunction(type, null, null);
+            }
+
+            if (lastPathPart.getPartType() == LIST_PART
+                    && (isListTypeDesignator(lastPathPart)
+                    || ((ListPart) lastPathPart).getListPartType() == INDEX
+                    || ((ListPart) lastPathPart).getListPartType() == RANK
+                    || ((ListPart) lastPathPart).getListPartType() == VALUE)) {
+                return new PathFunction(SIZE, null, null);
+            }
+
+            if (lastPathPart.getPartType() == MAP_PART
+                    && (isMapTypeDesignator(lastPathPart)
+                    || ((MapPart) lastPathPart).getMapPartType() == MapPart.MapPartType.INDEX
+                    || ((MapPart) lastPathPart).getMapPartType() == MapPart.MapPartType.RANK
+                    || ((MapPart) lastPathPart).getMapPartType() == MapPart.MapPartType.VALUE
+                    || ((MapPart) lastPathPart).getMapPartType() == MapPart.MapPartType.KEY)) {
+                return new PathFunction(SIZE, null, null);
+            }
+        }
+        return pathFunction;
+    }
+
+    private static boolean containOnlyListDesignator(List<AbstractPart> parts) {
+        return parts.size() == 1 && isListTypeDesignator(parts.get(0));
     }
 
     private static boolean isPrevCdtPartAmbiguous(AbstractPart lastPart) {
@@ -76,9 +114,9 @@ public class PathOperand extends AbstractPart {
     private static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int cdtReturnType,
                                   PathFunction pathFunction) {
         if (lastPathPart != null) { // if there are other parts except bin
-            if (lastPathPart.getPartType() == PartType.LIST_PART) {
+            if (lastPathPart.getPartType() == LIST_PART) {
                 return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, pathFunction, (ListPart) lastPathPart);
-            } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
+            } else if (lastPathPart.getPartType() == MAP_PART) {
                 return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, pathFunction, (MapPart) lastPathPart);
             }
             return null;
@@ -100,11 +138,11 @@ public class PathOperand extends AbstractPart {
         }
     }
 
-    private static boolean isListTypeDesignator(CdtPart cdtPart) {
+    private static boolean isListTypeDesignator(AbstractPart cdtPart) {
         return cdtPart instanceof ListPart listPart && listPart.getListPartType().equals(LIST_TYPE_DESIGNATOR);
     }
 
-    private static boolean isMapTypeDesignator(CdtPart cdtPart) {
+    private static boolean isMapTypeDesignator(AbstractPart cdtPart) {
         return cdtPart instanceof MapPart mapPart && mapPart.getMapPartType().equals(MAP_TYPE_DESIGNATOR);
     }
 
@@ -126,7 +164,7 @@ public class PathOperand extends AbstractPart {
     private static Exp processSize(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int cdtReturnType,
                                    PathFunction pathFunction) {
         BinPart bin = basePath.getBinPart();
-        if (lastPathPart.getPartType() == PartType.LIST_PART) {
+        if (lastPathPart.getPartType() == LIST_PART) {
             ListPart listPart = (ListPart) lastPathPart;
             // list type designator "[]" can be either after bin name or after path
             if (listPart.getListPartType().equals(LIST_TYPE_DESIGNATOR)) {
@@ -136,7 +174,7 @@ public class PathOperand extends AbstractPart {
                 CTX[] context = getContextArray(basePath.getParts(), true);
                 return ListExp.size(Exp.bin(bin.getBinName(), basePath.getBinType()), context);
             }
-        } else if (lastPathPart.getPartType() == PartType.MAP_PART) {
+        } else if (lastPathPart.getPartType() == MAP_PART) {
             MapPart mapPart = (MapPart) lastPathPart;
             if (mapPart.getMapPartType().equals(MAP_TYPE_DESIGNATOR)) {
                 return getCdtExpFunction(MapExp::size, basePath, lastPathPart, valueType, cdtReturnType, pathFunction);
