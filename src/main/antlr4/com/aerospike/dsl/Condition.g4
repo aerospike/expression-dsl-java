@@ -460,7 +460,6 @@ pathFunction
     | 'increment' '()'
     | 'clear' '()'
     | 'sort' '()'
-    | pathFunctionSize
     ;
 
 pathFunctionCast: PATH_FUNCTION_CAST;
@@ -477,10 +476,6 @@ PATH_FUNCTION_EXISTS: 'exists' '()';
 pathFunctionCount: PATH_FUNCTION_COUNT;
 
 PATH_FUNCTION_COUNT: 'count' '()';
-
-pathFunctionSize: PATH_FUNCTION_SIZE;
-
-PATH_FUNCTION_SIZE: 'size' '()';
 
 pathFunctionGet
     : PATH_FUNCTION_GET '(' pathFunctionParams ')'

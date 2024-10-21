@@ -1,5 +1,6 @@
 package com.aerospike.dsl;
 
+import com.aerospike.client.Value;
 import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
@@ -78,13 +79,20 @@ class ListExpressionsTests {
     @Test
     void listByValueCount() {
         Exp expected = Exp.gt(
-                ListExp.getByValue(
-                        ListReturnType.COUNT,
-                        Exp.val(100),
-                        Exp.listBin("listBin1")
-                ),
-                Exp.val(0));
+                ListExp.size(Exp.listBin("listBin1"), CTX.listValue(Value.get(100))),
+                Exp.val(0)
+        );
         translateAndCompare("$.listBin1.[=100].count() > 0", expected);
+
+        Exp expected2 = Exp.gt(
+                ListExp.size(
+                        ListExp.getByValue(ListReturnType.VALUE,
+                                Exp.val(100),
+                                Exp.listBin("listBin1"))
+                ),
+                Exp.val(0)
+        );
+        translateAndCompare("$.listBin1.[=100].[].count() > 0", expected2); // TODO: unify
     }
 
     @Test
@@ -125,10 +133,10 @@ class ListExpressionsTests {
         Exp expected = Exp.eq(
                 ListExp.size(Exp.listBin("listBin1")),
                 Exp.val(1));
-        translateAndCompare("$.listBin1.[].size() == 1", expected);
+        translateAndCompare("$.listBin1.[].count() == 1", expected);
 
-        // the default behaviour for size() without List '[]' or Map '{}' designators is List
-        translateAndCompare("$.listBin1.size() == 1", expected);
+        // the default behaviour for count() without List '[]' or Map '{}' designators is List
+        translateAndCompare("$.listBin1.count() == 1", expected);
     }
 
     @Test
@@ -142,10 +150,11 @@ class ListExpressionsTests {
                                 Exp.listBin("listBin1"))
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[1].[].size() == 100", expected);
+        translateAndCompare("$.listBin1.[1].[].count() == 100", expected);
 
-        // the default behaviour for size() without List '[]' or Map '{}' designators is List
-        translateAndCompare("$.listBin1.[1].size() == 100", expected);
+        // the default behaviour for count() without List '[]' or Map '{}' designators is List
+        translateAndCompare("$.listBin1.[1].count() == 100", expected);
+
     }
 
     @Test
@@ -160,10 +169,10 @@ class ListExpressionsTests {
                                 CTX.listIndex(1))
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[1].[2].[].size() == 100", expected);
+        translateAndCompare("$.listBin1.[1].[2].[].count() == 100", expected);
 
-        // the default behaviour for size() without List '[]' or Map '{}' designators is List
-        translateAndCompare("$.listBin1.[1].[2].size() == 100", expected);
+        // the default behaviour for count() without List '[]' or Map '{}' designators is List
+        translateAndCompare("$.listBin1.[1].[2].count() == 100", expected);
     }
 
     @Test
@@ -213,13 +222,14 @@ class ListExpressionsTests {
     @Test
     void listBinElementCount() {
         Exp expected = Exp.eq(
-                ListExp.getByIndex(
-                        ListReturnType.COUNT,
-                        Exp.Type.LIST,
-                        Exp.val(0),
-                        Exp.listBin("listBin1")
+                ListExp.size(
+                        ListExp.getByIndex(ListReturnType.VALUE,
+                                Exp.Type.INT, // TODO: must be LIST
+                                Exp.val(0),
+                                Exp.listBin("listBin1"))
                 ),
-                Exp.val(100));
+                Exp.val(100)
+        );
         translateAndCompare("$.listBin1.[0].count() == 100", expected);
         translateAndCompare("$.listBin1.[0].[].count() == 100", expected);
     }
@@ -227,7 +237,7 @@ class ListExpressionsTests {
     //@Test
     void negativeSyntaxList() {
         // TODO: should throw an exception (by ANTLR?)
-        assertThatThrownBy(() -> translate("$.listBin1.size() == 1"))
+        assertThatThrownBy(() -> translate("$.listBin1.count() == 1"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Get size from a List: unexpected value 'INT'");
 
