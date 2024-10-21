@@ -8,8 +8,10 @@ import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.cdt.CdtPart;
 import com.aerospike.dsl.model.cdt.list.ListPart;
 import com.aerospike.dsl.model.cdt.list.ListTypeDesignator;
+import com.aerospike.dsl.model.cdt.list.ListValue;
 import com.aerospike.dsl.model.cdt.map.MapPart;
 import com.aerospike.dsl.model.cdt.map.MapTypeDesignator;
+import com.aerospike.dsl.model.cdt.map.MapValue;
 import com.aerospike.dsl.util.TypeUtils;
 import lombok.Getter;
 
@@ -63,7 +65,7 @@ public class PathOperand extends AbstractPart {
     }
 
     private static PathFunction processPathFunction(BasePath basePath, AbstractPart lastPathPart,
-                                                                     PathFunction pathFunction) {
+                                                    PathFunction pathFunction) {
         if (pathFunction == null) return null;
 
         if (pathFunction.getPathFunctionType() == COUNT) {
@@ -168,6 +170,9 @@ public class PathOperand extends AbstractPart {
             ListPart listPart = (ListPart) lastPathPart;
             // list type designator "[]" can be either after bin name or after path
             if (listPart.getListPartType().equals(LIST_TYPE_DESIGNATOR)) {
+                if (valueType == null && !previousPartIs(ListValue.class, basePath.getParts())) {
+                    valueType = Exp.Type.LIST;
+                }
                 return getCdtExpFunction(ListExp::size, basePath, lastPathPart, valueType, cdtReturnType, pathFunction);
             } else {
                 // In size() the last element is considered context
@@ -177,6 +182,9 @@ public class PathOperand extends AbstractPart {
         } else if (lastPathPart.getPartType() == MAP_PART) {
             MapPart mapPart = (MapPart) lastPathPart;
             if (mapPart.getMapPartType().equals(MAP_TYPE_DESIGNATOR)) {
+                if (valueType == null && !previousPartIs(MapValue.class, basePath.getParts())) {
+                    valueType = Exp.Type.MAP;
+                }
                 return getCdtExpFunction(MapExp::size, basePath, lastPathPart, valueType, cdtReturnType, pathFunction);
             } else {
                 // In size() the last element is considered context
@@ -188,10 +196,19 @@ public class PathOperand extends AbstractPart {
         }
     }
 
+    private static boolean previousPartIs(Class<?> clazz, List<AbstractPart> parts) {
+        List<AbstractPart> partsUpToDesignator = !parts.isEmpty()
+                ? parts.subList(0, parts.size() - 1)
+                : new ArrayList<>();
+
+        return !partsUpToDesignator.isEmpty()
+                && clazz.isInstance(partsUpToDesignator.get(partsUpToDesignator.size() - 1));
+    }
+
     private static BasePath updateWithCdtTypeDesignator(BasePath basePath, PathFunction pathFunction) {
         if (mustHaveCdtDesignator(pathFunction, basePath.getParts())) {
-            // For cases like list.size() and map.size() when no explicit type ([] is for List, {} is for Map)
-            // If no parts but with pathFunction (e.g. $.bin.size()) - in this case we apply default List
+            // For cases like list.count() and map.count() with no explicit type ([] is for List, {} is for Map)
+            // If there are no parts but a pathFunction (e.g. $.bin.count()) - in this case we apply List by default
             AbstractPart lastPathPart = new ListTypeDesignator();
             basePath.getParts().add(lastPathPart);
             return basePath;

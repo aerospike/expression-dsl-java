@@ -145,7 +145,7 @@ class ListExpressionsTests {
         Exp expected = Exp.eq(
                 ListExp.size(
                         ListExp.getByIndex(ListReturnType.VALUE,
-                                Exp.Type.INT,
+                                Exp.Type.LIST,
                                 Exp.val(1),
                                 Exp.listBin("listBin1"))
                 ),
@@ -163,7 +163,7 @@ class ListExpressionsTests {
         Exp expected = Exp.eq(
                 ListExp.size(
                         ListExp.getByIndex(ListReturnType.VALUE,
-                                Exp.Type.INT,
+                                Exp.Type.LIST,
                                 Exp.val(2),
                                 Exp.listBin("listBin1"),
                                 CTX.listIndex(1))
@@ -224,7 +224,7 @@ class ListExpressionsTests {
         Exp expected = Exp.eq(
                 ListExp.size(
                         ListExp.getByIndex(ListReturnType.VALUE,
-                                Exp.Type.INT, // TODO: must be LIST
+                                Exp.Type.LIST,
                                 Exp.val(0),
                                 Exp.listBin("listBin1"))
                 ),
