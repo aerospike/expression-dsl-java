@@ -130,18 +130,18 @@ public class MapExpressionsTests {
         Exp expected = Exp.eq(
                 MapExp.size(
                         MapExp.getByKey(ListReturnType.VALUE,
-                                Exp.Type.INT,
+                                Exp.Type.MAP,
                                 Exp.val("a"),
                                 Exp.mapBin("mapBin1"))
                 ),
                 Exp.val(200));
         translateAndCompare("$.mapBin1.a.{}.count() == 200", expected);
 
-        // the default behaviour for count() without List '[]' or Map '{}' designators is List
+        // the default behaviour for count() without Map '{}' or List '[]' designators is List
         Exp expected2 = Exp.eq(
                 ListExp.size(
                         MapExp.getByKey(MapReturnType.VALUE,
-                                Exp.Type.INT,
+                                Exp.Type.LIST,
                                 Exp.val("a"),
                                 Exp.mapBin("mapBin1"))
                 ),
@@ -155,7 +155,7 @@ public class MapExpressionsTests {
         Exp expected = Exp.eq(
                 MapExp.size(
                         MapExp.getByKey(ListReturnType.VALUE,
-                                Exp.Type.INT,
+                                Exp.Type.MAP,
                                 Exp.val("b"),
                                 Exp.mapBin("mapBin1"),
                                 CTX.mapKey(Value.get("a")))
@@ -163,11 +163,11 @@ public class MapExpressionsTests {
                 Exp.val(200));
         translateAndCompare("$.mapBin1.a.b.{}.count() == 200", expected);
 
-        // the default behaviour for count() without List '[]' or Map '{}' designators is List
+        // the default behaviour for count() without Map '{}' or List '[]' designators is List
         Exp expected2 = Exp.eq(
                 ListExp.size(
                         MapExp.getByKey(MapReturnType.VALUE,
-                                Exp.Type.INT,
+                                Exp.Type.LIST,
                                 Exp.val("b"),
                                 Exp.mapBin("mapBin1"),
                                 CTX.mapKey(Value.get("a")))

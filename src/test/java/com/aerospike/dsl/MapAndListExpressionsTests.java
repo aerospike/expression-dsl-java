@@ -102,7 +102,7 @@ public class MapAndListExpressionsTests {
                 ListExp.size(
                         ListExp.getByIndex(
                                 ListReturnType.VALUE,
-                                Exp.Type.INT,
+                                Exp.Type.LIST,
                                 Exp.val(0),
                                 Exp.listBin("listBin1"),
                                 CTX.listIndex(1),
