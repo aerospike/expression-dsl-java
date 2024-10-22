@@ -210,20 +210,13 @@ public class MapExpressionsTests {
     @Test
     void mapByValueCount() {
         Exp expected = Exp.gt(
-                MapExp.size(Exp.mapBin("mapBin1"), CTX.mapValue(Value.get(100))),
+                MapExp.getByValue(MapReturnType.COUNT,
+                        Exp.val(100),
+                        Exp.mapBin("mapBin1")),
                 Exp.val(0)
         );
         translateAndCompare("$.mapBin1.{=100}.count() > 0", expected);
-
-        Exp expected2 = Exp.gt(
-                MapExp.size(
-                        MapExp.getByValue(MapReturnType.VALUE,
-                                Exp.val(100),
-                                Exp.mapBin("mapBin1"))
-                ),
-                Exp.val(0)
-        );
-        translateAndCompare("$.mapBin1.{=100}.{}.count() > 0", expected2); // TODO: unify
+        translateAndCompare("$.mapBin1.{=100}.{}.count() > 0", expected);
     }
 
     @Test

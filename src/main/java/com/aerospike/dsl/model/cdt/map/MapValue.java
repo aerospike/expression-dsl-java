@@ -20,7 +20,12 @@ public class MapValue extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        Exp value = getExpVal(valueType, getValue());
+        Exp value = switch (valueType) {
+            case BOOL -> Exp.val((Boolean) getValue());
+            case STRING -> Exp.val((String) getValue());
+            case FLOAT -> Exp.val((Float) getValue());
+            default -> Exp.val((Integer) getValue()); // for getByValue the default is INT
+        };
         return MapExp.getByValue(cdtReturnType, value, Exp.bin(basePath.getBinPart().getBinName(),
                 basePath.getBinType()), context);
     }

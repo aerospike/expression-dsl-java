@@ -8,10 +8,8 @@ import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.cdt.CdtPart;
 import com.aerospike.dsl.model.cdt.list.ListPart;
 import com.aerospike.dsl.model.cdt.list.ListTypeDesignator;
-import com.aerospike.dsl.model.cdt.list.ListValue;
 import com.aerospike.dsl.model.cdt.map.MapPart;
 import com.aerospike.dsl.model.cdt.map.MapTypeDesignator;
-import com.aerospike.dsl.model.cdt.map.MapValue;
 import com.aerospike.dsl.util.TypeUtils;
 import lombok.Getter;
 
@@ -70,44 +68,57 @@ public class PathOperand extends AbstractPart {
 
         if (pathFunction.getPathFunctionType() == COUNT) {
             // Use size() when there is non-range List or Map count()
-            if (basePath.getParts().isEmpty() || containOnlyListDesignator(basePath.getParts())) {
-                PathFunction.PathFunctionType type = basePath.getBinType() == Exp.Type.LIST ? SIZE : COUNT;
+            if (basePath.getParts().isEmpty() || containOnlyDesignator(basePath.getParts())) {
+                PathFunction.PathFunctionType type = COUNT;
+                if (basePath.getBinType() == Exp.Type.LIST || basePath.getBinType() == Exp.Type.MAP) {
+                    type = SIZE;
+                }
                 return new PathFunction(type, null, null);
             }
 
-            if (lastPathPart.getPartType() == LIST_PART
-                    && (isListTypeDesignator(lastPathPart)
-                    || ((ListPart) lastPathPart).getListPartType() == INDEX
-                    || ((ListPart) lastPathPart).getListPartType() == RANK
-                    || ((ListPart) lastPathPart).getListPartType() == VALUE)) {
-                return new PathFunction(SIZE, null, null);
+            if (isListTypeDesignator(lastPathPart) || isMapTypeDesignator(lastPathPart)) {
+                AbstractPart partBeforeDesignator =
+                        getPartOrNull(basePath.getParts(), basePath.getParts().size() - 2);
+                if (partBeforeDesignator != null) lastPathPart = partBeforeDesignator;
             }
 
-            if (lastPathPart.getPartType() == MAP_PART
-                    && (isMapTypeDesignator(lastPathPart)
-                    || ((MapPart) lastPathPart).getMapPartType() == MapPart.MapPartType.INDEX
-                    || ((MapPart) lastPathPart).getMapPartType() == MapPart.MapPartType.RANK
-                    || ((MapPart) lastPathPart).getMapPartType() == MapPart.MapPartType.VALUE
-                    || ((MapPart) lastPathPart).getMapPartType() == MapPart.MapPartType.KEY)) {
-                return new PathFunction(SIZE, null, null);
+            if (lastPathPart.getPartType() == LIST_PART) {
+                ListPart listPart = (ListPart) lastPathPart;
+                if (listPart.getListPartType() == INDEX || listPart.getListPartType() == RANK) {
+                    return new PathFunction(SIZE, null, null);
+                }
+            }
+
+            if (lastPathPart.getPartType() == MAP_PART) {
+                MapPart mapPart = (MapPart) lastPathPart;
+                if (mapPart.getMapPartType() == MapPart.MapPartType.INDEX
+                        || mapPart.getMapPartType() == MapPart.MapPartType.RANK
+                        || mapPart.getMapPartType() == MapPart.MapPartType.KEY) {
+                    return new PathFunction(SIZE, null, null);
+                }
             }
         }
         return pathFunction;
     }
 
-    private static boolean containOnlyListDesignator(List<AbstractPart> parts) {
-        return parts.size() == 1 && isListTypeDesignator(parts.get(0));
+    private static AbstractPart getPartOrNull(List<AbstractPart> parts, int idx) {
+        return idx >= 0 ? parts.get(idx) : null;
+    }
+
+    private static boolean containOnlyDesignator(List<AbstractPart> parts) {
+        return parts.size() == 1 && (isListTypeDesignator(parts.get(0)) || isMapTypeDesignator(parts.get(0)));
     }
 
     private static boolean isPrevCdtPartAmbiguous(AbstractPart lastPart) {
         if (lastPart instanceof MapPart mapPart) { // check that lastPart is CDT Map
             // check relevant types
-            return List.of(MapPart.MapPartType.INDEX, MapPart.MapPartType.RANK, MapPart.MapPartType.KEY)
+            return List.of(MapPart.MapPartType.INDEX, MapPart.MapPartType.RANK, MapPart.MapPartType.KEY,
+                            MapPart.MapPartType.VALUE)
                     .contains(mapPart.getMapPartType());
         }
         if (lastPart instanceof ListPart listPart) { // check that lastPart is CDT List
             // check relevant types
-            return List.of(ListPart.ListPartType.INDEX, ListPart.ListPartType.RANK)
+            return List.of(ListPart.ListPartType.INDEX, ListPart.ListPartType.RANK, ListPart.ListPartType.VALUE)
                     .contains(listPart.getListPartType());
         }
         return false;
@@ -170,7 +181,7 @@ public class PathOperand extends AbstractPart {
             ListPart listPart = (ListPart) lastPathPart;
             // list type designator "[]" can be either after bin name or after path
             if (listPart.getListPartType().equals(LIST_TYPE_DESIGNATOR)) {
-                if (valueType == null && !previousPartIs(ListValue.class, basePath.getParts())) {
+                if (valueType == null) {
                     valueType = Exp.Type.LIST;
                 }
                 return getCdtExpFunction(ListExp::size, basePath, lastPathPart, valueType, cdtReturnType, pathFunction);
@@ -182,7 +193,7 @@ public class PathOperand extends AbstractPart {
         } else if (lastPathPart.getPartType() == MAP_PART) {
             MapPart mapPart = (MapPart) lastPathPart;
             if (mapPart.getMapPartType().equals(MAP_TYPE_DESIGNATOR)) {
-                if (valueType == null && !previousPartIs(MapValue.class, basePath.getParts())) {
+                if (valueType == null) {
                     valueType = Exp.Type.MAP;
                 }
                 return getCdtExpFunction(MapExp::size, basePath, lastPathPart, valueType, cdtReturnType, pathFunction);
@@ -194,15 +205,6 @@ public class PathOperand extends AbstractPart {
         } else {
             return null;
         }
-    }
-
-    private static boolean previousPartIs(Class<?> clazz, List<AbstractPart> parts) {
-        List<AbstractPart> partsUpToDesignator = !parts.isEmpty()
-                ? parts.subList(0, parts.size() - 1)
-                : new ArrayList<>();
-
-        return !partsUpToDesignator.isEmpty()
-                && clazz.isInstance(partsUpToDesignator.get(partsUpToDesignator.size() - 1));
     }
 
     private static BasePath updateWithCdtTypeDesignator(BasePath basePath, PathFunction pathFunction) {
@@ -221,9 +223,9 @@ public class PathOperand extends AbstractPart {
         // if existing path function type is SIZE or COUNT,
         // or if path function type is GET with return type COUNT
         // and parts are empty (only bin) or previous CDT part is ambiguous (index, rank or map key)
-        return pathFunction != null
-                && (List.of(SIZE, COUNT).contains(pathFunction.getPathFunctionType())
-                || pathFunctionIsGetWithCount(pathFunction))
+        if (pathFunction == null) return false;
+        PathFunction.PathFunctionType type = pathFunction.getPathFunctionType();
+        return (List.of(SIZE, COUNT).contains(type) || pathFunctionIsGetWithCount(pathFunction))
                 && (parts.isEmpty() || (isPrevCdtPartAmbiguous(parts.get(parts.size() - 1))));
     }
 
