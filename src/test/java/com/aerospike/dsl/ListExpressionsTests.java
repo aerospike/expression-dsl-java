@@ -1,6 +1,5 @@
 package com.aerospike.dsl;
 
-import com.aerospike.client.Value;
 import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
@@ -79,20 +78,13 @@ class ListExpressionsTests {
     @Test
     void listByValueCount() {
         Exp expected = Exp.gt(
-                ListExp.size(Exp.listBin("listBin1"), CTX.listValue(Value.get(100))),
+                ListExp.getByValue(ListReturnType.COUNT,
+                        Exp.val(100),
+                        Exp.listBin("listBin1")),
                 Exp.val(0)
         );
         translateAndCompare("$.listBin1.[=100].count() > 0", expected);
-
-        Exp expected2 = Exp.gt(
-                ListExp.size(
-                        ListExp.getByValue(ListReturnType.VALUE,
-                                Exp.val(100),
-                                Exp.listBin("listBin1"))
-                ),
-                Exp.val(0)
-        );
-        translateAndCompare("$.listBin1.[=100].[].count() > 0", expected2); // TODO: unify
+        translateAndCompare("$.listBin1.[=100].[].count() > 0", expected);
     }
 
     @Test
