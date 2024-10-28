@@ -13,10 +13,11 @@ import com.aerospike.dsl.model.cdt.list.ListPart;
 import com.aerospike.dsl.model.cdt.list.ListTypeDesignator;
 import com.aerospike.dsl.model.cdt.map.MapPart;
 import com.aerospike.dsl.model.cdt.map.MapTypeDesignator;
+import lombok.experimental.UtilityClass;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import static com.aerospike.dsl.model.AbstractPart.PartType.LIST_PART;
 import static com.aerospike.dsl.model.AbstractPart.PartType.MAP_PART;
@@ -24,6 +25,7 @@ import static com.aerospike.dsl.model.PathFunction.PathFunctionType.*;
 import static com.aerospike.dsl.model.cdt.list.ListPart.ListPartType.*;
 import static com.aerospike.dsl.model.cdt.map.MapPart.MapPartType.MAP_TYPE_DESIGNATOR;
 
+@UtilityClass
 public class PathOperandUtils {
 
     public static Exp.Type processValueType(AbstractPart lastPathPart, PathFunction pathFunction) {
@@ -118,15 +120,13 @@ public class PathOperandUtils {
     }
 
     public static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int cdtReturnType) {
-        if (lastPathPart != null) { // if there are other parts except bin
-            if (lastPathPart.getPartType() == LIST_PART) {
-                return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, (ListPart) lastPathPart);
-            } else if (lastPathPart.getPartType() == MAP_PART) {
-                return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, (MapPart) lastPathPart);
-            }
-            return null;
+        if (lastPathPart.getPartType() == LIST_PART) {
+            return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, (ListPart) lastPathPart);
+        } else if (lastPathPart.getPartType() == MAP_PART) {
+            return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, (MapPart) lastPathPart);
         }
-        return null;
+        throw new UnsupportedOperationException(
+                String.format("Path part type %s is not supported", lastPathPart.getPartType()));
     }
 
     private static Exp doProcessCdtGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType,
@@ -169,9 +169,9 @@ public class PathOperandUtils {
             return processListPartSize(basePath, lastPathPart, valueType, cdtReturnType);
         } else if (lastPathPart.getPartType() == MAP_PART) {
             return processMapPartSize(basePath, lastPathPart, valueType, cdtReturnType);
-        } else {
-            return null;
         }
+        throw new UnsupportedOperationException(
+                String.format("Path part type %s is not supported", lastPathPart.getPartType()));
     }
 
     private static Exp processListPartSize(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType,
@@ -182,11 +182,10 @@ public class PathOperandUtils {
         // list type designator "[]" can be either after bin name or after path
         if (listPart.getListPartType().equals(LIST_TYPE_DESIGNATOR)) {
             return getCdtExpFunction(ListExp::size, basePath, lastPathPart, valueType, cdtReturnType);
-        } else {
-            // In size() the last element is considered context
-            CTX[] context = getContextArray(basePath.getParts(), true);
-            return ListExp.size(Exp.bin(bin.getBinName(), basePath.getBinType()), context);
         }
+        // In size() the last element is considered context
+        CTX[] context = getContextArray(basePath.getParts(), true);
+        return ListExp.size(Exp.bin(bin.getBinName(), basePath.getBinType()), context);
     }
 
     private static Exp processMapPartSize(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType,
@@ -196,11 +195,10 @@ public class PathOperandUtils {
 
         if (mapPart.getMapPartType().equals(MAP_TYPE_DESIGNATOR)) {
             return getCdtExpFunction(MapExp::size, basePath, lastPathPart, valueType, cdtReturnType);
-        } else {
-            // In size() the last element is considered context
-            CTX[] context = getContextArray(basePath.getParts(), true);
-            return MapExp.size(Exp.bin(bin.getBinName(), basePath.getBinType()), context);
         }
+        // In size() the last element is considered context
+        CTX[] context = getContextArray(basePath.getParts(), true);
+        return MapExp.size(Exp.bin(bin.getBinName(), basePath.getBinType()), context);
     }
 
     public static BasePath updateWithCdtTypeDesignator(BasePath basePath, PathFunction pathFunction) {
@@ -241,10 +239,10 @@ public class PathOperandUtils {
         return ((CdtPart) lastPathPart).constructExp(basePath, valueType, cdtReturnType, context);
     }
 
-    private static Exp getCdtExpFunction(Function<Exp, Exp> function, BasePath basePath, AbstractPart lastPathPart,
+    private static Exp getCdtExpFunction(UnaryOperator<Exp> operator, BasePath basePath, AbstractPart lastPathPart,
                                          Exp.Type valueType, int cdtReturnType) {
         Exp cdtExp = constructCdtExp(basePath, lastPathPart, valueType, cdtReturnType);
-        return function.apply(cdtExp);
+        return operator.apply(cdtExp);
     }
 
     private static Exp.Type findValueType(AbstractPart lastPathPart, PathFunction.PathFunctionType pathFunctionType) {
@@ -258,9 +256,8 @@ public class PathOperandUtils {
             return lastPathPart.getExpType();
         } else if (pathFunctionType == COUNT) {
             return getValueTypeForCount(lastPathPart);
-        } else {
-            return TypeUtils.getDefaultType(lastPathPart);
         }
+        return TypeUtils.getDefaultType(lastPathPart);
     }
 
     private static Exp.Type getValueTypeForCount(AbstractPart lastPathPart) {

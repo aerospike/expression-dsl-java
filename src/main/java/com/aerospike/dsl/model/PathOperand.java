@@ -26,10 +26,13 @@ public class PathOperand extends AbstractPart {
         if (lastPathPart instanceof CdtPart) cdtReturnType =
                 ((CdtPart) lastPathPart).getReturnType(pathFunction.getReturnParam());
 
-        return switch (pathFunction.getPathFunctionType()) {
-            // CAST is the same as GET with a different type
-            case GET, COUNT, CAST -> processGet(basePath, lastPathPart, valueType, cdtReturnType);
-            case SIZE -> processSize(basePath, lastPathPart, valueType, cdtReturnType);
-        };
+        if (lastPathPart != null) { // only if there are other parts except a bin
+            return switch (pathFunction.getPathFunctionType()) {
+                // CAST is the same as GET with a different type
+                case GET, COUNT, CAST -> processGet(basePath, lastPathPart, valueType, cdtReturnType);
+                case SIZE -> processSize(basePath, lastPathPart, valueType, cdtReturnType);
+            };
+        }
+        return null;
     }
 }
