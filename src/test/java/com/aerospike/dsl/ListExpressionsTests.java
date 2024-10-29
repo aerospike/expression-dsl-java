@@ -395,7 +395,7 @@ class ListExpressionsTests {
         Exp expected = Exp.eq(
                 ListExp.getByIndex(
                         ListReturnType.COUNT,
-                        Exp.Type.INT,
+                        Exp.Type.LIST,
                         Exp.val(0),
                         Exp.listBin("listBin1")
                 ),

@@ -712,7 +712,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 Exp exp = PathOperand.processPath(basePath, ctx.pathFunction() == null
                     ? null
                     : (PathFunction) visit(ctx.pathFunction()));
-            return new PathOperand(exp);
+            return exp == null ? null : new PathOperand(exp);
         }
         return basePath.getBinPart();
     }
