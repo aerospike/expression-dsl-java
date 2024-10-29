@@ -247,9 +247,9 @@ public class PathOperandUtils {
     private static Exp.Type findValueType(AbstractPart lastPathPart, PathFunction.PathFunctionType pathFunctionType) {
         /*
             Determine valueType based on
-            1. Based on the last path part
+            1. The last path part
             2. Path function type
-            3. Default type detection
+            3. Default type
          */
         if (lastPathPart != null && lastPathPart.getExpType() != null) {
             return lastPathPart.getExpType();
