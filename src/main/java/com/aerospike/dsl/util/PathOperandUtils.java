@@ -214,9 +214,8 @@ public class PathOperandUtils {
 
     private static boolean mustHaveCdtDesignator(PathFunction pathFunction,
                                                  List<AbstractPart> parts) {
-        // if existing path function type is SIZE or COUNT,
-        // or if path function type is GET with return type COUNT
-        // and parts are empty (only bin) or previous CDT part is ambiguous (index, rank or map key)
+        // if existing path function type is SIZE or COUNT
+        // and parts are empty (only bin) or previous CDT part is ambiguous (CDT index, rank or map key)
         if (pathFunction == null) return false;
         PathFunction.PathFunctionType type = pathFunction.getPathFunctionType();
         return (List.of(SIZE, COUNT).contains(type) || pathFunctionIsGetWithCount(pathFunction))
@@ -248,9 +247,9 @@ public class PathOperandUtils {
     private static Exp.Type findValueType(AbstractPart lastPathPart, PathFunction.PathFunctionType pathFunctionType) {
         /*
             Determine valueType based on
-            1. Type detection (Exp.Type of the last path part)
+            1. Based on the last path part
             2. Path function type
-            3. Default INT
+            3. Default type detection
          */
         if (lastPathPart != null && lastPathPart.getExpType() != null) {
             return lastPathPart.getExpType();
