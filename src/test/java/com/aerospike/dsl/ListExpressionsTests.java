@@ -305,7 +305,8 @@ class ListExpressionsTests {
 
     @Test
     void listValueRange() {
-        Exp expected = ListExp.getByValueRange( // this operation uses valueEnd instead of count
+        // this operation uses valueEnd instead of count
+        Exp expected = ListExp.getByValueRange(
                 ListReturnType.VALUE,
                 Exp.val(111),
                 Exp.val(334),

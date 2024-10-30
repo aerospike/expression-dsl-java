@@ -2,6 +2,7 @@ package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
+import com.aerospike.dsl.annotation.Beta;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.AbstractPart;
 import lombok.experimental.UtilityClass;
@@ -12,6 +13,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 @UtilityClass
 public class ConditionTranslator {
 
+    @Beta
     public static Expression translate(String input) {
         ConditionLexer lexer = new ConditionLexer(CharStreams.fromString(input));
         ConditionParser parser = new ConditionParser(new CommonTokenStream(lexer));

@@ -1,6 +1,7 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.annotation.Beta;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
 import com.aerospike.dsl.model.cdt.list.*;
@@ -19,6 +20,7 @@ import java.util.function.UnaryOperator;
 
 import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 
+@Beta
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
     @Override
