@@ -10,6 +10,8 @@ import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
 import lombok.Getter;
 
+import static com.aerospike.dsl.util.ParsingUtils.subtractOrReturnNull;
+
 @Getter
 public class MapRankRangeRelative extends MapPart {
     private final boolean inverted;
@@ -17,11 +19,11 @@ public class MapRankRangeRelative extends MapPart {
     private final Integer count;
     private final Object relative;
 
-    public MapRankRangeRelative(boolean inverted, Integer start, Integer count, Object relative) {
+    public MapRankRangeRelative(boolean inverted, Integer start, Integer end, Object relative) {
         super(MapPartType.RANK_RANGE_RELATIVE);
         this.inverted = inverted;
         this.start = start;
-        this.count = count;
+        this.count = subtractOrReturnNull(end, start);
         this.relative = relative;
     }
 
@@ -63,10 +65,10 @@ public class MapRankRangeRelative extends MapPart {
             boolean isInverted = rankRangeRelative == null;
 
             Integer start = Integer.parseInt(range.start().INT().getText());
-            Integer count = null;
+            Integer end = null;
 
-            if (range.relativeRankEnd().count() != null) {
-                count = Integer.parseInt(range.relativeRankEnd().count().INT().getText());
+            if (range.relativeRankEnd().end() != null) {
+                end = Integer.parseInt(range.relativeRankEnd().end().INT().getText());
             }
 
             Object relativeValue = null;
@@ -83,7 +85,7 @@ public class MapRankRangeRelative extends MapPart {
                 }
             }
 
-            return new MapRankRangeRelative(isInverted, start, count, relativeValue);
+            return new MapRankRangeRelative(isInverted, start, end, relativeValue);
         }
         throw new AerospikeDSLException("Could not translate MapRankRangeRelative from ctx: %s".formatted(ctx));
     }

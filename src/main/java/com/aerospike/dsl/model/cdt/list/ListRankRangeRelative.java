@@ -10,6 +10,8 @@ import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
 import lombok.Getter;
 
+import static com.aerospike.dsl.util.ParsingUtils.subtractOrReturnNull;
+
 @Getter
 public class ListRankRangeRelative extends ListPart {
     private final boolean inverted;
@@ -17,11 +19,11 @@ public class ListRankRangeRelative extends ListPart {
     private final Integer count;
     private final Object relative;
 
-    public ListRankRangeRelative(boolean inverted, Integer start, Integer count, Object relative) {
+    public ListRankRangeRelative(boolean inverted, Integer start, Integer end, Object relative) {
         super(ListPartType.RANK_RANGE_RELATIVE);
         this.inverted = inverted;
         this.start = start;
-        this.count = count;
+        this.count = subtractOrReturnNull(end, start);
         this.relative = relative;
     }
 
@@ -63,9 +65,9 @@ public class ListRankRangeRelative extends ListPart {
             boolean isInverted = rankRangeRelative == null;
 
             Integer start = Integer.parseInt(range.start().INT().getText());
-            Integer count = null;
-            if (range.relativeRankEnd().count() != null) {
-                count = Integer.parseInt(range.relativeRankEnd().count().INT().getText());
+            Integer end = null;
+            if (range.relativeRankEnd().end() != null) {
+                end = Integer.parseInt(range.relativeRankEnd().end().INT().getText());
             }
 
             Object relativeValue = null;
@@ -82,7 +84,7 @@ public class ListRankRangeRelative extends ListPart {
                 }
             }
 
-            return new ListRankRangeRelative(isInverted, start, count, relativeValue);
+            return new ListRankRangeRelative(isInverted, start, end, relativeValue);
         }
         throw new AerospikeDSLException("Could not translate ListRankRangeRelative from ctx: %s".formatted(ctx));
     }

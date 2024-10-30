@@ -18,4 +18,13 @@ public class ParsingUtils {
             throw new IllegalArgumentException("String %s must contain more than 2 characters".formatted(str));
         }
     }
+
+    /**
+     * @param a Integer, can be null
+     * @param b Integer, non-null
+     * @return a - b if a != null, otherwise null
+     */
+    public static Integer subtractOrReturnNull(Integer a, Integer b) {
+        return a == null ? null : a - b;
+    }
 }

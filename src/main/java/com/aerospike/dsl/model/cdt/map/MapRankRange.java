@@ -9,17 +9,19 @@ import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
 import lombok.Getter;
 
+import static com.aerospike.dsl.util.ParsingUtils.subtractOrReturnNull;
+
 @Getter
 public class MapRankRange extends MapPart {
     private final boolean inverted;
     private final Integer start;
     private final Integer count;
 
-    public MapRankRange(boolean inverted, Integer start, Integer count) {
+    public MapRankRange(boolean inverted, Integer start, Integer end) {
         super(MapPartType.RANK_RANGE);
         this.inverted = inverted;
         this.start = start;
-        this.count = count;
+        this.count = subtractOrReturnNull(end, start);
     }
 
     @Override
@@ -51,12 +53,12 @@ public class MapRankRange extends MapPart {
             boolean isInverted = rankRange == null;
 
             Integer start = Integer.parseInt(range.start().INT().getText());
-            Integer count = null;
-            if (range.count() != null) {
-                count = Integer.parseInt(range.count().INT().getText());
+            Integer end = null;
+            if (range.end() != null) {
+                end = Integer.parseInt(range.end().INT().getText());
             }
 
-            return new MapRankRange(isInverted, start, count);
+            return new MapRankRange(isInverted, start, end);
         }
         throw new AerospikeDSLException("Could not translate MapRankRange from ctx: %s".formatted(ctx));
     }

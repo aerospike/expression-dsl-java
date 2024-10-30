@@ -250,12 +250,12 @@ invertedMapIndexRange
     ;
 
 indexRangeIdentifier
-    : start ':' count
+    : start ':' end
     | start ':'
     ;
 
 start: INT | '-' INT;
-count: INT | '-' INT;
+end: INT | '-' INT;
 
 mapValueList
     : standardMapValueList
@@ -302,7 +302,7 @@ invertedMapRankRange
     ;
 
 rankRangeIdentifier
-    : start ':' count
+    : start ':' end
     | start ':'
     ;
 
@@ -324,7 +324,7 @@ rankRangeRelativeIdentifier
     ;
 
 relativeRankEnd
-    : count relativeValue
+    : end relativeValue
     | relativeValue
     ;
 
@@ -350,7 +350,7 @@ indexRangeRelativeIdentifier
     ;
 
 relativeKeyEnd
-    : count '~' mapKey
+    : end '~' mapKey
     | '~' mapKey
     ;
 

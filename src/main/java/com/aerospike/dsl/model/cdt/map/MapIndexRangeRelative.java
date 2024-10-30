@@ -10,6 +10,8 @@ import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
 import lombok.Getter;
 
+import static com.aerospike.dsl.util.ParsingUtils.subtractOrReturnNull;
+
 @Getter
 public class MapIndexRangeRelative extends MapPart {
     private final boolean inverted;
@@ -17,11 +19,11 @@ public class MapIndexRangeRelative extends MapPart {
     private final Integer count;
     private final String relative;
 
-    public MapIndexRangeRelative(boolean inverted, Integer start, Integer count, String relative) {
+    public MapIndexRangeRelative(boolean inverted, Integer start, Integer end, String relative) {
         super(MapPartType.INDEX_RANGE_RELATIVE);
         this.inverted = inverted;
         this.start = start;
-        this.count = count;
+        this.count = subtractOrReturnNull(end, start);
         this.relative = relative;
     }
 
@@ -56,10 +58,10 @@ public class MapIndexRangeRelative extends MapPart {
             boolean isInverted = indexRangeRelative == null;
 
             Integer start = Integer.parseInt(range.start().INT().getText());
-            Integer count = null;
+            Integer end = null;
             String relativeKey = null;
-            if (range.relativeKeyEnd().count() != null) {
-                count = Integer.parseInt(range.relativeKeyEnd().count().INT().getText());
+            if (range.relativeKeyEnd().end() != null) {
+                end = Integer.parseInt(range.relativeKeyEnd().end().INT().getText());
             }
 
             if (range.relativeKeyEnd().mapKey() != null) {
@@ -70,7 +72,7 @@ public class MapIndexRangeRelative extends MapPart {
                     relativeKey = ParsingUtils.getWithoutQuotes(mapKeyContext.QUOTED_STRING().getText());
                 }
             }
-            return new MapIndexRangeRelative(isInverted, start, count, relativeKey);
+            return new MapIndexRangeRelative(isInverted, start, end, relativeKey);
         }
         throw new AerospikeDSLException("Could not translate MapIndexRangeRelative from ctx: %s".formatted(ctx));
     }
