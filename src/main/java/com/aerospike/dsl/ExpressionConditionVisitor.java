@@ -1,10 +1,17 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.annotation.Beta;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
-import com.aerospike.dsl.model.cdt.list.*;
+import com.aerospike.dsl.model.cdt.list.ListIndex;
+import com.aerospike.dsl.model.cdt.list.ListIndexRange;
+import com.aerospike.dsl.model.cdt.list.ListRank;
+import com.aerospike.dsl.model.cdt.list.ListRankRange;
+import com.aerospike.dsl.model.cdt.list.ListRankRangeRelative;
+import com.aerospike.dsl.model.cdt.list.ListTypeDesignator;
+import com.aerospike.dsl.model.cdt.list.ListValue;
+import com.aerospike.dsl.model.cdt.list.ListValueList;
+import com.aerospike.dsl.model.cdt.list.ListValueRange;
 import com.aerospike.dsl.model.cdt.map.*;
 import com.aerospike.dsl.util.TypeUtils;
 import com.aerospike.dsl.util.ValidationUtils;
@@ -20,7 +27,6 @@ import java.util.function.UnaryOperator;
 
 import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 
-@Beta
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
     @Override

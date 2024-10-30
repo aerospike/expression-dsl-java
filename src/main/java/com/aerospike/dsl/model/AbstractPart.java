@@ -1,13 +1,11 @@
 package com.aerospike.dsl.model;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.annotation.Beta;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-@Beta
 public abstract class AbstractPart {
 
     private PartType partType;
