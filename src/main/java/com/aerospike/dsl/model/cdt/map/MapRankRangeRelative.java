@@ -10,7 +10,7 @@ import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
 import lombok.Getter;
 
-import static com.aerospike.dsl.util.ParsingUtils.subtractOrReturnNull;
+import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
 @Getter
 public class MapRankRangeRelative extends MapPart {
@@ -23,7 +23,7 @@ public class MapRankRangeRelative extends MapPart {
         super(MapPartType.RANK_RANGE_RELATIVE);
         this.inverted = inverted;
         this.start = start;
-        this.count = subtractOrReturnNull(end, start);
+        this.count = subtractNullable(end, start);
         this.relative = relative;
     }
 

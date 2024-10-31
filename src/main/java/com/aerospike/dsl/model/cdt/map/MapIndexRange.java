@@ -9,7 +9,7 @@ import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
 import lombok.Getter;
 
-import static com.aerospike.dsl.util.ParsingUtils.subtractOrReturnNull;
+import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
 @Getter
 public class MapIndexRange extends MapPart {
@@ -21,7 +21,7 @@ public class MapIndexRange extends MapPart {
         super(MapPartType.INDEX_RANGE);
         this.inverted = inverted;
         this.start = start;
-        this.count = subtractOrReturnNull(end, start);
+        this.count = subtractNullable(end, start);
     }
 
     @Override

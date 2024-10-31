@@ -1,5 +1,6 @@
 package com.aerospike.dsl.util;
 
+import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -24,7 +25,7 @@ public class ParsingUtils {
      * @param b Integer, non-null
      * @return a - b if a != null, otherwise null
      */
-    public static Integer subtractOrReturnNull(Integer a, Integer b) {
+    public static Integer subtractNullable(Integer a, @NonNull Integer b) {
         return a == null ? null : a - b;
     }
 }
