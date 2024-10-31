@@ -333,7 +333,7 @@ public class MapExpressionsTests {
         Exp expected = MapExp.getByIndexRange(
                 MapReturnType.VALUE,
                 Exp.val(1),
-                Exp.val(3),
+                Exp.val(2),
                 Exp.mapBin("mapBin1"));
         translateAndCompare("$.mapBin1.{1:3}", expected);
 
@@ -341,7 +341,7 @@ public class MapExpressionsTests {
         expected = MapExp.getByIndexRange(
                 MapReturnType.VALUE,
                 Exp.val(-3),
-                Exp.val(1),
+                Exp.val(4),
                 Exp.mapBin("mapBin1"));
         translateAndCompare("$.mapBin1.{-3:1}", expected);
 
@@ -349,7 +349,7 @@ public class MapExpressionsTests {
         expected = MapExp.getByIndexRange(
                 MapReturnType.VALUE | MapReturnType.INVERTED,
                 Exp.val(2),
-                Exp.val(4),
+                Exp.val(2),
                 Exp.mapBin("mapBin1"));
         translateAndCompare("$.mapBin1.{!2:4}", expected);
 
@@ -451,7 +451,7 @@ public class MapExpressionsTests {
                 MapReturnType.VALUE,
                 Exp.val(-1),
                 Exp.val(10),
-                Exp.val(1),
+                Exp.val(2),
                 Exp.mapBin("mapBin1"));
         translateAndCompare("$.mapBin1.{#-1:1~10}", expected);
 
@@ -460,7 +460,7 @@ public class MapExpressionsTests {
                 MapReturnType.VALUE | MapReturnType.INVERTED,
                 Exp.val(-1),
                 Exp.val(10),
-                Exp.val(1),
+                Exp.val(2),
                 Exp.mapBin("mapBin1"));
         translateAndCompare("$.mapBin1.{!#-1:1~10}", expected);
 

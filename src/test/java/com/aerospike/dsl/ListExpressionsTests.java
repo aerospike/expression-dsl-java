@@ -250,7 +250,7 @@ class ListExpressionsTests {
         Exp expected = ListExp.getByIndexRange(
                 ListReturnType.VALUE,
                 Exp.val(1),
-                Exp.val(3),
+                Exp.val(2),
                 Exp.listBin("listBin1"));
         translateAndCompare("$.listBin1.[1:3]", expected);
 
@@ -258,7 +258,7 @@ class ListExpressionsTests {
         expected = ListExp.getByIndexRange(
                 ListReturnType.VALUE,
                 Exp.val(-3),
-                Exp.val(1),
+                Exp.val(4),
                 Exp.listBin("listBin1"));
         translateAndCompare("$.listBin1.[-3:1]", expected);
 
@@ -266,7 +266,7 @@ class ListExpressionsTests {
         expected = ListExp.getByIndexRange(
                 ListReturnType.VALUE | ListReturnType.INVERTED,
                 Exp.val(2),
-                Exp.val(4),
+                Exp.val(2),
                 Exp.listBin("listBin1"));
         translateAndCompare("$.listBin1.[!2:4]", expected);
 
@@ -305,6 +305,7 @@ class ListExpressionsTests {
 
     @Test
     void listValueRange() {
+        // this operation uses valueEnd instead of count
         Exp expected = ListExp.getByValueRange(
                 ListReturnType.VALUE,
                 Exp.val(111),
@@ -368,7 +369,7 @@ class ListExpressionsTests {
                 ListReturnType.VALUE,
                 Exp.val(-3),
                 Exp.val("b"),
-                Exp.val(-1),
+                Exp.val(2),
                 Exp.listBin("listBin1"));
         translateAndCompare("$.listBin1.[#-3:-1~b]", expected);
 
@@ -377,7 +378,7 @@ class ListExpressionsTests {
                 ListReturnType.VALUE | ListReturnType.INVERTED,
                 Exp.val(-3),
                 Exp.val("b"),
-                Exp.val(-1),
+                Exp.val(2),
                 Exp.listBin("listBin1"));
         translateAndCompare("$.listBin1.[!#-3:-1~b]", expected);
 
