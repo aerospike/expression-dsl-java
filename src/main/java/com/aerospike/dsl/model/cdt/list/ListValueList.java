@@ -7,13 +7,11 @@ import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
-import lombok.Getter;
 
 import java.util.List;
 
 import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 
-@Getter
 public class ListValueList extends ListPart {
     private final boolean inverted;
     private final List<?> valueList;
@@ -22,15 +20,6 @@ public class ListValueList extends ListPart {
         super(ListPartType.VALUE_LIST);
         this.inverted = inverted;
         this.valueList = valueList;
-    }
-
-    @Override
-    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (isInverted()) {
-            cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
-        }
-        return ListExp.getByValueList(cdtReturnType, Exp.val(getValueList()),
-                Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
     }
 
     public static ListValueList constructFromCTX(ConditionParser.ListValueListContext ctx) {
@@ -48,14 +37,23 @@ public class ListValueList extends ListPart {
                             return listValue.NAME_IDENTIFIER().getText();
                         } else if (listValue.QUOTED_STRING() != null) {
                             return getWithoutQuotes(listValue.QUOTED_STRING().getText());
-                        } else {
-                            return Integer.parseInt(listValue.INT().getText());
                         }
+                        return Integer.parseInt(listValue.INT().getText());
                     }
             ).toList();
 
             return new ListValueList(isInverted, valueListObjects);
         }
         throw new AerospikeDSLException("Could not translate ListValueList from ctx: %s".formatted(ctx));
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (inverted) {
+            cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
+        }
+
+        return ListExp.getByValueList(cdtReturnType, Exp.val(valueList),
+                Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
     }
 }

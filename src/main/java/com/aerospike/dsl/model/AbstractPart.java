@@ -8,16 +8,17 @@ import lombok.Setter;
 @Setter
 public abstract class AbstractPart {
 
+    protected Exp.Type expType;
+
     private PartType partType;
     private Exp exp;
-    Exp.Type expType;
 
-    public AbstractPart(PartType partType) {
+    protected AbstractPart(PartType partType) {
         this.partType = partType;
         this.exp = null;
     }
 
-    public AbstractPart(PartType partType, Exp exp) {
+    protected AbstractPart(PartType partType, Exp exp) {
         this.partType = partType;
         this.exp = exp;
     }

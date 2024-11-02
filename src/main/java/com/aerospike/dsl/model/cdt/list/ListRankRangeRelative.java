@@ -8,11 +8,9 @@ import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
-import lombok.Getter;
 
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
-@Getter
 public class ListRankRangeRelative extends ListPart {
     private final boolean inverted;
     private final Integer start;
@@ -25,33 +23,6 @@ public class ListRankRangeRelative extends ListPart {
         this.start = start;
         this.count = subtractNullable(end, start);
         this.relative = relative;
-    }
-
-    @Override
-    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (isInverted()) {
-            cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
-        }
-        Exp relativeExp;
-        if (getRelative() instanceof String) {
-            relativeExp = Exp.val((String) getRelative());
-        } else if (getRelative() instanceof Integer) {
-            relativeExp = Exp.val((Integer) getRelative());
-        } else {
-            throw new AerospikeDSLException("Unsupported value relative rank");
-        }
-        Exp start = Exp.val(getStart());
-        Exp count = null;
-        if (getCount() != null) {
-            count = Exp.val(getCount());
-        }
-        if (count == null) {
-            return ListExp.getByValueRelativeRankRange(cdtReturnType, start, relativeExp, Exp.bin(basePath.getBinPart().getBinName(),
-                    basePath.getBinType()), context);
-        } else {
-            return ListExp.getByValueRelativeRankRange(cdtReturnType, start, relativeExp, count, Exp.bin(basePath.getBinPart().getBinName(),
-                    basePath.getBinType()), context);
-        }
     }
 
     public static ListRankRangeRelative constructFromCTX(ConditionParser.ListRankRangeRelativeContext ctx) {
@@ -87,5 +58,31 @@ public class ListRankRangeRelative extends ListPart {
             return new ListRankRangeRelative(isInverted, start, end, relativeValue);
         }
         throw new AerospikeDSLException("Could not translate ListRankRangeRelative from ctx: %s".formatted(ctx));
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (inverted) {
+            cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
+        }
+
+        Exp relativeExp;
+        if (relative instanceof String rel) {
+            relativeExp = Exp.val(rel);
+        } else if (relative instanceof Integer rel) {
+            relativeExp = Exp.val(rel);
+        } else {
+            throw new AerospikeDSLException("Unsupported value relative rank");
+        }
+
+        Exp startExp = Exp.val(start);
+        if (count == null) {
+            return ListExp.getByValueRelativeRankRange(cdtReturnType, startExp, relativeExp,
+                    Exp.bin(basePath.getBinPart().getBinName(),
+                            basePath.getBinType()), context);
+        }
+        return ListExp.getByValueRelativeRankRange(cdtReturnType, startExp, relativeExp, Exp.val(count),
+                Exp.bin(basePath.getBinPart().getBinName(),
+                        basePath.getBinType()), context);
     }
 }

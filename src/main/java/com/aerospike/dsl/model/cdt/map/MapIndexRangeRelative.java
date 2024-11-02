@@ -8,11 +8,9 @@ import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
-import lombok.Getter;
 
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
-@Getter
 public class MapIndexRangeRelative extends MapPart {
     private final boolean inverted;
     private final Integer start;
@@ -27,26 +25,6 @@ public class MapIndexRangeRelative extends MapPart {
         this.relative = relative;
     }
 
-    @Override
-    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (isInverted()) {
-            cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
-        }
-        Exp keyExp = Exp.val(getRelative());
-        Exp start = Exp.val(getStart());
-        Exp count = null;
-        if (getCount() != null) {
-            count = Exp.val(getCount());
-        }
-        if (count == null) {
-            return MapExp.getByKeyRelativeIndexRange(cdtReturnType, keyExp, start, Exp.bin(basePath.getBinPart().getBinName(),
-                    basePath.getBinType()), context);
-        } else {
-            return MapExp.getByKeyRelativeIndexRange(cdtReturnType, keyExp, start, count, Exp.bin(basePath.getBinPart().getBinName(),
-                    basePath.getBinType()), context);
-        }
-    }
-
     public static MapIndexRangeRelative constructFromCTX(ConditionParser.MapIndexRangeRelativeContext ctx) {
         ConditionParser.StandardMapIndexRangeRelativeContext indexRangeRelative = ctx.standardMapIndexRangeRelative();
         ConditionParser.InvertedMapIndexRangeRelativeContext invertedIndexRangeRelative = ctx.invertedMapIndexRangeRelative();
@@ -59,11 +37,11 @@ public class MapIndexRangeRelative extends MapPart {
 
             Integer start = Integer.parseInt(range.start().INT().getText());
             Integer end = null;
-            String relativeKey = null;
             if (range.relativeKeyEnd().end() != null) {
                 end = Integer.parseInt(range.relativeKeyEnd().end().INT().getText());
             }
 
+            String relativeKey = null;
             if (range.relativeKeyEnd().mapKey() != null) {
                 ConditionParser.MapKeyContext mapKeyContext = range.relativeKeyEnd().mapKey();
                 if (mapKeyContext.NAME_IDENTIFIER() != null) {
@@ -75,5 +53,24 @@ public class MapIndexRangeRelative extends MapPart {
             return new MapIndexRangeRelative(isInverted, start, end, relativeKey);
         }
         throw new AerospikeDSLException("Could not translate MapIndexRangeRelative from ctx: %s".formatted(ctx));
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (inverted) {
+            cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+        }
+
+        Exp keyExp = Exp.val(relative);
+        Exp startExp = Exp.val(start);
+        if (count == null) {
+            return MapExp.getByKeyRelativeIndexRange(cdtReturnType, keyExp, startExp,
+                    Exp.bin(basePath.getBinPart().getBinName(),
+                            basePath.getBinType()), context);
+        }
+
+        return MapExp.getByKeyRelativeIndexRange(cdtReturnType, keyExp, startExp, Exp.val(count),
+                Exp.bin(basePath.getBinPart().getBinName(),
+                        basePath.getBinType()), context);
     }
 }

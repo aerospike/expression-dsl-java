@@ -10,25 +10,9 @@ public abstract class MapPart extends CdtPart {
 
     private final MapPartType mapPartType;
 
-    public MapPart(MapPartType mapPartType) {
+    protected MapPart(MapPartType mapPartType) {
         super(PartType.MAP_PART);
         this.mapPartType = mapPartType;
-    }
-
-    public enum MapPartType {
-        MAP_TYPE_DESIGNATOR,
-        KEY,
-        INDEX,
-        VALUE,
-        RANK,
-        KEY_RANGE,
-        KEY_LIST,
-        INDEX_RANGE,
-        VALUE_LIST,
-        VALUE_RANGE,
-        RANK_RANGE,
-        RANK_RANGE_RELATIVE,
-        INDEX_RANGE_RELATIVE
     }
 
     @Override
@@ -46,5 +30,21 @@ public abstract class MapPart extends CdtPart {
             case REVERSE_INDEX -> MapReturnType.REVERSE_INDEX;
             case REVERSE_RANK -> MapReturnType.REVERSE_RANK;
         };
+    }
+
+    public enum MapPartType {
+        MAP_TYPE_DESIGNATOR,
+        KEY,
+        INDEX,
+        VALUE,
+        RANK,
+        KEY_RANGE,
+        KEY_LIST,
+        INDEX_RANGE,
+        VALUE_LIST,
+        VALUE_RANGE,
+        RANK_RANGE,
+        RANK_RANGE_RELATIVE,
+        INDEX_RANGE_RELATIVE
     }
 }

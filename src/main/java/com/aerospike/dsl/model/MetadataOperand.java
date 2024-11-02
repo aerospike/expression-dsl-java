@@ -20,23 +20,6 @@ public class MetadataOperand extends Expr {
         this.functionName = functionName;
     }
 
-    public MetadataReturnType getMetadataType() {
-        return switch (functionName) {
-            case "deviceSize",
-                 "memorySize",
-                 "recordSize",
-                 "digestModulo",
-                 "lastUpdate",
-                 "sinceUpdate",
-                 "ttl",
-                 "voidTime" -> MetadataReturnType.INT;
-            case "isTombstone",
-                 "keyExists" -> MetadataReturnType.BOOL;
-            case "setName" -> MetadataReturnType.STRING;
-            default -> throw new IllegalArgumentException("Unknown metadata function: " + functionName);
-        };
-    }
-
     private static Exp constructExp(String functionName, Integer parameter) {
         return switch (functionName) {
             case "deviceSize" -> Exp.deviceSize();
@@ -50,6 +33,23 @@ public class MetadataOperand extends Expr {
             case "setName" -> Exp.setName();
             case "ttl" -> Exp.ttl();
             case "voidTime" -> Exp.voidTime();
+            default -> throw new IllegalArgumentException("Unknown metadata function: " + functionName);
+        };
+    }
+
+    public MetadataReturnType getMetadataType() {
+        return switch (functionName) {
+            case "deviceSize",
+                 "memorySize",
+                 "recordSize",
+                 "digestModulo",
+                 "lastUpdate",
+                 "sinceUpdate",
+                 "ttl",
+                 "voidTime" -> MetadataReturnType.INT;
+            case "isTombstone",
+                 "keyExists" -> MetadataReturnType.BOOL;
+            case "setName" -> MetadataReturnType.STRING;
             default -> throw new IllegalArgumentException("Unknown metadata function: " + functionName);
         };
     }

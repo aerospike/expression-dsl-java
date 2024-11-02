@@ -9,15 +9,8 @@ import com.aerospike.dsl.model.PathFunction;
 
 public abstract class CdtPart extends AbstractPart {
 
-    public CdtPart(PartType partType) {
+    protected CdtPart(PartType partType) {
         super(partType);
-    }
-
-    public abstract Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context);
-
-    public CTX getContext() {
-        // should print the subclass of the cdt type
-        throw new AerospikeDSLException("Context is not supported for %s".formatted(this.getClass().getName()));
     }
 
     public static Exp getExpVal(Exp.Type valueType, Object cdtValue) {
@@ -29,6 +22,13 @@ public abstract class CdtPart extends AbstractPart {
             default -> throw new IllegalStateException(
                     "Get by value from a CDT: unexpected value '%s'".formatted(valueType));
         };
+    }
+
+    public abstract Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context);
+
+    public CTX getContext() {
+        // should print the subclass of the cdt type
+        throw new AerospikeDSLException("Context is not supported for %s".formatted(this.getClass().getName()));
     }
 
     public abstract int getReturnType(PathFunction.ReturnParam returnParam);

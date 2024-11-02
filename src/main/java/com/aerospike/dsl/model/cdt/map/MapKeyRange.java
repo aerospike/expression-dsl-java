@@ -8,9 +8,9 @@ import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
-import lombok.Getter;
 
-@Getter
+import java.util.Optional;
+
 public class MapKeyRange extends MapPart {
     private final boolean inverted;
     private final String start;
@@ -21,20 +21,6 @@ public class MapKeyRange extends MapPart {
         this.inverted = inverted;
         this.start = start;
         this.end = end;
-    }
-
-    @Override
-    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (isInverted()) {
-            cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
-        }
-        Exp start = Exp.val(getStart());
-        Exp end = null;
-        if (getEnd() != null) {
-            end = Exp.val(getEnd());
-        }
-        return MapExp.getByKeyRange(cdtReturnType, start, end, Exp.bin(basePath.getBinPart().getBinName(),
-                basePath.getBinType()), context);
     }
 
     public static MapKeyRange constructFromCTX(ConditionParser.MapKeyRangeContext ctx) {
@@ -50,14 +36,27 @@ public class MapKeyRange extends MapPart {
                     ? range.mapKey(0).NAME_IDENTIFIER().getText()
                     : ParsingUtils.getWithoutQuotes(range.mapKey(0).QUOTED_STRING().getText());
 
-            String endKey = range.mapKey(1) != null
-                    ? (range.mapKey(1).NAME_IDENTIFIER() != null
-                    ? range.mapKey(1).NAME_IDENTIFIER().getText()
-                    : ParsingUtils.getWithoutQuotes(range.mapKey(1).QUOTED_STRING().getText()))
-                    : null;
+            String endKey = Optional.ofNullable(range.mapKey(1))
+                    .map(keyCtx -> keyCtx.NAME_IDENTIFIER() != null
+                            ? keyCtx.NAME_IDENTIFIER().getText()
+                            : ParsingUtils.getWithoutQuotes(keyCtx.QUOTED_STRING().getText()))
+                    .orElse(null);
 
             return new MapKeyRange(isInverted, startKey, endKey);
         }
         throw new AerospikeDSLException("Could not translate MapKeyRange from ctx: %s".formatted(ctx));
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (inverted) {
+            cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+        }
+
+        Exp startExp = Exp.val(start);
+        Exp endExp = end != null ? Exp.val(end) : null;
+
+        return MapExp.getByKeyRange(cdtReturnType, startExp, endExp, Exp.bin(basePath.getBinPart().getBinName(),
+                basePath.getBinType()), context);
     }
 }

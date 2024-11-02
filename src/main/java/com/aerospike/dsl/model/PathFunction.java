@@ -17,6 +17,13 @@ public class PathFunction extends AbstractPart {
         this.binType = binType;
     }
 
+    public static Exp.Type castTypeToExpType(CastType castType) {
+        return switch (castType) {
+            case INT -> Exp.Type.INT;
+            case FLOAT -> Exp.Type.FLOAT;
+        };
+    }
+
     public enum ReturnParam {
         VALUE,
         INDEX,
@@ -42,12 +49,5 @@ public class PathFunction extends AbstractPart {
     public enum CastType {
         INT,
         FLOAT
-    }
-
-    public static Exp.Type castTypeToExpType(CastType castType) {
-        return switch (castType) {
-            case INT -> Exp.Type.INT;
-            case FLOAT -> Exp.Type.FLOAT;
-        };
     }
 }
