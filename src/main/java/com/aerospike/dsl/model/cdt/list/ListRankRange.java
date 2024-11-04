@@ -22,7 +22,7 @@ public class ListRankRange extends ListPart {
         this.count = subtractNullable(end, start);
     }
 
-    public static ListRankRange constructFromCTX(ConditionParser.ListRankRangeContext ctx) {
+    public static ListRankRange from(ConditionParser.ListRankRangeContext ctx) {
         ConditionParser.StandardListRankRangeContext rankRange = ctx.standardListRankRange();
         ConditionParser.InvertedListRankRangeContext invertedRankRange = ctx.invertedListRankRange();
 

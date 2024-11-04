@@ -18,7 +18,7 @@ public class ListTypeDesignator extends ListPart {
         super(ListPartType.LIST_TYPE_DESIGNATOR);
     }
 
-    public static ListTypeDesignator constructFromCTX() {
+    public static ListTypeDesignator from() {
         return new ListTypeDesignator();
     }
 

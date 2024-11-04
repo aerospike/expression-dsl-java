@@ -23,7 +23,7 @@ public class MapKeyRange extends MapPart {
         this.end = end;
     }
 
-    public static MapKeyRange constructFromCTX(ConditionParser.MapKeyRangeContext ctx) {
+    public static MapKeyRange from(ConditionParser.MapKeyRangeContext ctx) {
         ConditionParser.StandardMapKeyRangeContext keyRange = ctx.standardMapKeyRange();
         ConditionParser.InvertedMapKeyRangeContext invertedKeyRange = ctx.invertedMapKeyRange();
 

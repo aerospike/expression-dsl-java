@@ -20,7 +20,7 @@ public class MapValueRange extends MapPart {
         this.end = end;
     }
 
-    public static MapValueRange constructFromCTX(ConditionParser.MapValueRangeContext ctx) {
+    public static MapValueRange from(ConditionParser.MapValueRangeContext ctx) {
         ConditionParser.StandardMapValueRangeContext valueRange = ctx.standardMapValueRange();
         ConditionParser.InvertedMapValueRangeContext invertedValueRange = ctx.invertedMapValueRange();
 

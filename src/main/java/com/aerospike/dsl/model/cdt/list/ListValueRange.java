@@ -20,7 +20,7 @@ public class ListValueRange extends ListPart {
         this.end = end;
     }
 
-    public static ListValueRange constructFromCTX(ConditionParser.ListValueRangeContext ctx) {
+    public static ListValueRange from(ConditionParser.ListValueRangeContext ctx) {
         ConditionParser.StandardListValueRangeContext valueRange = ctx.standardListValueRange();
         ConditionParser.InvertedListValueRangeContext invertedValueRange = ctx.invertedListValueRange();
 

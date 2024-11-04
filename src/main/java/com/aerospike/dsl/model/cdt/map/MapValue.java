@@ -16,7 +16,7 @@ public class MapValue extends MapPart {
         this.value = value;
     }
 
-    public static MapValue constructFromCTX(ConditionParser.MapValueContext ctx) {
+    public static MapValue from(ConditionParser.MapValueContext ctx) {
         Object mapValue = null;
         if (ctx.valueIdentifier().NAME_IDENTIFIER() != null) {
             mapValue = ctx.valueIdentifier().NAME_IDENTIFIER().getText();

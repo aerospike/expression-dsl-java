@@ -25,7 +25,7 @@ public class MapRankRangeRelative extends MapPart {
         this.relative = relative;
     }
 
-    public static MapRankRangeRelative constructFromCTX(ConditionParser.MapRankRangeRelativeContext ctx) {
+    public static MapRankRangeRelative from(ConditionParser.MapRankRangeRelativeContext ctx) {
         ConditionParser.StandardMapRankRangeRelativeContext rankRangeRelative = ctx.standardMapRankRangeRelative();
         ConditionParser.InvertedMapRankRangeRelativeContext invertedRankRangeRelative = ctx.invertedMapRankRangeRelative();
 

@@ -14,7 +14,7 @@ public class ListRank extends ListPart {
         this.rank = rank;
     }
 
-    public static ListRank constructFromCTX(ConditionParser.ListRankContext ctx) {
+    public static ListRank from(ConditionParser.ListRankContext ctx) {
         return new ListRank(Integer.parseInt(ctx.INT().getText()));
     }
 

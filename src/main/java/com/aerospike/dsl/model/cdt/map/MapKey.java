@@ -17,7 +17,7 @@ public class MapKey extends MapPart {
         this.key = key;
     }
 
-    public static MapKey constructFromCTX(ConditionParser.MapKeyContext ctx) {
+    public static MapKey from(ConditionParser.MapKeyContext ctx) {
         if (ctx.QUOTED_STRING() != null) {
             return new MapKey(ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()));
         }
