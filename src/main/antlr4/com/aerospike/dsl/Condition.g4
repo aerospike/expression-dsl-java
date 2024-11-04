@@ -139,23 +139,9 @@ pathFunctionGetType
     | 'GEO'
     ;
 
-pathFunctionReturnType
-    : PATH_FUNCTION_LIST_RETURN_TYPE
-    | PATH_FUNCTION_MAP_RETURN_TYPE
-    ;
+pathFunctionReturnType: PATH_FUNCTION_CDT_RETURN_TYPE;
 
-PATH_FUNCTION_LIST_RETURN_TYPE
-    : 'VALUE'
-    | 'INDEX'
-    | 'RANK'
-    | 'COUNT'
-    | 'NONE'
-    | 'EXISTS'
-    | 'REVERSE_INDEX'
-    | 'REVERSE_RANK'
-    ;
-
-PATH_FUNCTION_MAP_RETURN_TYPE
+PATH_FUNCTION_CDT_RETURN_TYPE
     : 'VALUE'
     | 'KEY_VALUE'
     | 'UNORDERED_MAP'
