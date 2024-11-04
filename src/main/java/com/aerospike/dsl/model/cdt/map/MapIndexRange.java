@@ -7,11 +7,9 @@ import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
-import lombok.Getter;
 
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
-@Getter
 public class MapIndexRange extends MapPart {
     private final boolean inverted;
     private final Integer start;
@@ -22,25 +20,6 @@ public class MapIndexRange extends MapPart {
         this.inverted = inverted;
         this.start = start;
         this.count = subtractNullable(end, start);
-    }
-
-    @Override
-    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (isInverted()) {
-            cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
-        }
-        Exp start = Exp.val(getStart());
-        Exp count = null;
-        if (getCount() != null) {
-            count = Exp.val(getCount());
-        }
-        if (count == null) {
-            return MapExp.getByIndexRange(cdtReturnType, start, Exp.bin(basePath.getBinPart().getBinName(),
-                    basePath.getBinType()), context);
-        } else {
-            return MapExp.getByIndexRange(cdtReturnType, start, count, Exp.bin(basePath.getBinPart().getBinName(),
-                    basePath.getBinType()), context);
-        }
     }
 
     public static MapIndexRange constructFromCTX(ConditionParser.MapIndexRangeContext ctx) {
@@ -61,5 +40,22 @@ public class MapIndexRange extends MapPart {
             return new MapIndexRange(isInverted, start, end);
         }
         throw new AerospikeDSLException("Could not translate MapIndexRange from ctx: %s".formatted(ctx));
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (inverted) {
+            cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
+        }
+
+        Exp startExp = Exp.val(start);
+        if (count == null) {
+            return MapExp.getByIndexRange(cdtReturnType, startExp, Exp.bin(basePath.getBinPart().getBinName(),
+                    basePath.getBinType()), context);
+        }
+
+        return MapExp.getByIndexRange(cdtReturnType, startExp, Exp.val(count),
+                Exp.bin(basePath.getBinPart().getBinName(),
+                        basePath.getBinType()), context);
     }
 }

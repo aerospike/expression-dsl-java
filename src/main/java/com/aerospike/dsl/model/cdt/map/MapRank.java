@@ -5,9 +5,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.model.BasePath;
-import lombok.Getter;
 
-@Getter
 public class MapRank extends MapPart {
     private final int rank;
 
@@ -16,18 +14,18 @@ public class MapRank extends MapPart {
         this.rank = rank;
     }
 
+    public static MapRank constructFromCTX(ConditionParser.MapRankContext ctx) {
+        return new MapRank(Integer.parseInt(ctx.INT().getText()));
+    }
+
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        return MapExp.getByRank(cdtReturnType, valueType, Exp.val(getRank()),
+        return MapExp.getByRank(cdtReturnType, valueType, Exp.val(rank),
                 Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
     }
 
     @Override
     public CTX getContext() {
-        return CTX.mapRank(getRank());
-    }
-
-    public static MapRank constructFromCTX(ConditionParser.MapRankContext ctx) {
-        return new MapRank(Integer.parseInt(ctx.INT().getText()));
+        return CTX.mapRank(rank);
     }
 }

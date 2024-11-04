@@ -7,32 +7,13 @@ import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
-import lombok.Getter;
 
-@Getter
 public class MapValue extends MapPart {
     private final Object value;
 
     public MapValue(Object value) {
         super(MapPartType.VALUE);
         this.value = value;
-    }
-
-    @Override
-    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        Exp value = switch (valueType) {
-            case BOOL -> Exp.val((Boolean) getValue());
-            case STRING -> Exp.val((String) getValue());
-            case FLOAT -> Exp.val((Float) getValue());
-            default -> Exp.val((Integer) getValue()); // for getByValue the default is INT
-        };
-        return MapExp.getByValue(cdtReturnType, value, Exp.bin(basePath.getBinPart().getBinName(),
-                basePath.getBinType()), context);
-    }
-
-    @Override
-    public CTX getContext() {
-        return CTX.mapValue(Value.get(getValue()));
     }
 
     public static MapValue constructFromCTX(ConditionParser.MapValueContext ctx) {
@@ -45,5 +26,23 @@ public class MapValue extends MapPart {
             mapValue = Integer.parseInt(ctx.valueIdentifier().INT().getText());
         }
         return new MapValue(mapValue);
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        Exp valueExp = switch (valueType) {
+            case BOOL -> Exp.val((Boolean) value);
+            case STRING -> Exp.val((String) value);
+            case FLOAT -> Exp.val((Float) value);
+            default -> Exp.val((Integer) value); // for getByValue the default is INT
+        };
+
+        return MapExp.getByValue(cdtReturnType, valueExp, Exp.bin(basePath.getBinPart().getBinName(),
+                basePath.getBinType()), context);
+    }
+
+    @Override
+    public CTX getContext() {
+        return CTX.mapValue(Value.get(value));
     }
 }

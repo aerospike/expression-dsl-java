@@ -7,32 +7,13 @@ import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.model.BasePath;
 import com.aerospike.dsl.util.ParsingUtils;
-import lombok.Getter;
 
-@Getter
 public class ListValue extends ListPart {
     private final Object value;
 
     public ListValue(Object value) {
         super(ListPartType.VALUE);
         this.value = value;
-    }
-
-    @Override
-    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        Exp value = switch (valueType) {
-            case BOOL -> Exp.val((Boolean) getValue());
-            case STRING -> Exp.val((String) getValue());
-            case FLOAT -> Exp.val((Float) getValue());
-            default -> Exp.val((Integer) getValue()); // for getByValue the default is INT
-        };
-        return ListExp.getByValue(cdtReturnType, value, Exp.bin(basePath.getBinPart().getBinName(),
-                basePath.getBinType()), context);
-    }
-
-    @Override
-    public CTX getContext() {
-        return CTX.listValue(Value.get(getValue()));
     }
 
     public static ListValue constructFromCTX(ConditionParser.ListValueContext ctx) {
@@ -45,5 +26,22 @@ public class ListValue extends ListPart {
             listValue = Integer.parseInt(ctx.valueIdentifier().INT().getText());
         }
         return new ListValue(listValue);
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        Exp valueExp = switch (valueType) {
+            case BOOL -> Exp.val((Boolean) value);
+            case STRING -> Exp.val((String) value);
+            case FLOAT -> Exp.val((Float) value);
+            default -> Exp.val((Integer) value); // for getByValue the default is INT
+        };
+        return ListExp.getByValue(cdtReturnType, valueExp, Exp.bin(basePath.getBinPart().getBinName(),
+                basePath.getBinType()), context);
+    }
+
+    @Override
+    public CTX getContext() {
+        return CTX.listValue(Value.get(value));
     }
 }

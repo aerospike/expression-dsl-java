@@ -7,11 +7,9 @@ import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
-import lombok.Getter;
 
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
-@Getter
 public class ListIndexRange extends ListPart {
     private final boolean inverted;
     private final Integer start;
@@ -22,25 +20,6 @@ public class ListIndexRange extends ListPart {
         this.inverted = inverted;
         this.start = start;
         this.count = subtractNullable(end, start);
-    }
-
-    @Override
-    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (isInverted()) {
-            cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
-        }
-        Exp start = Exp.val(getStart());
-        Exp count = null;
-        if (getCount() != null) {
-            count = Exp.val(getCount());
-        }
-        if (count == null) {
-            return ListExp.getByIndexRange(cdtReturnType, start, Exp.bin(basePath.getBinPart().getBinName(),
-                    basePath.getBinType()), context);
-        } else {
-            return ListExp.getByIndexRange(cdtReturnType, start, count, Exp.bin(basePath.getBinPart().getBinName(),
-                    basePath.getBinType()), context);
-        }
     }
 
     public static ListIndexRange constructFromCTX(ConditionParser.ListIndexRangeContext ctx) {
@@ -61,5 +40,22 @@ public class ListIndexRange extends ListPart {
             return new ListIndexRange(isInverted, start, end);
         }
         throw new AerospikeDSLException("Could not translate ListIndexRange from ctx: %s".formatted(ctx));
+    }
+
+    @Override
+    public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
+        if (inverted) {
+            cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
+        }
+
+        Exp startExp = Exp.val(start);
+        if (count == null) {
+            return ListExp.getByIndexRange(cdtReturnType, startExp, Exp.bin(basePath.getBinPart().getBinName(),
+                    basePath.getBinType()), context);
+        }
+
+        return ListExp.getByIndexRange(cdtReturnType, startExp, Exp.val(count),
+                Exp.bin(basePath.getBinPart().getBinName(),
+                        basePath.getBinType()), context);
     }
 }

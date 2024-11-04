@@ -5,9 +5,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.model.BasePath;
-import lombok.Getter;
 
-@Getter
 public class ListIndex extends ListPart {
     private final int index;
 
@@ -16,18 +14,18 @@ public class ListIndex extends ListPart {
         this.index = index;
     }
 
+    public static ListIndex constructFromCTX(ConditionParser.ListIndexContext ctx) {
+        return new ListIndex(Integer.parseInt(ctx.INT().getText()));
+    }
+
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        return ListExp.getByIndex(cdtReturnType, valueType, Exp.val(getIndex()),
+        return ListExp.getByIndex(cdtReturnType, valueType, Exp.val(index),
                 Exp.bin(basePath.getBinPart().getBinName(), basePath.getBinType()), context);
     }
 
     @Override
     public CTX getContext() {
-        return CTX.listIndex(getIndex());
-    }
-
-    public static ListIndex constructFromCTX(ConditionParser.ListIndexContext ctx) {
-        return new ListIndex(Integer.parseInt(ctx.INT().getText()));
+        return CTX.listIndex(index);
     }
 }

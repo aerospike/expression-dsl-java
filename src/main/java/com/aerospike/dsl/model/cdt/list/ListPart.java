@@ -11,21 +11,9 @@ public abstract class ListPart extends CdtPart {
 
     private final ListPartType listPartType;
 
-    public ListPart(ListPartType listPartType) {
+    protected ListPart(ListPartType listPartType) {
         super(PartType.LIST_PART);
         this.listPartType = listPartType;
-    }
-
-    public enum ListPartType {
-        LIST_TYPE_DESIGNATOR,
-        INDEX,
-        VALUE,
-        RANK,
-        INDEX_RANGE,
-        VALUE_LIST,
-        VALUE_RANGE,
-        RANK_RANGE,
-        RANK_RANGE_RELATIVE
     }
 
     @Override
@@ -41,5 +29,17 @@ public abstract class ListPart extends CdtPart {
             default ->
                     throw new AerospikeDSLException("Unsupported Return Param for List CDT: %s".formatted(returnParam));
         };
+    }
+
+    public enum ListPartType {
+        LIST_TYPE_DESIGNATOR,
+        INDEX,
+        VALUE,
+        RANK,
+        INDEX_RANGE,
+        VALUE_LIST,
+        VALUE_RANGE,
+        RANK_RANGE,
+        RANK_RANGE_RELATIVE
     }
 }
