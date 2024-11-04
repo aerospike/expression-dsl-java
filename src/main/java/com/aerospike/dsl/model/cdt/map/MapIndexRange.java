@@ -22,7 +22,7 @@ public class MapIndexRange extends MapPart {
         this.count = subtractNullable(end, start);
     }
 
-    public static MapIndexRange constructFromCTX(ConditionParser.MapIndexRangeContext ctx) {
+    public static MapIndexRange from(ConditionParser.MapIndexRangeContext ctx) {
         ConditionParser.StandardMapIndexRangeContext indexRange = ctx.standardMapIndexRange();
         ConditionParser.InvertedMapIndexRangeContext invertedIndexRange = ctx.invertedMapIndexRange();
 

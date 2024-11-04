@@ -22,7 +22,7 @@ public class ListValueList extends ListPart {
         this.valueList = valueList;
     }
 
-    public static ListValueList constructFromCTX(ConditionParser.ListValueListContext ctx) {
+    public static ListValueList from(ConditionParser.ListValueListContext ctx) {
         ConditionParser.StandardListValueListContext valueList = ctx.standardListValueList();
         ConditionParser.InvertedListValueListContext invertedValueList = ctx.invertedListValueList();
 

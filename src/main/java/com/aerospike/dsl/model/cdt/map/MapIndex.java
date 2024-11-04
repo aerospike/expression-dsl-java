@@ -14,7 +14,7 @@ public class MapIndex extends MapPart {
         this.index = index;
     }
 
-    public static MapIndex constructFromCTX(ConditionParser.MapIndexContext ctx) {
+    public static MapIndex from(ConditionParser.MapIndexContext ctx) {
         return new MapIndex(Integer.parseInt(ctx.INT().getText()));
     }
 

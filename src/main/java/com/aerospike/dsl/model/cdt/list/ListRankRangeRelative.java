@@ -25,7 +25,7 @@ public class ListRankRangeRelative extends ListPart {
         this.relative = relative;
     }
 
-    public static ListRankRangeRelative constructFromCTX(ConditionParser.ListRankRangeRelativeContext ctx) {
+    public static ListRankRangeRelative from(ConditionParser.ListRankRangeRelativeContext ctx) {
         ConditionParser.StandardListRankRangeRelativeContext rankRangeRelative = ctx.standardListRankRangeRelative();
         ConditionParser.InvertedListRankRangeRelativeContext invertedRankRangeRelative = ctx.invertedListRankRangeRelative();
 

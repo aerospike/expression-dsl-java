@@ -14,7 +14,7 @@ public class MapTypeDesignator extends MapPart {
         super(MapPartType.MAP_TYPE_DESIGNATOR);
     }
 
-    public static MapTypeDesignator constructFromCTX() {
+    public static MapTypeDesignator from() {
         return new MapTypeDesignator();
     }
 

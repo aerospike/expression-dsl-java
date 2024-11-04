@@ -16,7 +16,7 @@ public class ListValue extends ListPart {
         this.value = value;
     }
 
-    public static ListValue constructFromCTX(ConditionParser.ListValueContext ctx) {
+    public static ListValue from(ConditionParser.ListValueContext ctx) {
         Object listValue = null;
         if (ctx.valueIdentifier().NAME_IDENTIFIER() != null) {
             listValue = ctx.valueIdentifier().NAME_IDENTIFIER().getText();

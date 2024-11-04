@@ -21,7 +21,7 @@ public class MapKeyList extends MapPart {
         this.keyList = keyList;
     }
 
-    public static MapKeyList constructFromCTX(ConditionParser.MapKeyListContext ctx) {
+    public static MapKeyList from(ConditionParser.MapKeyListContext ctx) {
         ConditionParser.StandardMapKeyListContext keyList = ctx.standardMapKeyList();
         ConditionParser.InvertedMapKeyListContext invertedKeyList = ctx.invertedMapKeyList();
 

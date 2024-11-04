@@ -14,7 +14,7 @@ public class ListIndex extends ListPart {
         this.index = index;
     }
 
-    public static ListIndex constructFromCTX(ConditionParser.ListIndexContext ctx) {
+    public static ListIndex from(ConditionParser.ListIndexContext ctx) {
         return new ListIndex(Integer.parseInt(ctx.INT().getText()));
     }
 

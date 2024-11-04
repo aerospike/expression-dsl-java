@@ -22,7 +22,7 @@ public class MapValueList extends MapPart {
         this.valueList = valueList;
     }
 
-    public static MapValueList constructFromCTX(ConditionParser.MapValueListContext ctx) {
+    public static MapValueList from(ConditionParser.MapValueListContext ctx) {
         ConditionParser.StandardMapValueListContext valueList = ctx.standardMapValueList();
         ConditionParser.InvertedMapValueListContext invertedValueList = ctx.invertedMapValueList();
 

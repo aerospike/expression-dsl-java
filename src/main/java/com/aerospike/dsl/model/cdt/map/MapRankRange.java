@@ -22,7 +22,7 @@ public class MapRankRange extends MapPart {
         this.count = subtractNullable(end, start);
     }
 
-    public static MapRankRange constructFromCTX(ConditionParser.MapRankRangeContext ctx) {
+    public static MapRankRange from(ConditionParser.MapRankRangeContext ctx) {
         ConditionParser.StandardMapRankRangeContext rankRange = ctx.standardMapRankRange();
         ConditionParser.InvertedMapRankRangeContext invertedRankRange = ctx.invertedMapRankRange();
 

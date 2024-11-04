@@ -727,36 +727,36 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitListPart(ConditionParser.ListPartContext ctx) {
-        if (ctx.LIST_TYPE_DESIGNATOR() != null) return ListTypeDesignator.constructFromCTX();
-        if (ctx.listIndex() != null) return ListIndex.constructFromCTX(ctx.listIndex());
-        if (ctx.listValue() != null) return ListValue.constructFromCTX(ctx.listValue());
-        if (ctx.listRank() != null) return ListRank.constructFromCTX(ctx.listRank());
-        if (ctx.listIndexRange() != null) return ListIndexRange.constructFromCTX(ctx.listIndexRange());
-        if (ctx.listValueList() != null) return ListValueList.constructFromCTX(ctx.listValueList());
-        if (ctx.listValueRange() != null) return ListValueRange.constructFromCTX(ctx.listValueRange());
-        if (ctx.listRankRange() != null) return ListRankRange.constructFromCTX(ctx.listRankRange());
+        if (ctx.LIST_TYPE_DESIGNATOR() != null) return ListTypeDesignator.from();
+        if (ctx.listIndex() != null) return ListIndex.from(ctx.listIndex());
+        if (ctx.listValue() != null) return ListValue.from(ctx.listValue());
+        if (ctx.listRank() != null) return ListRank.from(ctx.listRank());
+        if (ctx.listIndexRange() != null) return ListIndexRange.from(ctx.listIndexRange());
+        if (ctx.listValueList() != null) return ListValueList.from(ctx.listValueList());
+        if (ctx.listValueRange() != null) return ListValueRange.from(ctx.listValueRange());
+        if (ctx.listRankRange() != null) return ListRankRange.from(ctx.listRankRange());
         if (ctx.listRankRangeRelative() != null)
-            return ListRankRangeRelative.constructFromCTX(ctx.listRankRangeRelative());
+            return ListRankRangeRelative.from(ctx.listRankRangeRelative());
         throw new AerospikeDSLException("Unexpected list part: %s".formatted(ctx.getText()));
     }
 
     @Override
     public AbstractPart visitMapPart(ConditionParser.MapPartContext ctx) {
-        if (ctx.MAP_TYPE_DESIGNATOR() != null) return MapTypeDesignator.constructFromCTX();
-        if (ctx.mapKey() != null) return MapKey.constructFromCTX(ctx.mapKey());
-        if (ctx.mapIndex() != null) return MapIndex.constructFromCTX(ctx.mapIndex());
-        if (ctx.mapValue() != null) return MapValue.constructFromCTX(ctx.mapValue());
-        if (ctx.mapRank() != null) return MapRank.constructFromCTX(ctx.mapRank());
-        if (ctx.mapKeyRange() != null) return MapKeyRange.constructFromCTX(ctx.mapKeyRange());
-        if (ctx.mapKeyList() != null) return MapKeyList.constructFromCTX(ctx.mapKeyList());
-        if (ctx.mapIndexRange() != null) return MapIndexRange.constructFromCTX(ctx.mapIndexRange());
-        if (ctx.mapValueList() != null) return MapValueList.constructFromCTX(ctx.mapValueList());
-        if (ctx.mapValueRange() != null) return MapValueRange.constructFromCTX(ctx.mapValueRange());
-        if (ctx.mapRankRange() != null) return MapRankRange.constructFromCTX(ctx.mapRankRange());
+        if (ctx.MAP_TYPE_DESIGNATOR() != null) return MapTypeDesignator.from();
+        if (ctx.mapKey() != null) return MapKey.from(ctx.mapKey());
+        if (ctx.mapIndex() != null) return MapIndex.from(ctx.mapIndex());
+        if (ctx.mapValue() != null) return MapValue.from(ctx.mapValue());
+        if (ctx.mapRank() != null) return MapRank.from(ctx.mapRank());
+        if (ctx.mapKeyRange() != null) return MapKeyRange.from(ctx.mapKeyRange());
+        if (ctx.mapKeyList() != null) return MapKeyList.from(ctx.mapKeyList());
+        if (ctx.mapIndexRange() != null) return MapIndexRange.from(ctx.mapIndexRange());
+        if (ctx.mapValueList() != null) return MapValueList.from(ctx.mapValueList());
+        if (ctx.mapValueRange() != null) return MapValueRange.from(ctx.mapValueRange());
+        if (ctx.mapRankRange() != null) return MapRankRange.from(ctx.mapRankRange());
         if (ctx.mapRankRangeRelative() != null)
-            return MapRankRangeRelative.constructFromCTX(ctx.mapRankRangeRelative());
+            return MapRankRangeRelative.from(ctx.mapRankRangeRelative());
         if (ctx.mapIndexRangeRelative() != null)
-            return MapIndexRangeRelative.constructFromCTX(ctx.mapIndexRangeRelative());
+            return MapIndexRangeRelative.from(ctx.mapIndexRangeRelative());
         throw new AerospikeDSLException("Unexpected map part: %s".formatted(ctx.getText()));
     }
 

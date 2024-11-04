@@ -14,7 +14,7 @@ public class MapRank extends MapPart {
         this.rank = rank;
     }
 
-    public static MapRank constructFromCTX(ConditionParser.MapRankContext ctx) {
+    public static MapRank from(ConditionParser.MapRankContext ctx) {
         return new MapRank(Integer.parseInt(ctx.INT().getText()));
     }
 
