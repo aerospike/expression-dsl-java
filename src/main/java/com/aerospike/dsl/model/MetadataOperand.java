@@ -10,13 +10,13 @@ public class MetadataOperand extends Expr {
 
     public MetadataOperand(String functionName) {
         super(constructExp(functionName, null));
-        this.setPartType(PartType.METADATA_OPERAND);
+        this.partType = PartType.METADATA_OPERAND;
         this.functionName = functionName;
     }
 
     public MetadataOperand(String functionName, int parameter) {
         super(constructExp(functionName, parameter));
-        this.setPartType(PartType.METADATA_OPERAND);
+        this.partType = PartType.METADATA_OPERAND;
         this.functionName = functionName;
     }
 

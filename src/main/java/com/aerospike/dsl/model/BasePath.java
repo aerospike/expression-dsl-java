@@ -20,12 +20,12 @@ public class BasePath extends AbstractPart {
     // Bin type is determined by the base path's first element
     public Exp.Type getBinType() {
         if (!parts.isEmpty()) {
-            return switch (parts.get(0).getPartType()) {
+            return switch (parts.get(0).partType) {
                 case MAP_PART -> Exp.Type.MAP;
                 case LIST_PART -> Exp.Type.LIST;
                 default -> null;
             };
         }
-        return binPart.getExpType();
+        return binPart.expType;
     }
 }
