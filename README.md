@@ -1,6 +1,10 @@
 # Aerospike Expression DSL
 [![Build project](https://github.com/citrusleaf/expression-dsl-java/actions/workflows/build.yml/badge.svg)](https://github.com/citrusleaf/expression-dsl-java/actions/workflows/build.yml)
 
+> [!NOTE]
+> This is a developer preview, not yet ready for production use, but with future releases planned. We appreciate feedback from the Aerospike 
+> developer community through GitHub issues or the [Aerospike Developers Discord](https://aerospike.com/community/).
+
 Aerospike Expression DSL is a Java library that allows translating a canonical Aerospike Expression DSL string into an Aerospike Expression.
 
 [Aerospike Expressions](https://aerospike.com/docs/server/guide/expressions) is a functional language for applying predicates to bin data and record metadata.  
@@ -45,3 +49,6 @@ Exp.build(
         Exp.val(100))
 );
 ```
+
+## License
+Licensed under the Apache 2.0 License.
