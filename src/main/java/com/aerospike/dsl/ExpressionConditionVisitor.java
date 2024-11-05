@@ -425,7 +425,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitPathFunctionCount(ConditionParser.PathFunctionCountContext ctx) {
-        return new PathFunction(PathFunction.PathFunctionType.COUNT, PathFunction.ReturnParam.COUNT, null); // todo: TYPE_PARAM?
+        // todo: TYPE_PARAM?
+        return new PathFunction(PathFunction.PathFunctionType.COUNT, PathFunction.ReturnParam.COUNT, null);
     }
 
     private String getPathFunctionParam(ConditionParser.PathFunctionParamContext paramCtx, String paramName) {
