@@ -9,7 +9,6 @@ import lombok.Setter;
 public abstract class AbstractPart {
 
     protected Exp.Type expType;
-
     protected PartType partType;
     protected Exp exp;
 
