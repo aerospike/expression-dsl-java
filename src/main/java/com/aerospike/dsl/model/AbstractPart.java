@@ -9,9 +9,8 @@ import lombok.Setter;
 public abstract class AbstractPart {
 
     protected Exp.Type expType;
-
-    private PartType partType;
-    private Exp exp;
+    protected PartType partType;
+    protected Exp exp;
 
     protected AbstractPart(PartType partType) {
         this.partType = partType;

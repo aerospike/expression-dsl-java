@@ -11,13 +11,13 @@ public class BinPart extends Expr {
     public BinPart(String binName) {
         super(null); // Exp unknown
         this.binName = binName;
-        this.setPartType(PartType.BIN_PART);
+        this.partType = PartType.BIN_PART;
         this.expType = null; // Exp type unknown
     }
 
     public void updateExp(Exp.Type expType) {
         this.expType = expType;
         // Update Expression of Abstract Part
-        super.setExp(Exp.bin(this.binName, expType));
+        super.exp = Exp.bin(this.binName, expType);
     }
 }

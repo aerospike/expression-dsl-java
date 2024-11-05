@@ -4,6 +4,7 @@ import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -226,16 +227,11 @@ class ListExpressionsTests {
         translateAndCompare("$.listBin1.[0].[].count() == 100", expected);
     }
 
-    //@Test
+    @Test
     void negativeSyntaxList() {
-        // TODO: should throw an exception (by ANTLR?)
-        assertThatThrownBy(() -> translate("$.listBin1.count() == 1"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Get size from a List: unexpected value 'INT'");
-
         // TODO: throw meaningful exception (by ANTLR?)
         assertThatThrownBy(() -> translate("$.listBin1.[stringValue] == 100"))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(AerospikeDSLException.class);
     }
 
     //@Test
