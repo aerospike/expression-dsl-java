@@ -23,8 +23,10 @@ import org.antlr.v4.runtime.tree.RuleNode;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.TreeMap;
 
+import static com.aerospike.dsl.model.Expr.ExprPartsOperation.SUB;
 import static com.aerospike.dsl.util.ParsingUtils.FilterOperationType.*;
 import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 
@@ -80,20 +82,31 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         throw new AerospikeDSLException("The operation is not supported by secondary index filter");
     }
 
+    private boolean isBinAndInt(AbstractPart left, AbstractPart right) {
+        return (left instanceof BinPart && right instanceof IntOperand)
+                || (right instanceof BinPart && left instanceof IntOperand);
+    }
+
     @Override
     public AbstractPart visitAddExpression(ConditionParser.AddExpressionContext ctx) {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
         if (isBinAndInt(left, right)) {
-            return new Expr(left, right);
+            return new Expr(left, right, Expr.ExprPartsOperation.ADD);
         }
         throw new AerospikeDSLException("The operation is not supported by secondary index filter");
     }
 
-    private boolean isBinAndInt(AbstractPart left, AbstractPart right) {
-        return (left instanceof BinPart && right instanceof IntOperand)
-                || (right instanceof BinPart && left instanceof IntOperand);
+    @Override
+    public AbstractPart visitSubExpression(ConditionParser.SubExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        if (isBinAndInt(left, right)) {
+            return new Expr(left, right, SUB);
+        }
+        throw new AerospikeDSLException("The operation is not supported by secondary index filter");
     }
 
     // 2 operands Filters
@@ -113,18 +126,18 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         }
 
         // Handle non Bin operands cases
-        if (left instanceof Expr) {
-            return getFilterOrFail(((Expr) left).getLeft(), ((Expr) left).getRight(), right, type); // TODO
+        if (left instanceof Expr leftExpr) {
+            return getFilterOrFail(leftExpr.getLeft(), leftExpr.getRight(), leftExpr.getOperationType(), right, type);
         }
-        if (right instanceof Expr) {
-            return getFilterOrFail(((Expr) right).getLeft(), ((Expr) right).getRight(), left, type); // TODO
+        if (right instanceof Expr rightExpr) {
+            return getFilterOrFail(rightExpr.getLeft(), rightExpr.getRight(), rightExpr.getOperationType(), left, type);
         }
         return null;
     }
 
     // 2 operands Filters
-    private Filter getFilterOrFail(AbstractPart exprLeft, AbstractPart exprRight, AbstractPart right,
-                                   ParsingUtils.FilterOperationType type) {
+    private Filter getFilterOrFail(AbstractPart exprLeft, AbstractPart exprRight, Expr.ExprPartsOperation operationType,
+                                   AbstractPart right, ParsingUtils.FilterOperationType type) {
         if (exprLeft == null) {
             throw new AerospikeDSLException("Unable to parse left operand of expression");
         }
@@ -135,7 +148,8 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         if (exprLeft.getPartType() == AbstractPart.PartType.BIN_PART) {
             if (exprRight instanceof IntOperand && right instanceof IntOperand) {
                 ValidationUtils.validateComparableTypes(exprLeft.getExpType(), Exp.Type.INT);
-                long value = ((IntOperand) right).getValue() - ((IntOperand) exprRight).getValue();
+                long value = getCombinedValue(((IntOperand) right).getValue(), ((IntOperand) exprRight).getValue(),
+                        operationType);
                 return applyFilterOperator(((BinPart) exprLeft).getBinName(), value, type);
             }
             throw new AerospikeDSLException("Not supported");
@@ -143,20 +157,44 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         if (exprRight.getPartType() == AbstractPart.PartType.BIN_PART) {
             if (exprLeft instanceof IntOperand && right instanceof IntOperand) {
                 ValidationUtils.validateComparableTypes(exprRight.getExpType(), Exp.Type.INT);
-                long value = ((IntOperand) right).getValue() - ((IntOperand) exprLeft).getValue();
+                long value = 0;
+                if (operationType == SUB) {
+                    value = getCombinedValueSubtr(((IntOperand) right).getValue(), ((IntOperand) exprLeft).getValue(),
+                            operationType);
+                    type = invertType(type);
+                } else {
+                    value = getCombinedValue(((IntOperand) right).getValue(), ((IntOperand) exprLeft).getValue(),
+                            operationType);
+                }
+
                 return applyFilterOperator(((BinPart) exprRight).getBinName(), value, type);
             }
             throw new AerospikeDSLException("Not supported");
         }
 
         // Handle non Bin operands cases
-        if (exprLeft instanceof Expr) {
-            return getFilterOrFail(((Expr) exprLeft).getLeft(), ((Expr) exprLeft).getRight(), type); // TODO
+        if (exprLeft instanceof Expr leftExpr) {
+            return getFilterOrFail(leftExpr.getLeft(), leftExpr.getRight(), type);
         }
 //        if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
 //            return getFilterRightBinTypeComparison((BinPart) right, left, type);
 //        }
         return null;
+    }
+
+    private long getCombinedValue(Long right, Long leftExprPart, Expr.ExprPartsOperation operationType) {
+        return switch (operationType) {
+            case ADD -> right - leftExprPart;
+            case SUB -> right + leftExprPart;
+            case DIV, MUL -> throw new UnsupportedOperationException("Not supported");
+        };
+    }
+
+    private long getCombinedValueSubtr(Long right, Long leftExprPart, Expr.ExprPartsOperation operationType) {
+        if (Objects.requireNonNull(operationType) == SUB) {
+            return leftExprPart - right;
+        }
+        throw new UnsupportedOperationException("Not supported");
     }
 
     private Filter getFilterLeftBinTypeComparison(BinPart left, AbstractPart right,
