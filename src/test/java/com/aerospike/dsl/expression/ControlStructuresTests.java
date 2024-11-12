@@ -1,9 +1,9 @@
-package com.aerospike.dsl;
+package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
 import org.junit.jupiter.api.Test;
 
-import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
+import static com.aerospike.dsl.util.TestUtils.parseExpressionAndCompare;
 
 public class ControlStructuresTests {
 
@@ -17,10 +17,10 @@ public class ControlStructuresTests {
                 Exp.val("other")
         );
 
-        translateAndCompare("when ($.who == 1 => \"bob\", default => \"other\")",
+        parseExpressionAndCompare("when ($.who == 1 => \"bob\", default => \"other\")",
                 expected);
         // different spacing style
-        translateAndCompare("when($.who == 1 => \"bob\", default => \"other\")",
+        parseExpressionAndCompare("when($.who == 1 => \"bob\", default => \"other\")",
                 expected);
     }
 
@@ -40,7 +40,7 @@ public class ControlStructuresTests {
         // Implicit detect as String
         //translateAndCompare("$.stringBin1 == (when ($.who == 1 => \"bob\", default => \"other\"))",
         //        expected);
-        translateAndCompare("$.stringBin1.get(type: STRING) == (when ($.who == 1 => \"bob\", default => \"other\"))",
+        parseExpressionAndCompare("$.stringBin1.get(type: STRING) == (when ($.who == 1 => \"bob\", default => \"other\"))",
                 expected);
     }
 
@@ -58,7 +58,7 @@ public class ControlStructuresTests {
                 Exp.val("other")
         );
 
-        translateAndCompare("when ($.who == 1 => \"bob\", $.who == 2 => \"fred\", default => \"other\")",
+        parseExpressionAndCompare("when ($.who == 1 => \"bob\", $.who == 2 => \"fred\", default => \"other\")",
                 expected);
     }
 
@@ -74,10 +74,10 @@ public class ControlStructuresTests {
                 Exp.add(Exp.var("x"), Exp.var("y"))
         );
 
-        translateAndCompare("with (x = 1, y = ${x} + 1) do (${x} + ${y})",
+        parseExpressionAndCompare("with (x = 1, y = ${x} + 1) do (${x} + ${y})",
                 expected);
         // different spacing style
-        translateAndCompare("with(x = 1, y = ${x}+1) do(${x}+${y})",
+        parseExpressionAndCompare("with(x = 1, y = ${x}+1) do(${x}+${y})",
                 expected);
     }
 }

@@ -28,4 +28,18 @@ public class ParsingUtils {
     public static Integer subtractNullable(Integer a, @NonNull Integer b) {
         return a == null ? null : a - b;
     }
+
+    @FunctionalInterface
+    public interface TriFunction<T, U, V, R> {
+        R apply(T t, U u, V v);
+    }
+
+    public enum FilterOperationType {
+        GT,
+        GTEQ,
+        LT,
+        LTEQ,
+        EQ,
+        NOTEQ
+    }
 }
