@@ -16,6 +16,7 @@ class BinFiltersTests {
     void binGT() {
         parseFiltersAndCompare("$.intBin1 > 100",
                 List.of(Filter.range("intBin1", 101, Long.MAX_VALUE)));
+
         assertThatThrownBy(() -> parseFilters("$.stringBin1 > 'text'"))
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("Operand type not supported");
@@ -26,6 +27,7 @@ class BinFiltersTests {
         // "$.intBin1 > 100" and "100 < $.intBin1" represent identical Filters
         parseFiltersAndCompare("100 < $.intBin1",
                 List.of(Filter.range("intBin1", 101, Long.MAX_VALUE)));
+
         assertThatThrownBy(() -> parseFilters("'text' > $.stringBin1"))
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("Operand type not supported");
@@ -71,7 +73,8 @@ class BinFiltersTests {
         parseFiltersAndCompare("100 == $.intBin1",
                 List.of(Filter.equal("intBin1", 100)));
 
-        parseFiltersAndCompare("$.stringBin1 == 'text'", List.of(Filter.equal("stringBin1", "text")));
+        parseFiltersAndCompare("$.stringBin1 == 'text'",
+                List.of(Filter.equal("stringBin1", "text")));
         parseFiltersAndCompare("$.stringBin1 == \"text\"",
                 List.of(Filter.equal("stringBin1", "text")));
     }

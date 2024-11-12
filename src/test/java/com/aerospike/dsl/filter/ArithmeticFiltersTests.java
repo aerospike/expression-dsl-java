@@ -21,8 +21,8 @@ public class ArithmeticFiltersTests {
         parseFiltersAndCompare("($.apples + 5) > 10",
                 List.of(Filter.range("apples", 10 - 5 + 1, Long.MAX_VALUE)));
 
-        parseFiltersAndCompare("(5 + $.bananas) > 10",
-                List.of(Filter.range("bananas", 6, Long.MAX_VALUE)));
+        parseFiltersAndCompare("(10 + $.bananas) > 10",
+                List.of(Filter.range("bananas", 10 - 10 + 1, Long.MAX_VALUE)));
 
         assertThatThrownBy(() -> parseFilters("(5.2 + $.bananas) > 10.2"))
                 .isInstanceOf(AerospikeDSLException.class)

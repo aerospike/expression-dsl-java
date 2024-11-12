@@ -11,7 +11,7 @@ public abstract class AbstractPart {
     protected Exp.Type expType;
     protected PartType partType;
     protected Exp exp;
-    protected SIndexFilter filters;
+    protected SIndexFilter sIndexFilter;
 
     protected AbstractPart(PartType partType) {
         this.partType = partType;
@@ -25,7 +25,7 @@ public abstract class AbstractPart {
 
     protected AbstractPart(PartType partType, SIndexFilter filters) {
         this.partType = partType;
-        this.filters = filters;
+        this.sIndexFilter = filters;
     }
 
     public enum PartType {

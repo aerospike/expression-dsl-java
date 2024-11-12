@@ -43,6 +43,6 @@ public class DSLParserImpl implements DSLParser {
         if (abstractPart == null) {
             throw new AerospikeDSLException("Could not parse given input, wrong syntax");
         }
-        return abstractPart.getFilters().getFilters();
+        return abstractPart.getSIndexFilter().getFilters();
     }
 }
