@@ -27,14 +27,14 @@ public class ArithmeticFiltersTests {
         parseFiltersAndCompare("($.apples + 5) <= 10",
                 List.of(Filter.range("apples", Long.MIN_VALUE, 10 - 5)));
 
-        parseFiltersAndCompare("(10 + $.bananas) > 10",
-                List.of(Filter.range("bananas", 10 - 10 + 1, Long.MAX_VALUE)));
-        parseFiltersAndCompare("(10 + $.bananas) >= 10",
-                List.of(Filter.range("bananas", 10 - 10, Long.MAX_VALUE)));
-        parseFiltersAndCompare("(10 + $.bananas) < 10",
-                List.of(Filter.range("bananas", Long.MIN_VALUE, 10 - 10 - 1)));
-        parseFiltersAndCompare("(10 + $.bananas) <= 10",
-                List.of(Filter.range("bananas", Long.MIN_VALUE, 10 - 10)));
+        parseFiltersAndCompare("(9 + $.bananas) > 10",
+                List.of(Filter.range("bananas", 10 - 9 + 1, Long.MAX_VALUE)));
+        parseFiltersAndCompare("(9 + $.bananas) >= 10",
+                List.of(Filter.range("bananas", 10 - 9, Long.MAX_VALUE)));
+        parseFiltersAndCompare("(9 + $.bananas) < 10",
+                List.of(Filter.range("bananas", Long.MIN_VALUE, 10 - 9 - 1)));
+        parseFiltersAndCompare("(9 + $.bananas) <= 10",
+                List.of(Filter.range("bananas", Long.MIN_VALUE, 10 - 9)));
 
         assertThatThrownBy(() -> parseFilters("(5.2 + $.bananas) > 10.2"))
                 .isInstanceOf(AerospikeDSLException.class)
@@ -56,13 +56,13 @@ public class ArithmeticFiltersTests {
         parseFiltersAndCompare("($.apples - 5) <= 10",
                 List.of(Filter.range("apples", Long.MIN_VALUE, 10 + 5)));
 
-        parseFiltersAndCompare("(10 - $.bananas) > 10",
-                List.of(Filter.range("bananas", Long.MIN_VALUE, 10 - 10 - 1)));
-        parseFiltersAndCompare("(10 - $.bananas) >= 10",
-                List.of(Filter.range("bananas", Long.MIN_VALUE, 10 - 10)));
-        parseFiltersAndCompare("(10 - $.bananas) < 10",
-                List.of(Filter.range("bananas", 10 - 10 + 1, Long.MAX_VALUE)));
-        parseFiltersAndCompare("(10 - $.bananas) <= 10",
-                List.of(Filter.range("bananas", 10 - 10, Long.MAX_VALUE)));
+        parseFiltersAndCompare("(9 - $.bananas) > 10",
+                List.of(Filter.range("bananas", Long.MIN_VALUE, 9 - 10 - 1)));
+        parseFiltersAndCompare("(9 - $.bananas) >= 10",
+                List.of(Filter.range("bananas", Long.MIN_VALUE, 9 - 10)));
+        parseFiltersAndCompare("(9 - $.bananas) < 10",
+                List.of(Filter.range("bananas", 9 - 10 + 1, Long.MAX_VALUE)));
+        parseFiltersAndCompare("(9 - $.bananas) <= 10",
+                List.of(Filter.range("bananas", 9 - 10, Long.MAX_VALUE)));
     }
 }
