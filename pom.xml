@@ -5,8 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.aerospike</groupId>
-    <artifactId>expression-dsl-java</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>aerospike-expression-dsl</artifactId>
+    <name>aerospike-expression-dsl</name>
+    <description>Aerospike Expression DSL</description>
+    <url>https://github.com/aerospike/expression-dsl-java</url>
+    <packaging>jar</packaging>
+    <version>0.1.0</version>
 
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
@@ -15,6 +19,10 @@
 
         <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
         <maven-surefire-plugin.version>3.3.0</maven-surefire-plugin.version>
+        <nexus-staging-maven-plugin.version>1.6.14</nexus-staging-maven-plugin.version>
+        <maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
+        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+        <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
 
         <aerospike-client-jdk8.version>8.1.1</aerospike-client-jdk8.version>
         <antlr.version>4.13.1</antlr.version>
@@ -22,6 +30,38 @@
         <junit-jupiter.version>5.8.1</junit-jupiter.version>
         <assertj-core.version>3.4.1</assertj-core.version>
     </properties>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <url>https://www.aerospike.com</url>
+            <organization>Aerospike</organization>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/aerospike/expression-dsl-java</url>
+        <connection>scm:git:git://github.com/aerospike/expression-dsl-java.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:aerospike/expression-dsl-java.git
+        </developerConnection>
+    </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
     <dependencies>
         <dependency>
@@ -115,6 +155,71 @@
                 <configuration>
                     <skipTests>${skipTests}</skipTests>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>${nexus-staging-maven-plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>false</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven-javadoc-plugin.version}</version>
+                <configuration>
+                    <doclint>all,-missing</doclint>
+                    <reportOutputDirectory>${basedir}</reportOutputDirectory>
+                    <doctitle>${project.name}</doctitle>
+                    <show>public</show>
+                    <splitindex>true</splitindex>
+                    <bottom>Copyright © 2024-{currentYear} Aerospike, Inc. All rights reserved.</bottom>
+                    <sourcepath>${project.basedir}/src/main/java;${project.basedir}/target/generated-sources/antlr4</sourcepath>
+                    <source>17</source>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${maven-source-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>${maven-gpg-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
