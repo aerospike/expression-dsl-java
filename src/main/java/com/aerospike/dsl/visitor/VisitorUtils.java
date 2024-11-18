@@ -294,7 +294,7 @@ public class VisitorUtils {
     }
 
     // 2 operands Filters
-    static Filter getFilterOrFail(AbstractPart left, AbstractPart right, VisitorUtils.FilterOperationType type) {
+    static Filter getFilterOrFail(AbstractPart left, AbstractPart right, FilterOperationType type) {
         if (left == null) {
             throw new AerospikeDSLException("Unable to parse left operand");
         }
@@ -303,10 +303,10 @@ public class VisitorUtils {
         }
 
         if (left.getPartType() == AbstractPart.PartType.BIN_PART) {
-            return getFilterLeftBinTypeComparison((BinPart) left, right, type);
+            return getFilter((BinPart) left, right, type);
         }
         if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
-            return getFilterRightBinTypeComparison((BinPart) right, left, type);
+            return getFilter((BinPart) right, left, invertType(type));
         }
 
         // Handle non Bin operands cases
@@ -321,7 +321,7 @@ public class VisitorUtils {
 
     // 2 operands Filters
     static Filter getFilterOrFail(AbstractPart exprLeft, AbstractPart exprRight, Expr.ExprPartsOperation operationType,
-                                  AbstractPart right, VisitorUtils.FilterOperationType type) {
+                                  AbstractPart right, FilterOperationType type) {
         if (exprLeft == null) {
             throw new AerospikeDSLException("Unable to parse left operand of expression");
         }
@@ -356,7 +356,7 @@ public class VisitorUtils {
         return null;
     }
 
-    private static VisitorUtils.ArithmeticTermType getTermType(Expr.ExprPartsOperation operationType, boolean isLeftTerm) {
+    private static ArithmeticTermType getTermType(Expr.ExprPartsOperation operationType, boolean isLeftTerm) {
         return switch (operationType) {
             case ADD -> ADDEND;
             case SUB -> isLeftTerm ? SUBTR : MIN;
@@ -366,8 +366,8 @@ public class VisitorUtils {
         };
     }
 
-    private static Pair<Long, Long> getLimitsForDivision(long left, long right, VisitorUtils.FilterOperationType type,
-                                                         VisitorUtils.ArithmeticTermType termType) {
+    private static Pair<Long, Long> getLimitsForDivision(long left, long right, FilterOperationType type,
+                                                         ArithmeticTermType termType) {
         // Prevent division by zero
         if (right == 0) {
             throw new AerospikeDSLException("Cannot divide by zero");
@@ -381,7 +381,7 @@ public class VisitorUtils {
     }
 
     private static Pair<Long, Long> LimitsForBinDividend(long left, long right,
-                                                         VisitorUtils.FilterOperationType operationType) {
+                                                         FilterOperationType operationType) {
         if (left > 0 && right > 0) {
             // both operands are positive
             return getLimitsForBinDividendWithLeftNumberPositive(operationType, left, right);
@@ -404,7 +404,8 @@ public class VisitorUtils {
         return new Pair<>(null, null);
     }
 
-    private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberNegative(VisitorUtils.FilterOperationType operationType, long left, long right) {
+    private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberNegative(FilterOperationType operationType,
+                                                                                  long left, long right) {
         return switch (operationType) {
             case GT:
                 yield new Pair<>(Long.MIN_VALUE, left * right - 1);
@@ -419,7 +420,8 @@ public class VisitorUtils {
         };
     }
 
-    private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberPositive(VisitorUtils.FilterOperationType operationType, long left, long right) {
+    private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberPositive(FilterOperationType operationType,
+                                                                                  long left, long right) {
         return switch (operationType) {
             case GT:
                 yield new Pair<>(left * right + 1, Long.MAX_VALUE);
@@ -434,8 +436,7 @@ public class VisitorUtils {
         };
     }
 
-    private static Pair<Long, Long> getLimitsForBinDivisor(long left, long right,
-                                                           VisitorUtils.FilterOperationType operationType) {
+    private static Pair<Long, Long> getLimitsForBinDivisor(long left, long right, FilterOperationType operationType) {
         if (left > 0 && right > 0) {
             // both operands are positive
             return switch (operationType) {
@@ -494,52 +495,49 @@ public class VisitorUtils {
         return new Pair<>(null, null);
     }
 
-    private static Filter getFilterForDivOrFail(String binName, Pair<Long, Long> value, VisitorUtils.FilterOperationType type) {
+    private static Filter getFilterForDivOrFail(String binName, Pair<Long, Long> value, FilterOperationType type) {
         // Based on the operation type, generate the appropriate filter range
         return switch (type) {
             case GT, GTEQ, LT, LTEQ -> Filter.range(binName, value.a, value.b);  // Range from 1 to value - 1
             case EQ -> Filter.equal(binName, value.a);  // Exact match for equality case
-            default ->
-                    throw new AerospikeDSLException("OperationType not supported for division: " + type);
+            default -> throw new AerospikeDSLException("OperationType not supported for division: " + type);
         };
     }
 
-    private static Filter getFilterLeftBinTypeComparison(BinPart left, AbstractPart right,
-                                                         VisitorUtils.FilterOperationType type) {
-        String binNameLeft = left.getBinName();
-        return switch (right.getPartType()) {
+    private static Filter getFilter(BinPart bin, AbstractPart operand, FilterOperationType type) {
+        String binName = bin.getBinName();
+        return switch (operand.getPartType()) {
             case INT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.INT);
-                yield applyFilterOperator(binNameLeft, ((IntOperand) right).getValue(), type);
+                ValidationUtils.validateComparableTypes(bin.getExpType(), Exp.Type.INT);
+                yield applyFilterOperator(binName, ((IntOperand) operand).getValue(), type);
             }
             case STRING_OPERAND -> {
                 if (type != EQ) throw new AerospikeDSLException("Operand type not supported");
 
-                if (left.getExpType() != null &&
-                        left.getExpType().equals(Exp.Type.BLOB)) {
+                if (bin.getExpType() != null &&
+                        bin.getExpType().equals(Exp.Type.BLOB)) {
                     // Base64 Blob
-                    ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BLOB);
-                    String base64String = ((StringOperand) right).getValue();
+                    ValidationUtils.validateComparableTypes(bin.getExpType(), Exp.Type.BLOB);
+                    String base64String = ((StringOperand) operand).getValue();
                     byte[] value = Base64.getDecoder().decode(base64String);
-                    yield Filter.equal(binNameLeft, value);
+                    yield Filter.equal(binName, value);
                 } else {
                     // String
-                    ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.STRING);
-                    yield Filter.equal(binNameLeft, ((StringOperand) right).getValue());
+                    ValidationUtils.validateComparableTypes(bin.getExpType(), Exp.Type.STRING);
+                    yield Filter.equal(binName, ((StringOperand) operand).getValue());
                 }
             }
-            default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
+            default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(operand.getPartType()));
         };
     }
 
-    private static Filter applyFilterOperator(String binName, long value,
-                                              VisitorUtils.FilterOperationType type) {
+    private static Filter applyFilterOperator(String binName, long value, FilterOperationType type) {
         return getFilterForArithmeticOrFail(binName, value, type);
     }
 
     private static Filter applyFilterOperator(String binName, IntOperand leftOperand, IntOperand rightOperand,
-                                              Expr.ExprPartsOperation operationType, VisitorUtils.FilterOperationType type,
-                                              VisitorUtils.ArithmeticTermType termType) {
+                                              Expr.ExprPartsOperation operationType, FilterOperationType type,
+                                              ArithmeticTermType termType) {
         long leftValue = leftOperand.getValue();
         long rightValue = rightOperand.getValue();
         long value;
@@ -576,7 +574,7 @@ public class VisitorUtils {
         return getFilterForArithmeticOrFail(binName, value, type);
     }
 
-    private static Filter getFilterForArithmeticOrFail(String binName, long value, VisitorUtils.FilterOperationType type,
+    private static Filter getFilterForArithmeticOrFail(String binName, long value, FilterOperationType type,
                                                        Long limit) {
         return switch (type) {
             // "$.intBin1 > 100" and "100 < $.intBin1" represent the same Filter
@@ -589,23 +587,11 @@ public class VisitorUtils {
         };
     }
 
-    private static Filter getFilterForArithmeticOrFail(String binName, long value, VisitorUtils.FilterOperationType type) {
+    private static Filter getFilterForArithmeticOrFail(String binName, long value, FilterOperationType type) {
         return getFilterForArithmeticOrFail(binName, value, type, null);
     }
 
-    private static Filter getFilterRightBinTypeComparison(BinPart right, AbstractPart left,
-                                                          VisitorUtils.FilterOperationType type) {
-        String binNameRight = right.getBinName();
-        return switch (left.getPartType()) {
-            case INT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.INT, right.getExpType());
-                yield applyFilterOperator(binNameRight, ((IntOperand) left).getValue(), invertType(type));
-            }
-            default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
-        };
-    }
-
-    private VisitorUtils.FilterOperationType invertType(VisitorUtils.FilterOperationType type) {
+    private FilterOperationType invertType(FilterOperationType type) {
         return switch (type) {
             case GT -> LT;
             case GTEQ -> LTEQ;

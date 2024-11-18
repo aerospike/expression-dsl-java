@@ -33,9 +33,4 @@ public class TestUtils {
         List<Filter> actualFilter = parser.parseFilters(input);
         assertEquals(actualFilter, expected);
     }
-
-    public static void parseFilterAndCompare(String input, Filter expected) {
-        List<Filter> actualFilter = parser.parseFilters(input);
-        assertEquals(actualFilter.get(0), expected);
-    }
 }
