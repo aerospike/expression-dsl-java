@@ -46,7 +46,6 @@ class BinFiltersTests {
         // "$.intBin1 >= 100" and "100 <= $.intBin1" represent identical Filters
         parseFiltersAndCompare("100 <= $.intBin1",
                 List.of(Filter.range("intBin1", 100, Long.MAX_VALUE)));
-
     }
 
     @Test
@@ -65,7 +64,6 @@ class BinFiltersTests {
 
         parseFiltersAndCompare("100 >= $.intBin1",
                 List.of(Filter.range("intBin1", Long.MIN_VALUE, 100)));
-
     }
 
     @Test
