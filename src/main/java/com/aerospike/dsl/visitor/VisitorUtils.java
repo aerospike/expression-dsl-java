@@ -509,7 +509,8 @@ public class VisitorUtils {
         return switch (operand.getPartType()) {
             case INT_OPERAND -> {
                 ValidationUtils.validateComparableTypes(bin.getExpType(), Exp.Type.INT);
-                yield applyFilterOperator(binName, ((IntOperand) operand).getValue(), type);
+                yield getFilterForArithmeticOrFail(binName, ((IntOperand) operand).getValue(), type);
+
             }
             case STRING_OPERAND -> {
                 if (type != EQ) throw new AerospikeDSLException("Operand type not supported");
@@ -529,10 +530,6 @@ public class VisitorUtils {
             }
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(operand.getPartType()));
         };
-    }
-
-    private static Filter applyFilterOperator(String binName, long value, FilterOperationType type) {
-        return getFilterForArithmeticOrFail(binName, value, type);
     }
 
     private static Filter applyFilterOperator(String binName, IntOperand leftOperand, IntOperand rightOperand,
@@ -574,21 +571,16 @@ public class VisitorUtils {
         return getFilterForArithmeticOrFail(binName, value, type);
     }
 
-    private static Filter getFilterForArithmeticOrFail(String binName, long value, FilterOperationType type,
-                                                       Long limit) {
+    private static Filter getFilterForArithmeticOrFail(String binName, long value, FilterOperationType type) {
         return switch (type) {
             // "$.intBin1 > 100" and "100 < $.intBin1" represent the same Filter
-            case GT -> Filter.range(binName, value + 1, limit == null ? Long.MAX_VALUE : limit);
-            case GTEQ -> Filter.range(binName, value, limit == null ? Long.MAX_VALUE : limit);
-            case LT -> Filter.range(binName, limit == null ? Long.MIN_VALUE : limit, value - 1);
-            case LTEQ -> Filter.range(binName, limit == null ? Long.MIN_VALUE : limit, value);
+            case GT -> Filter.range(binName, value + 1, Long.MAX_VALUE);
+            case GTEQ -> Filter.range(binName, value, Long.MAX_VALUE);
+            case LT -> Filter.range(binName, Long.MIN_VALUE, value - 1);
+            case LTEQ -> Filter.range(binName, Long.MIN_VALUE, value);
             case EQ -> Filter.equal(binName, value);
             default -> throw new AerospikeDSLException("The operation is not supported by secondary index filter");
         };
-    }
-
-    private static Filter getFilterForArithmeticOrFail(String binName, long value, FilterOperationType type) {
-        return getFilterForArithmeticOrFail(binName, value, type, null);
     }
 
     private FilterOperationType invertType(FilterOperationType type) {

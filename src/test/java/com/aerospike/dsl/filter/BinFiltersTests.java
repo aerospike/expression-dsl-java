@@ -16,6 +16,8 @@ class BinFiltersTests {
     void binGT() {
         parseFiltersAndCompare("$.intBin1 > 100",
                 List.of(Filter.range("intBin1", 101, Long.MAX_VALUE)));
+        parseFiltersAndCompare("$.intBin1 > -100",
+                List.of(Filter.range("intBin1", -99, Long.MAX_VALUE)));
 
         assertThatThrownBy(() -> parseFilters("$.stringBin1 > 'text'"))
                 .isInstanceOf(AerospikeDSLException.class)
