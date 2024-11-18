@@ -13,7 +13,7 @@ import static com.aerospike.dsl.model.Expr.ExprPartsOperation.*;
 import static com.aerospike.dsl.visitor.VisitorUtils.FilterOperationType.*;
 import static com.aerospike.dsl.visitor.VisitorUtils.getFilterOrFail;
 
-public class FilterConditionVisitor extends ExpressionConditionVisitor{
+public class FilterConditionVisitor extends ExpressionConditionVisitor {
 
     @Override
     public AbstractPart visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {

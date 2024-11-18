@@ -106,7 +106,7 @@ public class ArithmeticFiltersTests {
         parseFiltersAndCompare("(9 * $.bananas) >= 10",
                 List.of(Filter.range("bananas", 10 / 9, Long.MAX_VALUE)));
         parseFiltersAndCompare("(9 * $.bananas) < 10",
-                List.of(Filter.range("bananas", Long.MIN_VALUE, 10 / 9 - 1))); // TODO: 10 / 9 must be included
+                List.of(Filter.range("bananas", Long.MIN_VALUE, 10 / 9)));
         parseFiltersAndCompare("(9 * $.bananas) <= 10",
                 List.of(Filter.range("bananas", Long.MIN_VALUE, 10 / 9)));
 
@@ -279,9 +279,9 @@ public class ArithmeticFiltersTests {
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("The operation is not supported by secondary index filter");
         parseFiltersAndCompare("(-90 / $.bananas) < -10",
-                List.of(Filter.range("bananas", 0L, -90 / -10 - 1))); // [1, 8]
+                List.of(Filter.range("bananas", 1L, -90 / -10 - 1))); // [1, 8]
         parseFiltersAndCompare("(-90 / $.bananas) <= -10",
-                List.of(Filter.range("bananas", 0L, -90 / -10))); // [1, 9]
+                List.of(Filter.range("bananas", 1L, -90 / -10))); // [1, 9]
     }
 
     @Test
@@ -371,6 +371,6 @@ public class ArithmeticFiltersTests {
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("The operation is not supported by secondary index filter");
         parseFiltersAndCompare("(-90 / $.bananas) <= -90",
-                List.of(Filter.range("bananas", 0L, 90 / 90))); // (0,1] // TODO: must be only 1
+                List.of(Filter.range("bananas", 1L, 90 / 90)));
     }
 }

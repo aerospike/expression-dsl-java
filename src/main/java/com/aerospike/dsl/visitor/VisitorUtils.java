@@ -335,7 +335,8 @@ public class VisitorUtils {
                 return applyFilterOperator(((BinPart) exprLeft).getBinName(), leftOperand, rightOperand,
                         operationType, type, getTermType(operationType, true));
             }
-            throw new AerospikeDSLException("Not supported");
+            throw new AerospikeDSLException(
+                    String.format("Operands not supported in secondary index Filter: %s, %s", exprRight, right));
         }
         if (exprRight.getPartType() == AbstractPart.PartType.BIN_PART) { // bin is on the right side
             if (exprLeft instanceof IntOperand leftOperand && right instanceof IntOperand rightOperand) {
@@ -343,7 +344,8 @@ public class VisitorUtils {
                 return applyFilterOperator(((BinPart) exprRight).getBinName(), leftOperand, rightOperand,
                         operationType, type, getTermType(operationType, false));
             }
-            throw new AerospikeDSLException("Not supported");
+            throw new AerospikeDSLException(
+                    String.format("Operands not supported in secondary index Filter: %s, %s", exprRight, right));
         }
 
         // Handle non Bin operands cases
@@ -441,7 +443,7 @@ public class VisitorUtils {
             // both operands are positive
             return switch (operationType) {
                 case GT:
-                    yield new Pair<>(1L, left / right - 1L);
+                    yield new Pair<>(1L, getClosestLongToTheLeft((float) left / right));
                 case GTEQ:
                     yield new Pair<>(1L, left / right);
                 case LT, LTEQ:
@@ -457,9 +459,9 @@ public class VisitorUtils {
                 case GT, GTEQ:
                     yield new Pair<>(null, null);
                 case LT:
-                    yield new Pair<>(0L, left / right - 1L);
+                    yield new Pair<>(1L, getClosestLongToTheLeft((float) left / right));
                 case LTEQ:
-                    yield new Pair<>(0L, left / right);
+                    yield new Pair<>(1L, left / right);
                 default:
                     throw new AerospikeDSLException("OperationType not supported for division: " + operationType);
             };
@@ -469,7 +471,7 @@ public class VisitorUtils {
                 case GT, GTEQ:
                     yield new Pair<>(null, null);
                 case LT:
-                    yield new Pair<>(left / right + 1L, -1L);
+                    yield new Pair<>(getClosestLongToTheRight((float) left / right), -1L);
                 case LTEQ:
                     yield new Pair<>(left / right, -1L);
                 default:
@@ -479,7 +481,7 @@ public class VisitorUtils {
             // right positive, left negative
             return switch (operationType) {
                 case GT:
-                    yield new Pair<>(left / right + 1, -1L);
+                    yield new Pair<>(getClosestLongToTheRight((float) left / right), -1L);
                 case GTEQ:
                     yield new Pair<>(left / right, -1L);
                 case LT, LTEQ:
@@ -528,7 +530,8 @@ public class VisitorUtils {
                     yield Filter.equal(binName, ((StringOperand) operand).getValue());
                 }
             }
-            default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(operand.getPartType()));
+            default ->
+                    throw new AerospikeDSLException("Operand type not supported: %s".formatted(operand.getPartType()));
         };
     }
 
@@ -537,7 +540,7 @@ public class VisitorUtils {
                                               ArithmeticTermType termType) {
         long leftValue = leftOperand.getValue();
         long rightValue = rightOperand.getValue();
-        long value;
+        float value;
         if (Objects.requireNonNull(operationType) == ADD) {
             value = rightValue - leftValue;
         } else if (operationType == SUB) {
@@ -563,7 +566,8 @@ public class VisitorUtils {
                 if (leftValue == 0) throw new AerospikeDSLException("Cannot divide by zero");
                 type = invertType(type);
             }
-            value = rightValue / leftValue;
+            float val = (float) rightValue / leftValue;
+            return getFilterForArithmeticOrFail(binName, val, type);
         } else {
             throw new UnsupportedOperationException("Not supported");
         }
@@ -571,16 +575,40 @@ public class VisitorUtils {
         return getFilterForArithmeticOrFail(binName, value, type);
     }
 
-    private static Filter getFilterForArithmeticOrFail(String binName, long value, FilterOperationType type) {
+    private static Filter getFilterForArithmeticOrFail(String binName, float value, FilterOperationType type) {
         return switch (type) {
             // "$.intBin1 > 100" and "100 < $.intBin1" represent the same Filter
-            case GT -> Filter.range(binName, value + 1, Long.MAX_VALUE);
-            case GTEQ -> Filter.range(binName, value, Long.MAX_VALUE);
-            case LT -> Filter.range(binName, Long.MIN_VALUE, value - 1);
-            case LTEQ -> Filter.range(binName, Long.MIN_VALUE, value);
-            case EQ -> Filter.equal(binName, value);
+            case GT -> Filter.range(binName, getClosestLongToTheRight(value), Long.MAX_VALUE);
+            case GTEQ -> Filter.range(binName, (long) value, Long.MAX_VALUE);
+            case LT -> Filter.range(binName, Long.MIN_VALUE, getClosestLongToTheLeft(value));
+            case LTEQ -> Filter.range(binName, Long.MIN_VALUE, (long) value);
+            case EQ -> Filter.equal(binName, (long) value);
             default -> throw new AerospikeDSLException("The operation is not supported by secondary index filter");
         };
+    }
+
+    private static long getClosestLongToTheLeft(float value) {
+        // Get the largest integer less than or equal to the float
+        long flooredValue = (long) Math.floor(value);
+
+        // If the float is a round number, subtract 1
+        if (value == flooredValue) {
+            return flooredValue - 1;
+        }
+
+        return flooredValue;
+    }
+
+    private static long getClosestLongToTheRight(float value) {
+        // Get the smallest integer greater than or equal to the float
+        long ceiledValue = (long) Math.ceil(value);
+
+        // If the float is a round number, add 1
+        if (value == ceiledValue) {
+            return ceiledValue + 1;
+        }
+
+        return ceiledValue;
     }
 
     private FilterOperationType invertType(FilterOperationType type) {
