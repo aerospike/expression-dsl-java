@@ -1,6 +1,8 @@
-package com.aerospike.dsl;
+package com.aerospike.dsl.visitor;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.ConditionBaseVisitor;
+import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
 import com.aerospike.dsl.model.cdt.list.ListIndex;
@@ -14,18 +16,15 @@ import com.aerospike.dsl.model.cdt.list.ListValueList;
 import com.aerospike.dsl.model.cdt.list.ListValueRange;
 import com.aerospike.dsl.model.cdt.map.*;
 import com.aerospike.dsl.util.TypeUtils;
-import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.TreeMap;
-import java.util.function.BinaryOperator;
-import java.util.function.UnaryOperator;
 
-import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
+import static com.aerospike.dsl.util.ParsingUtils.unquote;
+import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
@@ -99,17 +98,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             expressions.add(expr.getExp());
         }
         return new Expr(Exp.exclusive(expressions.toArray(new Exp[0])));
-    }
-
-    private void logicalSetBinsAsBooleanExpr(Expr left, Expr right) {
-        logicalSetBinAsBooleanExpr(left);
-        logicalSetBinAsBooleanExpr(right);
-    }
-
-    private void logicalSetBinAsBooleanExpr(Expr expr) {
-        if (expr instanceof BinPart) {
-            ((BinPart) expr).updateExp(Exp.Type.BOOL);
-        }
     }
 
     @Override
@@ -264,150 +252,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new Expr(exp);
     }
 
-    // 2 operands Expressions
-    private Exp getExpOrFail(AbstractPart left, AbstractPart right, BinaryOperator<Exp> operator) {
-        if (left == null) {
-            throw new AerospikeDSLException("Unable to parse left operand");
-        }
-        if (right == null) {
-            throw new AerospikeDSLException("Unable to parse right operand");
-        }
-
-        if (left.getPartType() == AbstractPart.PartType.BIN_PART) {
-            return getExpLeftBinTypeComparison((BinPart) left, right, operator);
-        }
-        if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
-            return getExpRightBinTypeComparison(left, (BinPart) right, operator);
-        }
-
-        // Handle non Bin operands cases
-        Exp leftExp = left.getExp();
-        Exp rightExp = right.getExp();
-        return operator.apply(leftExp, rightExp);
-    }
-
-    private Exp getExpLeftBinTypeComparison(BinPart left, AbstractPart right, BinaryOperator<Exp> operator) {
-        String binNameLeft = left.getBinName();
-        return switch (right.getPartType()) {
-            case INT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.INT);
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            case FLOAT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.FLOAT);
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            case BOOL_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BOOL);
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            case STRING_OPERAND -> {
-                if (left.getExpType() != null &&
-                        left.getExpType().equals(Exp.Type.BLOB)) {
-                    // Base64 Blob
-                    ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BLOB);
-                    String base64String = ((StringOperand) right).getValue();
-                    byte[] value = Base64.getDecoder().decode(base64String);
-                    yield operator.apply(left.getExp(), Exp.val(value));
-                } else {
-                    // String
-                    ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.STRING);
-                    yield operator.apply(left.getExp(), right.getExp());
-                }
-            }
-            case METADATA_OPERAND -> {
-                // No need to validate, types are determined by metadata function
-                Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString());
-                yield operator.apply(
-                        Exp.bin(binNameLeft, binType),
-                        right.getExp()
-                );
-            }
-            case EXPR, PATH_OPERAND ->
-                    operator.apply(left.getExp(), right.getExp()); // Can't validate with Expr on one side
-            // Left and right are both bin parts
-            case BIN_PART -> {
-                // Validate types if possible
-                ValidationUtils.validateComparableTypes(left.getExpType(), right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            case LIST_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.LIST);
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            case MAP_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.MAP);
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
-        };
-    }
-
-    private Exp getExpRightBinTypeComparison(AbstractPart left, BinPart right, BinaryOperator<Exp> operator) {
-        String binNameRight = right.getBinName();
-        return switch (left.getPartType()) {
-            case INT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.INT, right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            case FLOAT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.FLOAT, right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            case BOOL_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.BOOL, right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            case STRING_OPERAND -> {
-                if (right.getExpType() != null &&
-                        right.getExpType().equals(Exp.Type.BLOB)) {
-                    // Base64 Blob
-                    ValidationUtils.validateComparableTypes(Exp.Type.BLOB, right.getExpType());
-                    String base64String = ((StringOperand) left).getValue();
-                    byte[] value = Base64.getDecoder().decode(base64String);
-                    yield operator.apply(Exp.val(value), right.getExp());
-                } else {
-                    // String
-                    ValidationUtils.validateComparableTypes(Exp.Type.STRING, right.getExpType());
-                    yield operator.apply(left.getExp(), right.getExp());
-                }
-            }
-            case METADATA_OPERAND -> {
-                // No need to validate, types are determined by metadata function
-                Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString());
-                yield operator.apply(
-                        left.getExp(),
-                        Exp.bin(binNameRight, binType)
-                );
-            }
-            case EXPR, PATH_OPERAND ->
-                    operator.apply(left.getExp(), right.getExp()); // Can't validate with Expr on one side
-            // No need for 2 BIN_OPERAND handling since it's covered in the left condition
-            case LIST_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.LIST, right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            case MAP_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.MAP, right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
-            }
-            default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
-        };
-    }
-
-    // 1 operand Expressions
-    private Exp getExpOrFail(AbstractPart operand, UnaryOperator<Exp> operator) {
-        if (operand == null) {
-            throw new AerospikeDSLException("Unable to parse operand");
-        }
-
-        // 1 Operand Expression is always a BIN Operand
-        String binName = ((BinPart) operand).getBinName();
-
-        // There is only 1 case of a single operand expression (int not), and it always gets an integer
-        return operator.apply(Exp.bin(binName, Exp.Type.INT));
-    }
-
     @Override
     public AbstractPart visitPathFunctionGet(ConditionParser.PathFunctionGetContext ctx) {
         PathFunction.ReturnParam returnParam = null;
@@ -429,20 +273,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new PathFunction(PathFunction.PathFunctionType.COUNT, PathFunction.ReturnParam.COUNT, null);
     }
 
-    private String getPathFunctionParam(ConditionParser.PathFunctionParamContext paramCtx, String paramName) {
-        String paramNameText;
-        String paramNameValue;
-        String paramValue = null;
-        if (paramCtx.pathFunctionParamName() != null) {
-            paramNameText = paramCtx.pathFunctionParamName().getText();
-            paramNameValue = paramCtx.pathFunctionParamValue().getText();
-            if (paramNameText.equalsIgnoreCase(paramName)) {
-                paramValue = paramNameValue;
-            }
-        }
-        return paramValue;
-    }
-
     @Override
     public AbstractPart visitPathFunctionCast(ConditionParser.PathFunctionCastContext ctx) {
         String typeVal = extractTypeFromMethod(ctx.PATH_FUNCTION_CAST().getText());
@@ -450,14 +280,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Exp.Type binType = PathFunction.castTypeToExpType(castType);
 
         return new PathFunction(PathFunction.PathFunctionType.CAST, null, binType);
-    }
-
-    private static String extractTypeFromMethod(String methodName) {
-        if (methodName.startsWith("as") && methodName.endsWith("()")) {
-            return methodName.substring(2, methodName.length() - 2);
-        } else {
-            throw new AerospikeDSLException("Invalid method name: %s".formatted(methodName));
-        }
     }
 
     @Override
@@ -471,22 +293,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         } else {
             return new MetadataOperand(functionName);
         }
-    }
-
-    private String extractFunctionName(String text) {
-        int startParen = text.indexOf('(');
-        return (startParen != -1) ? text.substring(0, startParen) : text;
-    }
-
-    private Integer extractParameter(String text) {
-        int startParen = text.indexOf('(');
-        int endParen = text.indexOf(')');
-
-        if (startParen != -1 && endParen != -1 && endParen > startParen + 1) {
-            String numberStr = text.substring(startParen + 1, endParen);
-            return Integer.parseInt(numberStr);
-        }
-        return null;
     }
 
     @Override
@@ -528,13 +334,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new ListOperand(list);
     }
 
-    private boolean shouldVisitListElement(int i, int size, ParseTree child) {
-        return size > 0 // size is not 0
-                && i != 0 // not the first element ('[')
-                && i != size - 1 // not the last element (']')
-                && !child.getText().equals(","); // not a comma (list elements separator)
-    }
-
     @Override
     public AbstractPart visitOrderedMapConstant(ConditionParser.OrderedMapConstantContext ctx) {
         return readChildrenIntoMapOperand(ctx);
@@ -572,17 +371,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new MapOperand(map);
     }
 
-    private boolean shouldVisitMapElement(int i, int size, ParseTree child) {
-        return size > 0 // size is not 0
-                && i != 0 // not the first element ('{')
-                && i != size - 1 // not the last element ('}')
-                && !child.getText().equals(":") // not a colon (map key and value separator)
-                && !child.getText().equals(","); // not a comma (map pairs separator)
-    }
-
     @Override
     public AbstractPart visitStringOperand(ConditionParser.StringOperandContext ctx) {
-        String text = getWithoutQuotes(ctx.getText());
+        String text = unquote(ctx.getText());
         return new StringOperand(text);
     }
 
@@ -640,14 +431,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new VariableOperand(extractVariableName(text));
     }
 
-    private String extractVariableName(String variableReference) {
-        if (variableReference.startsWith("${") && variableReference.endsWith("}")) {
-            return variableReference.substring(2, variableReference.length() - 1);
-        } else {
-            throw new IllegalArgumentException("Input string is not in the correct format");
-        }
-    }
-
     private AbstractPart overrideType(AbstractPart part, ParseTree ctx) {
         ConditionParser.PathFunctionContext pathFunctionContext =
                 ((ConditionParser.PathContext) ctx.getParent()).pathFunction();
@@ -681,34 +464,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             }
         }
         return part;
-    }
-
-    private Exp.Type detectImplicitTypeFromUpperTree(ParseTree ctx) {
-        // Search for a "leaf" operand child (Int, Float, String and Boolean)
-        // in the above levels of the current path in the expression tree
-        while (ctx.getParent() != null) {
-            ctx = ctx.getParent();
-
-            for (int i = 0; i < ctx.getChildCount(); i++) {
-                ParseTree child = ctx.getChild(i);
-
-                if (child instanceof ConditionParser.OperandContext operandContext) {
-                    if (operandContext.numberOperand() != null) {
-                        if (operandContext.numberOperand().intOperand() != null) {
-                            return Exp.Type.INT;
-                        } else if (operandContext.numberOperand().floatOperand() != null) {
-                            return Exp.Type.FLOAT;
-                        }
-                    } else if (operandContext.stringOperand() != null) {
-                        return Exp.Type.STRING;
-                    } else if (operandContext.booleanOperand() != null) {
-                        return Exp.Type.BOOL;
-                    }
-                }
-            }
-        }
-        // Could not detect, return null and determine defaults later on
-        return null;
     }
 
     @Override

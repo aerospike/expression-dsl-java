@@ -2,19 +2,22 @@ package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
+import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.annotation.Beta;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.AbstractPart;
-import lombok.experimental.UtilityClass;
+import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
+import com.aerospike.dsl.visitor.FilterConditionVisitor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-@UtilityClass
-public class ConditionTranslator {
+import java.util.List;
+
+public class DSLParserImpl implements DSLParser {
 
     @Beta
-    public static Expression translate(String input) {
+    public Expression parseExpression(String input) {
         ConditionLexer lexer = new ConditionLexer(CharStreams.fromString(input));
         ConditionParser parser = new ConditionParser(new CommonTokenStream(lexer));
         ParseTree tree = parser.parse();
@@ -28,5 +31,20 @@ public class ConditionTranslator {
         }
         Exp expResult = abstractPart.getExp();
         return Exp.build(expResult);
+    }
+
+    @Beta
+    public List<Filter> parseFilters(String input) {
+        ConditionLexer lexer = new ConditionLexer(CharStreams.fromString(input));
+        ConditionParser parser = new ConditionParser(new CommonTokenStream(lexer));
+        ParseTree tree = parser.parse();
+
+        FilterConditionVisitor visitor = new FilterConditionVisitor();
+        AbstractPart abstractPart = visitor.visit(tree);
+
+        if (abstractPart == null) {
+            throw new AerospikeDSLException("Could not parse given input, wrong syntax");
+        }
+        return abstractPart.getSIndexFilter().getFilters();
     }
 }

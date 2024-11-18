@@ -9,7 +9,7 @@ public class BinPart extends Expr {
     private final String binName;
 
     public BinPart(String binName) {
-        super(null); // Exp unknown
+        super((Exp) null); // Exp unknown
         this.binName = binName;
         this.partType = PartType.BIN_PART;
         this.expType = null; // Exp type unknown

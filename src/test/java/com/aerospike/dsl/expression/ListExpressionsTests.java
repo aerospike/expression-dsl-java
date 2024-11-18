@@ -1,4 +1,4 @@
-package com.aerospike.dsl;
+package com.aerospike.dsl.expression;
 
 import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.ListReturnType;
@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static com.aerospike.dsl.util.TestUtils.translate;
-import static com.aerospike.dsl.util.TestUtils.translateAndCompare;
+import static com.aerospike.dsl.util.TestUtils.parseExpression;
+import static com.aerospike.dsl.util.TestUtils.parseExpressionAndCompare;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ListExpressionsTests {
@@ -26,10 +26,10 @@ class ListExpressionsTests {
                 ),
                 Exp.val(100));
         // Implicit detect as Int
-        translateAndCompare("$.listBin1.[0] == 100", expected);
-        translateAndCompare("$.listBin1.[0].get(type: INT) == 100", expected);
-        translateAndCompare("$.listBin1.[0].get(type: INT, return: VALUE) == 100", expected);
-        translateAndCompare("$.listBin1.[0].asInt() == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[0] == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[0].get(type: INT) == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[0].get(type: INT, return: VALUE) == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[0].asInt() == 100", expected);
     }
 
     @Test
@@ -43,9 +43,9 @@ class ListExpressionsTests {
                 ),
                 Exp.val("stringVal"));
         // Implicit detect as string
-        translateAndCompare("$.listBin1.[0] == \"stringVal\"", expected);
-        translateAndCompare("$.listBin1.[0].get(type: STRING) == \"stringVal\"", expected);
-        translateAndCompare("$.listBin1.[0].get(type: STRING, return: VALUE) == \"stringVal\"", expected);
+        parseExpressionAndCompare("$.listBin1.[0] == \"stringVal\"", expected);
+        parseExpressionAndCompare("$.listBin1.[0].get(type: STRING) == \"stringVal\"", expected);
+        parseExpressionAndCompare("$.listBin1.[0].get(type: STRING, return: VALUE) == \"stringVal\"", expected);
 
         expected = Exp.eq(
                 ListExp.getByIndex(
@@ -56,9 +56,9 @@ class ListExpressionsTests {
                 ),
                 Exp.val(true));
         // Implicit detect as boolean
-        translateAndCompare("$.listBin1.[0] == true", expected);
-        translateAndCompare("$.listBin1.[0].get(type: BOOL) == true", expected);
-        translateAndCompare("$.listBin1.[0].get(type: BOOL, return: VALUE) == true", expected);
+        parseExpressionAndCompare("$.listBin1.[0] == true", expected);
+        parseExpressionAndCompare("$.listBin1.[0].get(type: BOOL) == true", expected);
+        parseExpressionAndCompare("$.listBin1.[0].get(type: BOOL, return: VALUE) == true", expected);
     }
 
     @Test
@@ -70,10 +70,10 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[=100] == 100", expected);
-        translateAndCompare("$.listBin1.[=100].get(type: INT) == 100", expected);
-        translateAndCompare("$.listBin1.[=100].get(type: INT, return: VALUE) == 100", expected);
-        translateAndCompare("$.listBin1.[=100].asInt() == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[=100] == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[=100].get(type: INT) == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[=100].get(type: INT, return: VALUE) == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[=100].asInt() == 100", expected);
     }
 
     @Test
@@ -84,8 +84,8 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")),
                 Exp.val(0)
         );
-        translateAndCompare("$.listBin1.[=100].count() > 0", expected);
-        translateAndCompare("$.listBin1.[=100].[].count() > 0", expected);
+        parseExpressionAndCompare("$.listBin1.[=100].count() > 0", expected);
+        parseExpressionAndCompare("$.listBin1.[=100].[].count() > 0", expected);
     }
 
     @Test
@@ -98,10 +98,10 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[#-1] == 100", expected);
-        translateAndCompare("$.listBin1.[#-1].get(type: INT) == 100", expected);
-        translateAndCompare("$.listBin1.[#-1].get(type: INT, return: VALUE) == 100", expected);
-        translateAndCompare("$.listBin1.[#-1].asInt() == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[#-1] == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[#-1].get(type: INT) == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[#-1].get(type: INT, return: VALUE) == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[#-1].asInt() == 100", expected);
     }
 
     @Test
@@ -116,9 +116,9 @@ class ListExpressionsTests {
                         CTX.listIndex(0)
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[0].[0].[0] == 100", expected);
-        translateAndCompare("$.listBin1.[0].[0].[0].get(type: INT) == 100", expected);
-        translateAndCompare("$.listBin1.[0].[0].[0].get(type: INT, return: VALUE) == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[0].[0].[0] == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[0].[0].[0].get(type: INT) == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[0].[0].[0].get(type: INT, return: VALUE) == 100", expected);
     }
 
     @Test
@@ -126,10 +126,10 @@ class ListExpressionsTests {
         Exp expected = Exp.eq(
                 ListExp.size(Exp.listBin("listBin1")),
                 Exp.val(1));
-        translateAndCompare("$.listBin1.[].count() == 1", expected);
+        parseExpressionAndCompare("$.listBin1.[].count() == 1", expected);
 
         // the default behaviour for count() without List '[]' or Map '{}' designators is List
-        translateAndCompare("$.listBin1.count() == 1", expected);
+        parseExpressionAndCompare("$.listBin1.count() == 1", expected);
     }
 
     @Test
@@ -143,10 +143,10 @@ class ListExpressionsTests {
                                 Exp.listBin("listBin1"))
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[1].[].count() == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[1].[].count() == 100", expected);
 
         // the default behaviour for count() without List '[]' or Map '{}' designators is List
-        translateAndCompare("$.listBin1.[1].count() == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[1].count() == 100", expected);
 
     }
 
@@ -162,10 +162,10 @@ class ListExpressionsTests {
                                 CTX.listIndex(1))
                 ),
                 Exp.val(100));
-        translateAndCompare("$.listBin1.[1].[2].[].count() == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[1].[2].[].count() == 100", expected);
 
         // the default behaviour for count() without List '[]' or Map '{}' designators is List
-        translateAndCompare("$.listBin1.[1].[2].count() == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[1].[2].count() == 100", expected);
     }
 
     @Test
@@ -179,7 +179,7 @@ class ListExpressionsTests {
                         CTX.listIndex(5)
                 ),
                 Exp.val("stringVal"));
-        translateAndCompare("$.listBin1.[5].[1].get(type: STRING) == \"stringVal\"", expected);
+        parseExpressionAndCompare("$.listBin1.[5].[1].get(type: STRING) == \"stringVal\"", expected);
     }
 
     @Test
@@ -195,8 +195,8 @@ class ListExpressionsTests {
                 ),
                 Exp.val("stringVal"));
         // Implicit detect as String
-        translateAndCompare("$.listBin1.[5].[#-1] == \"stringVal\"", expected);
-        translateAndCompare("$.listBin1.[5].[#-1].get(type: STRING) == \"stringVal\"", expected);
+        parseExpressionAndCompare("$.listBin1.[5].[#-1] == \"stringVal\"", expected);
+        parseExpressionAndCompare("$.listBin1.[5].[#-1].get(type: STRING) == \"stringVal\"", expected);
 
         // Nested List Rank Value
         expected = Exp.eq(
@@ -209,7 +209,7 @@ class ListExpressionsTests {
                 ),
                 Exp.val(200));
         // Implicit detect as Int
-        translateAndCompare("$.listBin1.[5].[#-1].[=100] == 200", expected);
+        parseExpressionAndCompare("$.listBin1.[5].[#-1].[=100] == 200", expected);
     }
 
     @Test
@@ -223,21 +223,21 @@ class ListExpressionsTests {
                 ),
                 Exp.val(100)
         );
-        translateAndCompare("$.listBin1.[0].count() == 100", expected);
-        translateAndCompare("$.listBin1.[0].[].count() == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[0].count() == 100", expected);
+        parseExpressionAndCompare("$.listBin1.[0].[].count() == 100", expected);
     }
 
     @Test
     void negativeSyntaxList() {
         // TODO: throw meaningful exception (by ANTLR?)
-        assertThatThrownBy(() -> translate("$.listBin1.[stringValue] == 100"))
+        assertThatThrownBy(() -> parseExpression("$.listBin1.[stringValue] == 100"))
                 .isInstanceOf(AerospikeDSLException.class);
     }
 
     //@Test
     void negativeTypeComparisonList() {
         // TODO: should fail? Exp is successfully created but comparing int to a string value (validations on List)
-        assertThatThrownBy(() -> translate("$.listBin1.[#-1].get(type: INT) == \"stringValue\""))
+        assertThatThrownBy(() -> parseExpression("$.listBin1.[#-1].get(type: INT) == \"stringValue\""))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -248,7 +248,7 @@ class ListExpressionsTests {
                 Exp.val(1),
                 Exp.val(2),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[1:3]", expected);
+        parseExpressionAndCompare("$.listBin1.[1:3]", expected);
 
         // Negative
         expected = ListExp.getByIndexRange(
@@ -256,7 +256,7 @@ class ListExpressionsTests {
                 Exp.val(-3),
                 Exp.val(4),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[-3:1]", expected);
+        parseExpressionAndCompare("$.listBin1.[-3:1]", expected);
 
         // Inverted
         expected = ListExp.getByIndexRange(
@@ -264,14 +264,14 @@ class ListExpressionsTests {
                 Exp.val(2),
                 Exp.val(2),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[!2:4]", expected);
+        parseExpressionAndCompare("$.listBin1.[!2:4]", expected);
 
         // From start till the end
         expected = ListExp.getByIndexRange(
                 ListReturnType.VALUE,
                 Exp.val(1),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[1:]", expected);
+        parseExpressionAndCompare("$.listBin1.[1:]", expected);
     }
 
     @Test
@@ -280,23 +280,23 @@ class ListExpressionsTests {
                 ListReturnType.VALUE,
                 Exp.val(List.of("a", "b", "c")),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[=a,b,c]", expected);
-        translateAndCompare("$.listBin1.[=\"a\",\"b\",\"c\"]", expected);
+        parseExpressionAndCompare("$.listBin1.[=a,b,c]", expected);
+        parseExpressionAndCompare("$.listBin1.[=\"a\",\"b\",\"c\"]", expected);
 
         // Integer
         expected = ListExp.getByValueList(
                 ListReturnType.VALUE,
                 Exp.val(List.of(1, 2, 3)),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[=1,2,3]", expected);
+        parseExpressionAndCompare("$.listBin1.[=1,2,3]", expected);
 
         // Inverted
         expected = ListExp.getByValueList(
                 ListReturnType.VALUE | ListReturnType.INVERTED,
                 Exp.val(List.of("a", "b", "c")),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[!=a,b,c]", expected);
-        translateAndCompare("$.listBin1.[!=\"a\",\"b\",\"c\"]", expected);
+        parseExpressionAndCompare("$.listBin1.[!=a,b,c]", expected);
+        parseExpressionAndCompare("$.listBin1.[!=\"a\",\"b\",\"c\"]", expected);
     }
 
     @Test
@@ -307,7 +307,7 @@ class ListExpressionsTests {
                 Exp.val(111),
                 Exp.val(334),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[=111:334]", expected);
+        parseExpressionAndCompare("$.listBin1.[=111:334]", expected);
 
         // Inverted
         expected = ListExp.getByValueRange(
@@ -315,7 +315,7 @@ class ListExpressionsTests {
                 Exp.val(10),
                 Exp.val(20),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[!=10:20]", expected);
+        parseExpressionAndCompare("$.listBin1.[!=10:20]", expected);
 
         // From start till the end
         expected = ListExp.getByValueRange(
@@ -323,7 +323,7 @@ class ListExpressionsTests {
                 Exp.val(111),
                 null,
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[=111:]", expected);
+        parseExpressionAndCompare("$.listBin1.[=111:]", expected);
     }
 
     @Test
@@ -333,7 +333,7 @@ class ListExpressionsTests {
                 Exp.val(0),
                 Exp.val(3),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[#0:3]", expected);
+        parseExpressionAndCompare("$.listBin1.[#0:3]", expected);
 
         // Inverted
         expected = ListExp.getByRankRange(
@@ -341,14 +341,14 @@ class ListExpressionsTests {
                 Exp.val(0),
                 Exp.val(3),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[!#0:3]", expected);
+        parseExpressionAndCompare("$.listBin1.[!#0:3]", expected);
 
         // From start till the end
         expected = ListExp.getByRankRange(
                 ListReturnType.VALUE,
                 Exp.val(-3),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[#-3:]", expected);
+        parseExpressionAndCompare("$.listBin1.[#-3:]", expected);
 
         // From start till the end with context
         expected = ListExp.getByRankRange(
@@ -356,7 +356,7 @@ class ListExpressionsTests {
                 Exp.val(-3),
                 Exp.listBin("listBin1"),
                 CTX.listIndex(5));
-        translateAndCompare("$.listBin1.[5].[#-3:]", expected);
+        parseExpressionAndCompare("$.listBin1.[5].[#-3:]", expected);
     }
 
     @Test
@@ -367,7 +367,7 @@ class ListExpressionsTests {
                 Exp.val("b"),
                 Exp.val(2),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[#-3:-1~b]", expected);
+        parseExpressionAndCompare("$.listBin1.[#-3:-1~b]", expected);
 
         // Inverted
         expected = ListExp.getByValueRelativeRankRange(
@@ -376,7 +376,7 @@ class ListExpressionsTests {
                 Exp.val("b"),
                 Exp.val(2),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[!#-3:-1~b]", expected);
+        parseExpressionAndCompare("$.listBin1.[!#-3:-1~b]", expected);
 
         // From start till the end
         expected = ListExp.getByValueRelativeRankRange(
@@ -384,7 +384,7 @@ class ListExpressionsTests {
                 Exp.val(-3),
                 Exp.val("b"),
                 Exp.listBin("listBin1"));
-        translateAndCompare("$.listBin1.[#-3:~b]", expected);
+        parseExpressionAndCompare("$.listBin1.[#-3:~b]", expected);
     }
 
     @Test
@@ -398,7 +398,7 @@ class ListExpressionsTests {
                 ),
                 Exp.val(5));
         // Implicit detect as Int
-        translateAndCompare("$.listBin1.[0].get(return: COUNT) == 5", expected);
+        parseExpressionAndCompare("$.listBin1.[0].get(return: COUNT) == 5", expected);
 
         expected = Exp.eq(
                 ListExp.getByIndex(
@@ -409,7 +409,7 @@ class ListExpressionsTests {
                 ),
                 Exp.val(true));
         // Implicit detect as Int
-        translateAndCompare("$.listBin1.[0].get(return: EXISTS) == true", expected);
+        parseExpressionAndCompare("$.listBin1.[0].get(return: EXISTS) == true", expected);
 
         expected = Exp.eq(
                 ListExp.getByIndex(
@@ -420,6 +420,6 @@ class ListExpressionsTests {
                 ),
                 Exp.val(1));
         // Implicit detect as Int
-        translateAndCompare("$.listBin1.[0].get(return: INDEX) == 1", expected);
+        parseExpressionAndCompare("$.listBin1.[0].get(return: INDEX) == 1", expected);
     }
 }
