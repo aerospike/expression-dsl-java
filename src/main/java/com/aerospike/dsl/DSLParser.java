@@ -6,11 +6,10 @@ import com.aerospike.client.query.Filter;
 import java.util.List;
 
 /**
- * DSLParser provides API to convert String DSL path into either Aerospike filter Expression or secondary index Filter -
+ * Contains API to convert dot separated String path into an Aerospike filter -
  * a functional language for applying predicates to bin data and record metadata.
  * <br>
  * Such filters are used in different areas of Aerospike Server functionality including the following:
- * <br>
  * <ul>
  * <li> filtering queries (acting as the WHERE clause),</li>
  * <li> filtering batch operations,</li>
