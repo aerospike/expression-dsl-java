@@ -6,7 +6,8 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.model.BasePath;
-import com.aerospike.dsl.util.ParsingUtils;
+
+import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 
 public class ListValue extends ListPart {
     private final Object value;
@@ -21,7 +22,7 @@ public class ListValue extends ListPart {
         if (ctx.valueIdentifier().NAME_IDENTIFIER() != null) {
             listValue = ctx.valueIdentifier().NAME_IDENTIFIER().getText();
         } else if (ctx.valueIdentifier().QUOTED_STRING() != null) {
-            listValue = ParsingUtils.getWithoutQuotes(ctx.valueIdentifier().QUOTED_STRING().getText());
+            listValue = getWithoutQuotes(ctx.valueIdentifier().QUOTED_STRING().getText());
         } else if (ctx.valueIdentifier().INT() != null) {
             listValue = Integer.parseInt(ctx.valueIdentifier().INT().getText());
         }

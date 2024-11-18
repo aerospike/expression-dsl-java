@@ -7,9 +7,10 @@ import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
-import com.aerospike.dsl.util.ParsingUtils;
 
 import java.util.Optional;
+
+import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 
 public class MapKeyRange extends MapPart {
     private final boolean inverted;
@@ -34,12 +35,12 @@ public class MapKeyRange extends MapPart {
 
             String startKey = range.mapKey(0).NAME_IDENTIFIER() != null
                     ? range.mapKey(0).NAME_IDENTIFIER().getText()
-                    : ParsingUtils.getWithoutQuotes(range.mapKey(0).QUOTED_STRING().getText());
+                    : getWithoutQuotes(range.mapKey(0).QUOTED_STRING().getText());
 
             String endKey = Optional.ofNullable(range.mapKey(1))
                     .map(keyCtx -> keyCtx.NAME_IDENTIFIER() != null
                             ? keyCtx.NAME_IDENTIFIER().getText()
-                            : ParsingUtils.getWithoutQuotes(keyCtx.QUOTED_STRING().getText()))
+                            : getWithoutQuotes(keyCtx.QUOTED_STRING().getText()))
                     .orElse(null);
 
             return new MapKeyRange(isInverted, startKey, endKey);

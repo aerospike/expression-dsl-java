@@ -7,8 +7,8 @@ import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
-import com.aerospike.dsl.util.ParsingUtils;
 
+import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
 public class MapRankRangeRelative extends MapPart {
@@ -50,7 +50,7 @@ public class MapRankRangeRelative extends MapPart {
                 } else if (valueIdentifierContext.NAME_IDENTIFIER() != null) {
                     relativeValue = valueIdentifierContext.NAME_IDENTIFIER().getText();
                 } else if (valueIdentifierContext.QUOTED_STRING() != null) {
-                    relativeValue = ParsingUtils.getWithoutQuotes(valueIdentifierContext.QUOTED_STRING().getText());
+                    relativeValue = getWithoutQuotes(valueIdentifierContext.QUOTED_STRING().getText());
                 }
             }
 

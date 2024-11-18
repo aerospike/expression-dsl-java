@@ -7,9 +7,10 @@ import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
-import com.aerospike.dsl.util.ParsingUtils;
 
 import java.util.List;
+
+import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 
 public class MapKeyList extends MapPart {
     private final boolean inverted;
@@ -35,7 +36,7 @@ public class MapKeyList extends MapPart {
                         if (mapKey.NAME_IDENTIFIER() != null) {
                             return mapKey.NAME_IDENTIFIER().getText();
                         } else {
-                            return ParsingUtils.getWithoutQuotes(mapKey.QUOTED_STRING().getText());
+                            return getWithoutQuotes(mapKey.QUOTED_STRING().getText());
                         }
                     }
             ).toList();

@@ -6,6 +6,8 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.annotation.Beta;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.AbstractPart;
+import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
+import com.aerospike.dsl.visitor.FilterConditionVisitor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;

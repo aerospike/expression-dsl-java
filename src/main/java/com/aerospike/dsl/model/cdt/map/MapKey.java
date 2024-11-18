@@ -7,7 +7,8 @@ import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
-import com.aerospike.dsl.util.ParsingUtils;
+
+import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
 
 public class MapKey extends MapPart {
     private final String key;
@@ -19,7 +20,7 @@ public class MapKey extends MapPart {
 
     public static MapKey from(ConditionParser.MapKeyContext ctx) {
         if (ctx.QUOTED_STRING() != null) {
-            return new MapKey(ParsingUtils.getWithoutQuotes(ctx.QUOTED_STRING().getText()));
+            return new MapKey(getWithoutQuotes(ctx.QUOTED_STRING().getText()));
         }
         if (ctx.NAME_IDENTIFIER() != null) {
             return new MapKey(ctx.NAME_IDENTIFIER().getText());

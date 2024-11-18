@@ -1,7 +1,8 @@
-package com.aerospike.dsl;
+package com.aerospike.dsl.visitor;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.client.query.Filter;
+import com.aerospike.dsl.ConditionBaseVisitor;
+import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.*;
 import com.aerospike.dsl.model.cdt.list.ListIndex;
@@ -14,31 +15,98 @@ import com.aerospike.dsl.model.cdt.list.ListValue;
 import com.aerospike.dsl.model.cdt.list.ListValueList;
 import com.aerospike.dsl.model.cdt.list.ListValueRange;
 import com.aerospike.dsl.model.cdt.map.*;
-import com.aerospike.dsl.util.ParsingUtils;
 import com.aerospike.dsl.util.TypeUtils;
-import com.aerospike.dsl.util.ValidationUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
-import java.util.Objects;
 import java.util.TreeMap;
 
-import static com.aerospike.dsl.model.Expr.ExprPartsOperation.SUB;
-import static com.aerospike.dsl.util.ParsingUtils.FilterOperationType.*;
 import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
+import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
-public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
+public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
+
+    @Override
+    public AbstractPart visitWithExpression(ConditionParser.WithExpressionContext ctx) {
+        List<Exp> expressions = new ArrayList<>();
+
+        // iterate each definition
+        for (ConditionParser.VariableDefinitionContext vdc : ctx.variableDefinition()) {
+            expressions.add(Exp.def(vdc.stringOperand().getText(), visit(vdc.expression()).getExp()));
+        }
+        // last expression is the action (described after "do")
+        expressions.add(visit(ctx.expression()).getExp());
+        return new Expr(Exp.let(expressions.toArray(new Exp[0])));
+    }
+
+    @Override
+    public AbstractPart visitWhenExpression(ConditionParser.WhenExpressionContext ctx) {
+        List<Exp> expressions = new ArrayList<>();
+
+        // iterate each condition declaration
+        for (ConditionParser.ExpressionMappingContext emc : ctx.expressionMapping()) {
+            // visit condition
+            expressions.add(visit(emc.expression(0)).getExp());
+            // visit action
+            expressions.add(visit(emc.expression(1)).getExp());
+        }
+
+        // visit default
+        expressions.add(visit(ctx.expression()).getExp());
+        return new Expr(Exp.cond(expressions.toArray(new Exp[0])));
+    }
+
+    @Override
+    public AbstractPart visitAndExpression(ConditionParser.AndExpressionContext ctx) {
+        Expr left = (Expr) visit(ctx.expression(0));
+        Expr right = (Expr) visit(ctx.expression(1));
+
+        logicalSetBinsAsBooleanExpr(left, right);
+        return new Expr(Exp.and(left.getExp(), right.getExp()));
+    }
+
+    @Override
+    public AbstractPart visitOrExpression(ConditionParser.OrExpressionContext ctx) {
+        Expr left = (Expr) visit(ctx.expression(0));
+        Expr right = (Expr) visit(ctx.expression(1));
+
+        logicalSetBinsAsBooleanExpr(left, right);
+        return new Expr(Exp.or(left.getExp(), right.getExp()));
+    }
+
+    @Override
+    public AbstractPart visitNotExpression(ConditionParser.NotExpressionContext ctx) {
+        Expr expr = (Expr) visit(ctx.expression());
+
+        logicalSetBinAsBooleanExpr(expr);
+        return new Expr(Exp.not(expr.getExp()));
+    }
+
+    @Override
+    public AbstractPart visitExclusiveExpression(ConditionParser.ExclusiveExpressionContext ctx) {
+        if (ctx.expression().size() < 2) {
+            throw new AerospikeDSLException("Exclusive logical operator requires 2 or more expressions");
+        }
+        List<Exp> expressions = new ArrayList<>();
+
+        // iterate each condition declaration
+        for (ConditionParser.ExpressionContext ec : ctx.expression()) {
+            Expr expr = (Expr) visit(ec);
+            logicalSetBinAsBooleanExpr(expr);
+            expressions.add(expr.getExp());
+        }
+        return new Expr(Exp.exclusive(expressions.toArray(new Exp[0])));
+    }
 
     @Override
     public AbstractPart visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Filter filter = getFilterOrFail(left, right, GT);
-        return new Expr(new SIndexFilter(filter));
+        Exp exp = getExpOrFail(left, right, Exp::gt);
+        return new Expr(exp);
     }
 
     @Override
@@ -46,8 +114,8 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Filter filter = getFilterOrFail(left, right, GTEQ);
-        return new Expr(new SIndexFilter(filter));
+        Exp exp = getExpOrFail(left, right, Exp::ge);
+        return new Expr(exp);
     }
 
     @Override
@@ -55,8 +123,8 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Filter filter = getFilterOrFail(left, right, LT);
-        return new Expr(new SIndexFilter(filter));
+        Exp exp = getExpOrFail(left, right, Exp::lt);
+        return new Expr(exp);
     }
 
     @Override
@@ -64,8 +132,8 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Filter filter = getFilterOrFail(left, right, LTEQ);
-        return new Expr(new SIndexFilter(filter));
+        Exp exp = getExpOrFail(left, right, Exp::le);
+        return new Expr(exp);
     }
 
     @Override
@@ -73,18 +141,17 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Filter filter = getFilterOrFail(left, right, EQ);
-        return new Expr(new SIndexFilter(filter));
+        Exp exp = getExpOrFail(left, right, Exp::eq);
+        return new Expr(exp);
     }
 
     @Override
     public AbstractPart visitInequalityExpression(ConditionParser.InequalityExpressionContext ctx) {
-        throw new AerospikeDSLException("The operation is not supported by secondary index filter");
-    }
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
 
-    private boolean isBinAndInt(AbstractPart left, AbstractPart right) {
-        return (left instanceof BinPart && right instanceof IntOperand)
-                || (right instanceof BinPart && left instanceof IntOperand);
+        Exp exp = getExpOrFail(left, right, Exp::ne);
+        return new Expr(exp);
     }
 
     @Override
@@ -92,10 +159,8 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        if (isBinAndInt(left, right)) {
-            return new Expr(left, right, Expr.ExprPartsOperation.ADD);
-        }
-        throw new AerospikeDSLException("The operation is not supported by secondary index filter");
+        Exp exp = getExpOrFail(left, right, Exp::add);
+        return new Expr(exp);
     }
 
     @Override
@@ -103,160 +168,88 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        if (isBinAndInt(left, right)) {
-            return new Expr(left, right, SUB);
-        }
-        throw new AerospikeDSLException("The operation is not supported by secondary index filter");
+        Exp exp = getExpOrFail(left, right, Exp::sub);
+        return new Expr(exp);
     }
 
-    // 2 operands Filters
-    private Filter getFilterOrFail(AbstractPart left, AbstractPart right, ParsingUtils.FilterOperationType type) {
-        if (left == null) {
-            throw new AerospikeDSLException("Unable to parse left operand");
-        }
-        if (right == null) {
-            throw new AerospikeDSLException("Unable to parse right operand");
-        }
+    @Override
+    public AbstractPart visitMulExpression(ConditionParser.MulExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
 
-        if (left.getPartType() == AbstractPart.PartType.BIN_PART) {
-            return getFilterLeftBinTypeComparison((BinPart) left, right, type);
-        }
-        if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
-            return getFilterRightBinTypeComparison((BinPart) right, left, type);
-        }
-
-        // Handle non Bin operands cases
-        if (left instanceof Expr leftExpr) {
-            return getFilterOrFail(leftExpr.getLeft(), leftExpr.getRight(), leftExpr.getOperationType(), right, type);
-        }
-        if (right instanceof Expr rightExpr) {
-            return getFilterOrFail(rightExpr.getLeft(), rightExpr.getRight(), rightExpr.getOperationType(), left, type);
-        }
-        return null;
+        Exp exp = getExpOrFail(left, right, Exp::mul);
+        return new Expr(exp);
     }
 
-    // 2 operands Filters
-    private Filter getFilterOrFail(AbstractPart exprLeft, AbstractPart exprRight, Expr.ExprPartsOperation operationType,
-                                   AbstractPart right, ParsingUtils.FilterOperationType type) {
-        if (exprLeft == null) {
-            throw new AerospikeDSLException("Unable to parse left operand of expression");
-        }
-        if (exprRight == null) {
-            throw new AerospikeDSLException("Unable to parse right operand of expression");
-        }
+    @Override
+    public AbstractPart visitDivExpression(ConditionParser.DivExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
 
-        if (exprLeft.getPartType() == AbstractPart.PartType.BIN_PART) {
-            if (exprRight instanceof IntOperand && right instanceof IntOperand) {
-                ValidationUtils.validateComparableTypes(exprLeft.getExpType(), Exp.Type.INT);
-                long value = getCombinedValue(((IntOperand) right).getValue(), ((IntOperand) exprRight).getValue(),
-                        operationType);
-                return applyFilterOperator(((BinPart) exprLeft).getBinName(), value, type);
-            }
-            throw new AerospikeDSLException("Not supported");
-        }
-        if (exprRight.getPartType() == AbstractPart.PartType.BIN_PART) {
-            if (exprLeft instanceof IntOperand && right instanceof IntOperand) {
-                ValidationUtils.validateComparableTypes(exprRight.getExpType(), Exp.Type.INT);
-                long value = 0;
-                if (operationType == SUB) {
-                    value = getCombinedValueSubtr(((IntOperand) right).getValue(), ((IntOperand) exprLeft).getValue(),
-                            operationType);
-                    type = invertType(type);
-                } else {
-                    value = getCombinedValue(((IntOperand) right).getValue(), ((IntOperand) exprLeft).getValue(),
-                            operationType);
-                }
-
-                return applyFilterOperator(((BinPart) exprRight).getBinName(), value, type);
-            }
-            throw new AerospikeDSLException("Not supported");
-        }
-
-        // Handle non Bin operands cases
-        if (exprLeft instanceof Expr leftExpr) {
-            return getFilterOrFail(leftExpr.getLeft(), leftExpr.getRight(), type);
-        }
-//        if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
-//            return getFilterRightBinTypeComparison((BinPart) right, left, type);
-//        }
-        return null;
+        Exp exp = getExpOrFail(left, right, Exp::div);
+        return new Expr(exp);
     }
 
-    private long getCombinedValue(Long right, Long leftExprPart, Expr.ExprPartsOperation operationType) {
-        return switch (operationType) {
-            case ADD -> right - leftExprPart;
-            case SUB -> right + leftExprPart;
-            case DIV, MUL -> throw new UnsupportedOperationException("Not supported");
-        };
+    @Override
+    public AbstractPart visitModExpression(ConditionParser.ModExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::mod);
+        return new Expr(exp);
     }
 
-    private long getCombinedValueSubtr(Long right, Long leftExprPart, Expr.ExprPartsOperation operationType) {
-        if (Objects.requireNonNull(operationType) == SUB) {
-            return leftExprPart - right;
-        }
-        throw new UnsupportedOperationException("Not supported");
+    @Override
+    public AbstractPart visitIntAndExpression(ConditionParser.IntAndExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::intAnd);
+        return new Expr(exp);
     }
 
-    private Filter getFilterLeftBinTypeComparison(BinPart left, AbstractPart right,
-                                                  ParsingUtils.FilterOperationType type) {
-        String binNameLeft = left.getBinName();
-        return switch (right.getPartType()) {
-            case INT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.INT);
-                yield applyFilterOperator(binNameLeft, ((IntOperand) right).getValue(), type);
-            }
-            case STRING_OPERAND -> {
-                if (type != EQ) throw new AerospikeDSLException("Operand type not supported");
+    @Override
+    public AbstractPart visitIntOrExpression(ConditionParser.IntOrExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
 
-                if (left.getExpType() != null &&
-                        left.getExpType().equals(Exp.Type.BLOB)) {
-                    // Base64 Blob
-                    ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BLOB);
-                    String base64String = ((StringOperand) right).getValue();
-                    byte[] value = Base64.getDecoder().decode(base64String);
-                    yield Filter.equal(binNameLeft, value);
-                } else {
-                    // String
-                    ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.STRING);
-                    yield Filter.equal(binNameLeft, ((StringOperand) right).getValue());
-                }
-            }
-            default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
-        };
+        Exp exp = getExpOrFail(left, right, Exp::intOr);
+        return new Expr(exp);
     }
 
-    private Filter applyFilterOperator(String binName, Long value, ParsingUtils.FilterOperationType type) {
-        return switch (type) {
-            // "$.intBin1 > 100" and "100 < $.intBin1" represent identical Filter
-            case GT -> Filter.range(binName, value + 1, Long.MAX_VALUE);
-            case GTEQ -> Filter.range(binName, value, Long.MAX_VALUE);
-            case LT -> Filter.range(binName, Long.MIN_VALUE, value - 1);
-            case LTEQ -> Filter.range(binName, Long.MIN_VALUE, value);
-            case EQ -> Filter.equal(binName, value);
-            default -> throw new AerospikeDSLException("The operation is not supported by secondary index filter");
-        };
+    @Override
+    public AbstractPart visitIntXorExpression(ConditionParser.IntXorExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::intXor);
+        return new Expr(exp);
     }
 
-    private Filter getFilterRightBinTypeComparison(BinPart right, AbstractPart left,
-                                                   ParsingUtils.FilterOperationType type) {
-        String binNameRight = right.getBinName();
-        return switch (left.getPartType()) {
-            case INT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.INT, right.getExpType());
-                yield applyFilterOperator(binNameRight, ((IntOperand) left).getValue(), invertType(type));
-            }
-            default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
-        };
+    @Override
+    public AbstractPart visitIntNotExpression(ConditionParser.IntNotExpressionContext ctx) {
+        AbstractPart operand = visit(ctx.operand());
+
+        Exp exp = getExpOrFail(operand, Exp::intNot);
+        return new Expr(exp);
     }
 
-    private ParsingUtils.FilterOperationType invertType(ParsingUtils.FilterOperationType type) {
-        return switch (type) {
-            case GT -> LT;
-            case GTEQ -> LTEQ;
-            case LT -> GT;
-            case LTEQ -> GTEQ;
-            default -> type;
-        };
+    @Override
+    public AbstractPart visitIntLShiftExpression(ConditionParser.IntLShiftExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::lshift);
+        return new Expr(exp);
+    }
+
+    @Override
+    public AbstractPart visitIntRShiftExpression(ConditionParser.IntRShiftExpressionContext ctx) {
+        AbstractPart left = visit(ctx.operand(0));
+        AbstractPart right = visit(ctx.operand(1));
+
+        Exp exp = getExpOrFail(left, right, Exp::rshift);
+        return new Expr(exp);
     }
 
     @Override
@@ -280,20 +273,6 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         return new PathFunction(PathFunction.PathFunctionType.COUNT, PathFunction.ReturnParam.COUNT, null);
     }
 
-    private String getPathFunctionParam(ConditionParser.PathFunctionParamContext paramCtx, String paramName) {
-        String paramNameText;
-        String paramNameValue;
-        String paramValue = null;
-        if (paramCtx.pathFunctionParamName() != null) {
-            paramNameText = paramCtx.pathFunctionParamName().getText();
-            paramNameValue = paramCtx.pathFunctionParamValue().getText();
-            if (paramNameText.equalsIgnoreCase(paramName)) {
-                paramValue = paramNameValue;
-            }
-        }
-        return paramValue;
-    }
-
     @Override
     public AbstractPart visitPathFunctionCast(ConditionParser.PathFunctionCastContext ctx) {
         String typeVal = extractTypeFromMethod(ctx.PATH_FUNCTION_CAST().getText());
@@ -301,14 +280,6 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         Exp.Type binType = PathFunction.castTypeToExpType(castType);
 
         return new PathFunction(PathFunction.PathFunctionType.CAST, null, binType);
-    }
-
-    private static String extractTypeFromMethod(String methodName) {
-        if (methodName.startsWith("as") && methodName.endsWith("()")) {
-            return methodName.substring(2, methodName.length() - 2);
-        } else {
-            throw new AerospikeDSLException("Invalid method name: %s".formatted(methodName));
-        }
     }
 
     @Override
@@ -322,22 +293,6 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         } else {
             return new MetadataOperand(functionName);
         }
-    }
-
-    private String extractFunctionName(String text) {
-        int startParen = text.indexOf('(');
-        return (startParen != -1) ? text.substring(0, startParen) : text;
-    }
-
-    private Integer extractParameter(String text) {
-        int startParen = text.indexOf('(');
-        int endParen = text.indexOf(')');
-
-        if (startParen != -1 && endParen != -1 && endParen > startParen + 1) {
-            String numberStr = text.substring(startParen + 1, endParen);
-            return Integer.parseInt(numberStr);
-        }
-        return null;
     }
 
     @Override
@@ -379,13 +334,6 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         return new ListOperand(list);
     }
 
-    private boolean shouldVisitListElement(int i, int size, ParseTree child) {
-        return size > 0 // size is not 0
-                && i != 0 // not the first element ('[')
-                && i != size - 1 // not the last element (']')
-                && !child.getText().equals(","); // not a comma (list elements separator)
-    }
-
     @Override
     public AbstractPart visitOrderedMapConstant(ConditionParser.OrderedMapConstantContext ctx) {
         return readChildrenIntoMapOperand(ctx);
@@ -421,14 +369,6 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         }
 
         return new MapOperand(map);
-    }
-
-    private boolean shouldVisitMapElement(int i, int size, ParseTree child) {
-        return size > 0 // size is not 0
-                && i != 0 // not the first element ('{')
-                && i != size - 1 // not the last element ('}')
-                && !child.getText().equals(":") // not a colon (map key and value separator)
-                && !child.getText().equals(","); // not a comma (map pairs separator)
     }
 
     @Override
@@ -491,14 +431,6 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         return new VariableOperand(extractVariableName(text));
     }
 
-    private String extractVariableName(String variableReference) {
-        if (variableReference.startsWith("${") && variableReference.endsWith("}")) {
-            return variableReference.substring(2, variableReference.length() - 1);
-        } else {
-            throw new IllegalArgumentException("Input string is not in the correct format");
-        }
-    }
-
     private AbstractPart overrideType(AbstractPart part, ParseTree ctx) {
         ConditionParser.PathFunctionContext pathFunctionContext =
                 ((ConditionParser.PathContext) ctx.getParent()).pathFunction();
@@ -534,34 +466,6 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
         return part;
     }
 
-    private Exp.Type detectImplicitTypeFromUpperTree(ParseTree ctx) {
-        // Search for a "leaf" operand child (Int, Float, String and Boolean)
-        // in the above levels of the current path in the expression tree
-        while (ctx.getParent() != null) {
-            ctx = ctx.getParent();
-
-            for (int i = 0; i < ctx.getChildCount(); i++) {
-                ParseTree child = ctx.getChild(i);
-
-                if (child instanceof ConditionParser.OperandContext operandContext) {
-                    if (operandContext.numberOperand() != null) {
-                        if (operandContext.numberOperand().intOperand() != null) {
-                            return Exp.Type.INT;
-                        } else if (operandContext.numberOperand().floatOperand() != null) {
-                            return Exp.Type.FLOAT;
-                        }
-                    } else if (operandContext.stringOperand() != null) {
-                        return Exp.Type.STRING;
-                    } else if (operandContext.booleanOperand() != null) {
-                        return Exp.Type.BOOL;
-                    }
-                }
-            }
-        }
-        // Could not detect, return null and determine defaults later on
-        return null;
-    }
-
     @Override
     public AbstractPart visitPath(ConditionParser.PathContext ctx) {
         BasePath basePath = (BasePath) visit(ctx.basePath());
@@ -569,7 +473,7 @@ public class FilterConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
         // if there are other parts except bin, get a corresponding Exp
         if (!parts.isEmpty() || ctx.pathFunction() != null && ctx.pathFunction().pathFunctionCount() != null) {
-            Exp exp = PathOperand.processPath(basePath, ctx.pathFunction() == null
+                Exp exp = PathOperand.processPath(basePath, ctx.pathFunction() == null
                     ? null
                     : (PathFunction) visit(ctx.pathFunction()));
             return exp == null ? null : new PathOperand(exp);
