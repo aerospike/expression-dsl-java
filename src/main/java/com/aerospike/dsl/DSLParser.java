@@ -2,6 +2,7 @@ package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Expression;
 import com.aerospike.client.query.Filter;
+import com.aerospike.dsl.exception.AerospikeDSLException;
 
 import java.util.List;
 
@@ -23,7 +24,6 @@ public interface DSLParser {
      * Parse String DSL path into Aerospike filter Expression.
      * <br><br>
      * Examples:
-     * <br>
      * <table border="1">
      *   <tr>
      *     <td> $.binName </td> <td> Bin “binName” </td>
@@ -82,9 +82,9 @@ public interface DSLParser {
      *         mapKey("10")] </td>
      *   </tr>
      * </table>
-     *
      * @param input String consisting of dot separated elements, typically bin name and optional context
      * @return Expression object
+     * @throws AerospikeDSLException in case of unsupported DSL String or invalid syntax
      */
     Expression parseExpression(String input);
 
@@ -92,7 +92,6 @@ public interface DSLParser {
      * Parse String DSL path into Aerospike secondary index Filter.
      * <br><br>
      * Examples:
-     * <br>
      * <table border="1">
      *   <tr>
      *     <td> $.intBin1 == 10 </td> <td> Filter.equal("intBin1", 10) </td>
@@ -104,9 +103,9 @@ public interface DSLParser {
      *     <td> $.stringBin1 == 'text' </td> <td> Filter.equal("stringBin1", "text") </td>
      *   </tr>
      * </table>
-     *
      * @param input String consisting of dot separated elements, typically bin name and value
-     * @return Filter object
+     * @return List of Filter objects
+     * @throws AerospikeDSLException in case of unsupported DSL String or invalid syntax
      */
     List<Filter> parseFilters(String input);
 }
