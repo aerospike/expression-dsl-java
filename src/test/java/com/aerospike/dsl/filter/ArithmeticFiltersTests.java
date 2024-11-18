@@ -353,7 +353,7 @@ public class ArithmeticFiltersTests {
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("The operation is not supported by secondary index filter");
         parseFiltersAndCompare("(90 / $.bananas) >= 90",
-                List.of(Filter.range("bananas", 90 / 90, 90 / 90))); // (0,1]
+                List.of(Filter.range("bananas", 90 / 90, 90 / 90))); // [1, 1]
         assertThatThrownBy(() -> parseFilters("(90 / $.bananas) < 90")) // maximal range is all numbers
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("The operation is not supported by secondary index filter");
@@ -371,6 +371,6 @@ public class ArithmeticFiltersTests {
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("The operation is not supported by secondary index filter");
         parseFiltersAndCompare("(-90 / $.bananas) <= -90",
-                List.of(Filter.range("bananas", 1L, 90 / 90)));
+                List.of(Filter.range("bananas", 1L, 90 / 90))); // [1, 1]
     }
 }
