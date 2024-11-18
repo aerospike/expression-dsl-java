@@ -52,9 +52,9 @@ public class VisitorUtils {
     static String extractVariableName(String variableReference) {
         if (variableReference.startsWith("${") && variableReference.endsWith("}")) {
             return variableReference.substring(2, variableReference.length() - 1);
-        } else {
-            throw new IllegalArgumentException("Input string is not in the correct format");
         }
+        throw new IllegalArgumentException("Input string is not in the correct format");
+
     }
 
     static Exp.Type detectImplicitTypeFromUpperTree(ParseTree ctx) {
@@ -352,10 +352,14 @@ public class VisitorUtils {
         if (exprLeft instanceof Expr leftExpr) {
             return getFilterOrFail(leftExpr.getLeft(), leftExpr.getRight(), type);
         }
-//        if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
-//            return getFilterRightBinTypeComparison((BinPart) right, left, type);
-//        }
         return null;
+    }
+
+    static void requireIntegerBin(AbstractPart left, AbstractPart right) {
+        if (!(left instanceof BinPart && right instanceof IntOperand)
+                && !(right instanceof BinPart && left instanceof IntOperand)) {
+            throw new AerospikeDSLException("The operation is not supported by secondary index filter");
+        }
     }
 
     private static ArithmeticTermType getTermType(Expr.ExprPartsOperation operationType, boolean isLeftTerm) {
@@ -398,12 +402,11 @@ public class VisitorUtils {
         } else if (right > 0 && left < 0) {
             // left negative, right positive
             return getLimitsForBinDividendWithLeftNumberNegative(operationType, left, right);
-        } else if ((left > 0 && right == 0) || (left < 0 && right == 0)) {
+        } else if (left != 0) {
             throw new AerospikeDSLException("Division by zero is not allowed");
-        } else if ((left == 0 && right > 0) || ((left == 0 && right < 0))) {
+        } else {
             return new Pair<>(null, null);
         }
-        return new Pair<>(null, null);
     }
 
     private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberNegative(FilterOperationType operationType,
@@ -489,12 +492,11 @@ public class VisitorUtils {
                 default:
                     throw new AerospikeDSLException("OperationType not supported for division: " + operationType);
             };
-        } else if ((left > 0 && right == 0) || (left < 0 && right == 0)) {
+        } else if (left != 0) {
             throw new AerospikeDSLException("Division by zero is not allowed");
-        } else if ((left == 0 && right > 0) || ((left == 0 && right < 0))) {
+        } else {
             return new Pair<>(null, null);
         }
-        return new Pair<>(null, null);
     }
 
     private static Filter getFilterForDivOrFail(String binName, Pair<Long, Long> value, FilterOperationType type) {

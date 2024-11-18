@@ -4,22 +4,19 @@ import com.aerospike.client.query.Filter;
 import lombok.Getter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-@Getter
 public class SIndexFilter {
 
+    @Getter
     protected final List<Filter> filters = new ArrayList<>();
 
     public SIndexFilter(Filter filter) {
-        addFilter(filter);
+        filters.add(filter);
     }
 
-    public SIndexFilter(List<Filter> filters) {
+    public SIndexFilter(Collection<Filter> filters) {
         this.filters.addAll(filters);
-    }
-
-    public void addFilter(Filter filter) {
-        if (filter != null) filters.add(filter);
     }
 }

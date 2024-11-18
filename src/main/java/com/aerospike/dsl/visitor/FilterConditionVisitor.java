@@ -4,14 +4,13 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.AbstractPart;
-import com.aerospike.dsl.model.BinPart;
 import com.aerospike.dsl.model.Expr;
-import com.aerospike.dsl.model.IntOperand;
 import com.aerospike.dsl.model.SIndexFilter;
 
 import static com.aerospike.dsl.model.Expr.ExprPartsOperation.*;
 import static com.aerospike.dsl.visitor.VisitorUtils.FilterOperationType.*;
 import static com.aerospike.dsl.visitor.VisitorUtils.getFilterOrFail;
+import static com.aerospike.dsl.visitor.VisitorUtils.requireIntegerBin;
 
 public class FilterConditionVisitor extends ExpressionConditionVisitor {
 
@@ -65,20 +64,13 @@ public class FilterConditionVisitor extends ExpressionConditionVisitor {
         throw new AerospikeDSLException("The operation is not supported by secondary index filter");
     }
 
-    private boolean isBinAndInt(AbstractPart left, AbstractPart right) {
-        return (left instanceof BinPart && right instanceof IntOperand)
-                || (right instanceof BinPart && left instanceof IntOperand);
-    }
-
     @Override
     public AbstractPart visitAddExpression(ConditionParser.AddExpressionContext ctx) {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        if (isBinAndInt(left, right)) {
-            return new Expr(left, right, ADD);
-        }
-        throw new AerospikeDSLException("The operation is not supported by secondary index filter");
+        requireIntegerBin(left, right);
+        return new Expr(left, right, ADD);
     }
 
     @Override
@@ -86,10 +78,8 @@ public class FilterConditionVisitor extends ExpressionConditionVisitor {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        if (isBinAndInt(left, right)) {
-            return new Expr(left, right, SUB);
-        }
-        throw new AerospikeDSLException("The operation is not supported by secondary index filter");
+        requireIntegerBin(left, right);
+        return new Expr(left, right, SUB);
     }
 
     @Override
@@ -97,10 +87,8 @@ public class FilterConditionVisitor extends ExpressionConditionVisitor {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        if (isBinAndInt(left, right)) {
-            return new Expr(left, right, DIV);
-        }
-        throw new AerospikeDSLException("The operation is not supported by secondary index filter");
+        requireIntegerBin(left, right);
+        return new Expr(left, right, DIV);
     }
 
     @Override
@@ -108,9 +96,7 @@ public class FilterConditionVisitor extends ExpressionConditionVisitor {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        if (isBinAndInt(left, right)) {
-            return new Expr(left, right, MUL);
-        }
-        throw new AerospikeDSLException("The operation is not supported by secondary index filter");
+        requireIntegerBin(left, right);
+        return new Expr(left, right, MUL);
     }
 }

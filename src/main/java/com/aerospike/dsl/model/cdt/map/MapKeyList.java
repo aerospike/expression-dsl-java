@@ -10,7 +10,7 @@ import com.aerospike.dsl.model.BasePath;
 
 import java.util.List;
 
-import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
+import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class MapKeyList extends MapPart {
     private final boolean inverted;
@@ -36,7 +36,7 @@ public class MapKeyList extends MapPart {
                         if (mapKey.NAME_IDENTIFIER() != null) {
                             return mapKey.NAME_IDENTIFIER().getText();
                         } else {
-                            return getWithoutQuotes(mapKey.QUOTED_STRING().getText());
+                            return unquote(mapKey.QUOTED_STRING().getText());
                         }
                     }
             ).toList();

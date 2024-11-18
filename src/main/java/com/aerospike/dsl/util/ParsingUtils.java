@@ -12,7 +12,7 @@ public class ParsingUtils {
      * @param str String input
      * @return String inside the quotes
      */
-    public static String getWithoutQuotes(String str) {
+    public static String unquote(String str) {
         if (str.length() > 2) {
             return str.substring(1, str.length() - 1);
         } else {

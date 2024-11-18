@@ -7,7 +7,7 @@ import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.model.BasePath;
 
-import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
+import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class MapValue extends MapPart {
     private final Object value;
@@ -22,7 +22,7 @@ public class MapValue extends MapPart {
         if (ctx.valueIdentifier().NAME_IDENTIFIER() != null) {
             mapValue = ctx.valueIdentifier().NAME_IDENTIFIER().getText();
         } else if (ctx.valueIdentifier().QUOTED_STRING() != null) {
-            mapValue = getWithoutQuotes(ctx.valueIdentifier().QUOTED_STRING().getText());
+            mapValue = unquote(ctx.valueIdentifier().QUOTED_STRING().getText());
         } else if (ctx.valueIdentifier().INT() != null) {
             mapValue = Integer.parseInt(ctx.valueIdentifier().INT().getText());
         }

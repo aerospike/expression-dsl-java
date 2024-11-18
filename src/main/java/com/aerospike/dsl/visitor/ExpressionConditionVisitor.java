@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
-import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
+import static com.aerospike.dsl.util.ParsingUtils.unquote;
 import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
@@ -373,7 +373,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitStringOperand(ConditionParser.StringOperandContext ctx) {
-        String text = getWithoutQuotes(ctx.getText());
+        String text = unquote(ctx.getText());
         return new StringOperand(text);
     }
 

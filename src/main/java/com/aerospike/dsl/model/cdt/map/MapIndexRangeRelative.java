@@ -8,7 +8,7 @@ import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.model.BasePath;
 
-import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
+import static com.aerospike.dsl.util.ParsingUtils.unquote;
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
 public class MapIndexRangeRelative extends MapPart {
@@ -47,7 +47,7 @@ public class MapIndexRangeRelative extends MapPart {
                 if (mapKeyContext.NAME_IDENTIFIER() != null) {
                     relativeKey = mapKeyContext.NAME_IDENTIFIER().getText();
                 } else if (mapKeyContext.QUOTED_STRING() != null) {
-                    relativeKey = getWithoutQuotes(mapKeyContext.QUOTED_STRING().getText());
+                    relativeKey = unquote(mapKeyContext.QUOTED_STRING().getText());
                 }
             }
             return new MapIndexRangeRelative(isInverted, start, end, relativeKey);

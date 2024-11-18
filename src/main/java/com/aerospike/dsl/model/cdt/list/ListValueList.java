@@ -10,7 +10,7 @@ import com.aerospike.dsl.model.BasePath;
 
 import java.util.List;
 
-import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
+import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class ListValueList extends ListPart {
     private final boolean inverted;
@@ -36,7 +36,7 @@ public class ListValueList extends ListPart {
                         if (listValue.NAME_IDENTIFIER() != null) {
                             return listValue.NAME_IDENTIFIER().getText();
                         } else if (listValue.QUOTED_STRING() != null) {
-                            return getWithoutQuotes(listValue.QUOTED_STRING().getText());
+                            return unquote(listValue.QUOTED_STRING().getText());
                         }
                         return Integer.parseInt(listValue.INT().getText());
                     }

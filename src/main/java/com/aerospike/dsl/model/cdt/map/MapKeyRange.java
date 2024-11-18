@@ -10,7 +10,7 @@ import com.aerospike.dsl.model.BasePath;
 
 import java.util.Optional;
 
-import static com.aerospike.dsl.util.ParsingUtils.getWithoutQuotes;
+import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class MapKeyRange extends MapPart {
     private final boolean inverted;
@@ -35,12 +35,12 @@ public class MapKeyRange extends MapPart {
 
             String startKey = range.mapKey(0).NAME_IDENTIFIER() != null
                     ? range.mapKey(0).NAME_IDENTIFIER().getText()
-                    : getWithoutQuotes(range.mapKey(0).QUOTED_STRING().getText());
+                    : unquote(range.mapKey(0).QUOTED_STRING().getText());
 
             String endKey = Optional.ofNullable(range.mapKey(1))
                     .map(keyCtx -> keyCtx.NAME_IDENTIFIER() != null
                             ? keyCtx.NAME_IDENTIFIER().getText()
-                            : getWithoutQuotes(keyCtx.QUOTED_STRING().getText()))
+                            : unquote(keyCtx.QUOTED_STRING().getText()))
                     .orElse(null);
 
             return new MapKeyRange(isInverted, startKey, endKey);
