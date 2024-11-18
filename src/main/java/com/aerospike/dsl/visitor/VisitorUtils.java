@@ -361,7 +361,7 @@ public class VisitorUtils {
         }
     }
 
-    private boolean isNumericBin(AbstractPart left, AbstractPart right) {
+    private static boolean isNumericBin(AbstractPart left, AbstractPart right) {
         return (left instanceof BinPart && right instanceof IntOperand)
                 || (right instanceof BinPart && left instanceof IntOperand);
     }
