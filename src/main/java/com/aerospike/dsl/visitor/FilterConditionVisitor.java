@@ -10,7 +10,7 @@ import com.aerospike.dsl.model.SIndexFilter;
 import static com.aerospike.dsl.model.Expr.ExprPartsOperation.*;
 import static com.aerospike.dsl.visitor.VisitorUtils.FilterOperationType.*;
 import static com.aerospike.dsl.visitor.VisitorUtils.getFilterOrFail;
-import static com.aerospike.dsl.visitor.VisitorUtils.requireIntegerBin;
+import static com.aerospike.dsl.visitor.VisitorUtils.validateNumericBin;
 
 public class FilterConditionVisitor extends ExpressionConditionVisitor {
 
@@ -69,7 +69,7 @@ public class FilterConditionVisitor extends ExpressionConditionVisitor {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        requireIntegerBin(left, right);
+        validateNumericBin(left, right);
         return new Expr(left, right, ADD);
     }
 
@@ -78,7 +78,7 @@ public class FilterConditionVisitor extends ExpressionConditionVisitor {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        requireIntegerBin(left, right);
+        validateNumericBin(left, right);
         return new Expr(left, right, SUB);
     }
 
@@ -87,7 +87,7 @@ public class FilterConditionVisitor extends ExpressionConditionVisitor {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        requireIntegerBin(left, right);
+        validateNumericBin(left, right);
         return new Expr(left, right, DIV);
     }
 
@@ -96,7 +96,7 @@ public class FilterConditionVisitor extends ExpressionConditionVisitor {
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        requireIntegerBin(left, right);
+        validateNumericBin(left, right);
         return new Expr(left, right, MUL);
     }
 }

@@ -10,7 +10,6 @@ import com.aerospike.dsl.model.Expr;
 import com.aerospike.dsl.model.IntOperand;
 import com.aerospike.dsl.model.MetadataOperand;
 import com.aerospike.dsl.model.StringOperand;
-import com.aerospike.dsl.util.ValidationUtils;
 import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -21,6 +20,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
 import static com.aerospike.dsl.model.Expr.ExprPartsOperation.*;
+import static com.aerospike.dsl.util.ValidationUtils.validateComparableTypes;
 import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.*;
 import static com.aerospike.dsl.visitor.VisitorUtils.FilterOperationType.*;
 
@@ -137,28 +137,28 @@ public class VisitorUtils {
         String binNameLeft = left.getBinName();
         return switch (right.getPartType()) {
             case INT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.INT);
+                validateComparableTypes(left.getExpType(), Exp.Type.INT);
                 yield operator.apply(left.getExp(), right.getExp());
             }
             case FLOAT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.FLOAT);
+                validateComparableTypes(left.getExpType(), Exp.Type.FLOAT);
                 yield operator.apply(left.getExp(), right.getExp());
             }
             case BOOL_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BOOL);
+                validateComparableTypes(left.getExpType(), Exp.Type.BOOL);
                 yield operator.apply(left.getExp(), right.getExp());
             }
             case STRING_OPERAND -> {
                 if (left.getExpType() != null &&
                         left.getExpType().equals(Exp.Type.BLOB)) {
                     // Base64 Blob
-                    ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.BLOB);
+                    validateComparableTypes(left.getExpType(), Exp.Type.BLOB);
                     String base64String = ((StringOperand) right).getValue();
                     byte[] value = Base64.getDecoder().decode(base64String);
                     yield operator.apply(left.getExp(), Exp.val(value));
                 } else {
                     // String
-                    ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.STRING);
+                    validateComparableTypes(left.getExpType(), Exp.Type.STRING);
                     yield operator.apply(left.getExp(), right.getExp());
                 }
             }
@@ -175,15 +175,15 @@ public class VisitorUtils {
             // Left and right are both bin parts
             case BIN_PART -> {
                 // Validate types if possible
-                ValidationUtils.validateComparableTypes(left.getExpType(), right.getExpType());
+                validateComparableTypes(left.getExpType(), right.getExpType());
                 yield operator.apply(left.getExp(), right.getExp());
             }
             case LIST_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.LIST);
+                validateComparableTypes(left.getExpType(), Exp.Type.LIST);
                 yield operator.apply(left.getExp(), right.getExp());
             }
             case MAP_OPERAND -> {
-                ValidationUtils.validateComparableTypes(left.getExpType(), Exp.Type.MAP);
+                validateComparableTypes(left.getExpType(), Exp.Type.MAP);
                 yield operator.apply(left.getExp(), right.getExp());
             }
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
@@ -194,28 +194,28 @@ public class VisitorUtils {
         String binNameRight = right.getBinName();
         return switch (left.getPartType()) {
             case INT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.INT, right.getExpType());
+                validateComparableTypes(Exp.Type.INT, right.getExpType());
                 yield operator.apply(left.getExp(), right.getExp());
             }
             case FLOAT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.FLOAT, right.getExpType());
+                validateComparableTypes(Exp.Type.FLOAT, right.getExpType());
                 yield operator.apply(left.getExp(), right.getExp());
             }
             case BOOL_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.BOOL, right.getExpType());
+                validateComparableTypes(Exp.Type.BOOL, right.getExpType());
                 yield operator.apply(left.getExp(), right.getExp());
             }
             case STRING_OPERAND -> {
                 if (right.getExpType() != null &&
                         right.getExpType().equals(Exp.Type.BLOB)) {
                     // Base64 Blob
-                    ValidationUtils.validateComparableTypes(Exp.Type.BLOB, right.getExpType());
+                    validateComparableTypes(Exp.Type.BLOB, right.getExpType());
                     String base64String = ((StringOperand) left).getValue();
                     byte[] value = Base64.getDecoder().decode(base64String);
                     yield operator.apply(Exp.val(value), right.getExp());
                 } else {
                     // String
-                    ValidationUtils.validateComparableTypes(Exp.Type.STRING, right.getExpType());
+                    validateComparableTypes(Exp.Type.STRING, right.getExpType());
                     yield operator.apply(left.getExp(), right.getExp());
                 }
             }
@@ -231,11 +231,11 @@ public class VisitorUtils {
                     operator.apply(left.getExp(), right.getExp()); // Can't validate with Expr on one side
             // No need for 2 BIN_OPERAND handling since it's covered in the left condition
             case LIST_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.LIST, right.getExpType());
+                validateComparableTypes(Exp.Type.LIST, right.getExpType());
                 yield operator.apply(left.getExp(), right.getExp());
             }
             case MAP_OPERAND -> {
-                ValidationUtils.validateComparableTypes(Exp.Type.MAP, right.getExpType());
+                validateComparableTypes(Exp.Type.MAP, right.getExpType());
                 yield operator.apply(left.getExp(), right.getExp());
             }
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
@@ -331,7 +331,7 @@ public class VisitorUtils {
 
         if (exprLeft.getPartType() == AbstractPart.PartType.BIN_PART) { // bin is on the left side
             if (exprRight instanceof IntOperand leftOperand && right instanceof IntOperand rightOperand) {
-                ValidationUtils.validateComparableTypes(exprLeft.getExpType(), Exp.Type.INT);
+                validateComparableTypes(exprLeft.getExpType(), Exp.Type.INT);
                 return applyFilterOperator(((BinPart) exprLeft).getBinName(), leftOperand, rightOperand,
                         operationType, type, getTermType(operationType, true));
             }
@@ -340,7 +340,7 @@ public class VisitorUtils {
         }
         if (exprRight.getPartType() == AbstractPart.PartType.BIN_PART) { // bin is on the right side
             if (exprLeft instanceof IntOperand leftOperand && right instanceof IntOperand rightOperand) {
-                ValidationUtils.validateComparableTypes(exprRight.getExpType(), Exp.Type.INT);
+                validateComparableTypes(exprRight.getExpType(), Exp.Type.INT);
                 return applyFilterOperator(((BinPart) exprRight).getBinName(), leftOperand, rightOperand,
                         operationType, type, getTermType(operationType, false));
             }
@@ -355,11 +355,15 @@ public class VisitorUtils {
         return null;
     }
 
-    static void requireIntegerBin(AbstractPart left, AbstractPart right) {
-        if (!(left instanceof BinPart && right instanceof IntOperand)
-                && !(right instanceof BinPart && left instanceof IntOperand)) {
+    static void validateNumericBin(AbstractPart left, AbstractPart right) {
+        if (!isNumericBin(left, right)) {
             throw new AerospikeDSLException("The operation is not supported by secondary index filter");
         }
+    }
+
+    private boolean isNumericBin(AbstractPart left, AbstractPart right) {
+        return (left instanceof BinPart && right instanceof IntOperand)
+                || (right instanceof BinPart && left instanceof IntOperand);
     }
 
     private static ArithmeticTermType getTermType(Expr.ExprPartsOperation operationType, boolean isLeftTerm) {
@@ -512,7 +516,7 @@ public class VisitorUtils {
         String binName = bin.getBinName();
         return switch (operand.getPartType()) {
             case INT_OPERAND -> {
-                ValidationUtils.validateComparableTypes(bin.getExpType(), Exp.Type.INT);
+                validateComparableTypes(bin.getExpType(), Exp.Type.INT);
                 yield getFilterForArithmeticOrFail(binName, ((IntOperand) operand).getValue(), type);
 
             }
@@ -522,13 +526,13 @@ public class VisitorUtils {
                 if (bin.getExpType() != null &&
                         bin.getExpType().equals(Exp.Type.BLOB)) {
                     // Base64 Blob
-                    ValidationUtils.validateComparableTypes(bin.getExpType(), Exp.Type.BLOB);
+                    validateComparableTypes(bin.getExpType(), Exp.Type.BLOB);
                     String base64String = ((StringOperand) operand).getValue();
                     byte[] value = Base64.getDecoder().decode(base64String);
                     yield Filter.equal(binName, value);
                 } else {
                     // String
-                    ValidationUtils.validateComparableTypes(bin.getExpType(), Exp.Type.STRING);
+                    validateComparableTypes(bin.getExpType(), Exp.Type.STRING);
                     yield Filter.equal(binName, ((StringOperand) operand).getValue());
                 }
             }
