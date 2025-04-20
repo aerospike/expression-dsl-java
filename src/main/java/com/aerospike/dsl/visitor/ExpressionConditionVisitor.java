@@ -4,6 +4,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.ConditionBaseVisitor;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.index.Index;
 import com.aerospike.dsl.model.*;
 import com.aerospike.dsl.model.cdt.list.ListIndex;
 import com.aerospike.dsl.model.cdt.list.ListIndexRange;
@@ -20,25 +21,63 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.TreeMap;
 
+import static com.aerospike.dsl.model.Expr.ExprPartsOperation.*;
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
 import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
+    private final boolean isFilterExp;
+    private final boolean isSIndexFilter;
+    private final String namespace;
+    private final Collection<Index> indexes;
+
+    public ExpressionConditionVisitor() {
+        this.isFilterExp = false;
+        this.isSIndexFilter = false;
+        this.namespace = null;
+        this.indexes = null;
+    }
+
+    public ExpressionConditionVisitor(boolean isFilterExp, boolean isSIndexFilter) {
+        this.isFilterExp = isFilterExp;
+        this.isSIndexFilter = isSIndexFilter;
+        this.namespace = null;
+        this.indexes = null;
+    }
+
+    public ExpressionConditionVisitor(String namespace, Collection<Index> indexes) {
+        this.isFilterExp = false;
+        this.isSIndexFilter = false;
+        this.namespace = namespace;
+        this.indexes = indexes;
+    }
+
+    public ExpressionConditionVisitor(String namespace, Collection<Index> indexes, boolean isFilterExp,
+                                      boolean isSIndexFilter) {
+        this.isFilterExp = isFilterExp;
+        this.isSIndexFilter = isSIndexFilter;
+        this.namespace = namespace;
+        this.indexes = indexes;
+    }
+
     @Override
     public AbstractPart visitWithExpression(ConditionParser.WithExpressionContext ctx) {
-        List<Exp> expressions = new ArrayList<>();
+        List<WithOperand> expressions = new ArrayList<>();
 
         // iterate each definition
         for (ConditionParser.VariableDefinitionContext vdc : ctx.variableDefinition()) {
-            expressions.add(Exp.def(vdc.stringOperand().getText(), visit(vdc.expression()).getExp()));
+            AbstractPart part = visit(vdc.expression());
+            WithOperand withOperand = new WithOperand(part, vdc.stringOperand().getText());
+            expressions.add(withOperand);
         }
         // last expression is the action (described after "do")
-        expressions.add(visit(ctx.expression()).getExp());
-        return new Expr(Exp.let(expressions.toArray(new Exp[0])));
+        expressions.add(new WithOperand(visit(ctx.expression()), true));
+        return new Expr(new WithOperandsExpr(expressions), Expr.ExprPartsOperation.WITH);
     }
 
     @Override
@@ -64,7 +103,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr right = (Expr) visit(ctx.expression(1));
 
         logicalSetBinsAsBooleanExpr(left, right);
-        return new Expr(Exp.and(left.getExp(), right.getExp()));
+        return new Expr(left, right, Expr.ExprPartsOperation.AND);
     }
 
     @Override
@@ -73,7 +112,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr right = (Expr) visit(ctx.expression(1));
 
         logicalSetBinsAsBooleanExpr(left, right);
-        return new Expr(Exp.or(left.getExp(), right.getExp()));
+        return new Expr(left, right, Expr.ExprPartsOperation.OR);
     }
 
     @Override
@@ -81,7 +120,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr expr = (Expr) visit(ctx.expression());
 
         logicalSetBinAsBooleanExpr(expr);
-        return new Expr(Exp.not(expr.getExp()));
+        return new Expr(expr, Expr.ExprPartsOperation.LT); // TODO: unary operator
     }
 
     @Override
@@ -105,8 +144,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::gt);
-        return new Expr(exp);
+        return new Expr(left, right, Expr.ExprPartsOperation.GT);
     }
 
     @Override
@@ -114,8 +152,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::ge);
-        return new Expr(exp);
+        return new Expr(left, right, Expr.ExprPartsOperation.GTEQ);
     }
 
     @Override
@@ -123,8 +160,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::lt);
-        return new Expr(exp);
+        return new Expr(left, right, Expr.ExprPartsOperation.LT);
     }
 
     @Override
@@ -132,8 +168,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::le);
-        return new Expr(exp);
+        return new Expr(left, right, Expr.ExprPartsOperation.LTEQ);
     }
 
     @Override
@@ -141,8 +176,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::eq);
-        return new Expr(exp);
+        return new Expr(left, right, Expr.ExprPartsOperation.EQ);
     }
 
     @Override
@@ -150,8 +184,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::ne);
-        return new Expr(exp);
+        return new Expr(left, right, Expr.ExprPartsOperation.NOTEQ);
     }
 
     @Override
@@ -159,8 +192,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::add);
-        return new Expr(exp);
+        if (!isFilterExp) validateNumericBinForFilter(left, right);
+        return new Expr(left, right, ADD);
     }
 
     @Override
@@ -168,8 +201,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::sub);
-        return new Expr(exp);
+        if (!isFilterExp) validateNumericBinForFilter(left, right);
+        return new Expr(left, right, SUB);
     }
 
     @Override
@@ -177,8 +210,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::mul);
-        return new Expr(exp);
+        if (!isFilterExp) validateNumericBinForFilter(left, right);
+        return new Expr(left, right, MUL);
     }
 
     @Override
@@ -186,8 +219,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::div);
-        return new Expr(exp);
+        if (!isFilterExp) validateNumericBinForFilter(left, right);
+        return new Expr(left, right, DIV);
     }
 
     @Override
@@ -195,8 +228,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::mod);
-        return new Expr(exp);
+        return new Expr(left, right, MOD);
     }
 
     @Override
@@ -204,8 +236,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::intAnd);
-        return new Expr(exp);
+        return new Expr(left, right, INT_AND);
     }
 
     @Override
@@ -213,8 +244,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::intOr);
-        return new Expr(exp);
+        return new Expr(left, right, INT_OR);
     }
 
     @Override
@@ -222,16 +252,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::intXor);
-        return new Expr(exp);
+        return new Expr(left, right, INT_XOR);
     }
 
     @Override
     public AbstractPart visitIntNotExpression(ConditionParser.IntNotExpressionContext ctx) {
         AbstractPart operand = visit(ctx.operand());
 
-        Exp exp = getExpOrFail(operand, Exp::intNot);
-        return new Expr(exp);
+        return new Expr(operand, INT_NOT);
     }
 
     @Override
@@ -239,8 +267,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::lshift);
-        return new Expr(exp);
+        return new Expr(left, right, L_SHIFT);
     }
 
     @Override
@@ -248,8 +275,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        Exp exp = getExpOrFail(left, right, Exp::rshift);
-        return new Expr(exp);
+        return new Expr(left, right, R_SHIFT);
     }
 
     @Override
@@ -519,5 +545,25 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     protected AbstractPart aggregateResult(AbstractPart aggregate, AbstractPart nextResult) {
         return nextResult == null ? aggregate : nextResult;
+    }
+
+    @Override
+    public AbstractPart visitChildren(RuleNode node) {
+        AbstractPart result = defaultResult();
+        int n = node.getChildCount();
+        for (int i=0; i<n; i++) {
+            if (!shouldVisitNextChild(node, result)) {
+                break;
+            }
+
+            ParseTree c = node.getChild(i);
+            AbstractPart childResult = c.accept(this);
+            result = aggregateResult(result, childResult);
+        }
+
+        if (result != null && result.getPartType() == AbstractPart.PartType.EXPR) {
+            return buildExpr((Expr) result, namespace, indexes, isFilterExp);
+        }
+        return result;
     }
 }

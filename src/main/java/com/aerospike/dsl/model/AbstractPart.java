@@ -1,6 +1,7 @@
 package com.aerospike.dsl.model;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.client.query.Filter;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +12,7 @@ public abstract class AbstractPart {
     protected Exp.Type expType;
     protected PartType partType;
     protected Exp exp;
-    protected SIndexFilter sIndexFilter;
+    protected Filter sIndexFilter;
 
     protected AbstractPart(PartType partType) {
         this.partType = partType;
@@ -23,9 +24,9 @@ public abstract class AbstractPart {
         this.exp = exp;
     }
 
-    protected AbstractPart(PartType partType, SIndexFilter filters) {
+    protected AbstractPart(PartType partType, Filter filter) {
         this.partType = partType;
-        this.sIndexFilter = filters;
+        this.sIndexFilter = filter;
     }
 
     public enum PartType {
@@ -35,6 +36,8 @@ public abstract class AbstractPart {
         STRING_OPERAND,
         LIST_OPERAND,
         MAP_OPERAND,
+        WITH_OPERAND,
+        WITH_OPERAND_EXPR,
         BASE_PATH,
         BIN_PART,
         LIST_PART,

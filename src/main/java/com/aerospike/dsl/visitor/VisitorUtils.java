@@ -2,8 +2,11 @@ package com.aerospike.dsl.visitor;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.query.Filter;
+import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.exception.NoApplicableFilterException;
+import com.aerospike.dsl.index.Index;
 import com.aerospike.dsl.model.AbstractPart;
 import com.aerospike.dsl.model.BinPart;
 import com.aerospike.dsl.model.Expr;
@@ -14,18 +17,26 @@ import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 
+import static com.aerospike.dsl.model.AbstractPart.PartType.*;
 import static com.aerospike.dsl.model.Expr.ExprPartsOperation.*;
 import static com.aerospike.dsl.util.ValidationUtils.validateComparableTypes;
 import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.*;
-import static com.aerospike.dsl.visitor.VisitorUtils.FilterOperationType.*;
 
 @UtilityClass
 public class VisitorUtils {
+
+    Map<Exp.Type, IndexType> expTypeToIndexType = Map.of(Exp.Type.INT, IndexType.NUMERIC,
+            Exp.Type.STRING, IndexType.STRING);
 
     protected enum FilterOperationType {
         GT,
@@ -120,10 +131,10 @@ public class VisitorUtils {
             throw new AerospikeDSLException("Unable to parse right operand");
         }
 
-        if (left.getPartType() == AbstractPart.PartType.BIN_PART) {
+        if (left.getPartType() == BIN_PART) {
             return getExpLeftBinTypeComparison((BinPart) left, right, operator);
         }
-        if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
+        if (right.getPartType() == BIN_PART) {
             return getExpRightBinTypeComparison(left, (BinPart) right, operator);
         }
 
@@ -302,10 +313,10 @@ public class VisitorUtils {
             throw new AerospikeDSLException("Unable to parse right operand");
         }
 
-        if (left.getPartType() == AbstractPart.PartType.BIN_PART) {
+        if (left.getPartType() == BIN_PART) {
             return getFilter((BinPart) left, right, type);
         }
-        if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
+        if (right.getPartType() == BIN_PART) {
             return getFilter((BinPart) right, left, invertType(type));
         }
 
@@ -329,7 +340,7 @@ public class VisitorUtils {
             throw new AerospikeDSLException("Unable to parse right operand of expression");
         }
 
-        if (exprLeft.getPartType() == AbstractPart.PartType.BIN_PART) { // bin is on the left side
+        if (exprLeft.getPartType() == BIN_PART) { // bin is on the left side
             if (exprRight instanceof IntOperand leftOperand && right instanceof IntOperand rightOperand) {
                 validateComparableTypes(exprLeft.getExpType(), Exp.Type.INT);
                 return applyFilterOperator(((BinPart) exprLeft).getBinName(), leftOperand, rightOperand,
@@ -338,7 +349,7 @@ public class VisitorUtils {
             throw new AerospikeDSLException(
                     String.format("Operands not supported in secondary index Filter: %s, %s", exprRight, right));
         }
-        if (exprRight.getPartType() == AbstractPart.PartType.BIN_PART) { // bin is on the right side
+        if (exprRight.getPartType() == BIN_PART) { // bin is on the right side
             if (exprLeft instanceof IntOperand leftOperand && right instanceof IntOperand rightOperand) {
                 validateComparableTypes(exprRight.getExpType(), Exp.Type.INT);
                 return applyFilterOperator(((BinPart) exprRight).getBinName(), leftOperand, rightOperand,
@@ -355,15 +366,15 @@ public class VisitorUtils {
         return null;
     }
 
-    static void validateNumericBin(AbstractPart left, AbstractPart right) {
+    static void validateNumericBinForFilter(AbstractPart left, AbstractPart right) {
         if (!isNumericBin(left, right)) {
-            throw new AerospikeDSLException("The operation is not supported by secondary index filter");
+            throw new NoApplicableFilterException("The operation is not supported by secondary index filter");
         }
     }
 
     private static boolean isNumericBin(AbstractPart left, AbstractPart right) {
-        return (left instanceof BinPart && right instanceof IntOperand)
-                || (right instanceof BinPart && left instanceof IntOperand);
+        return (left.getPartType() == BIN_PART && right.getPartType() == INT_OPERAND)
+                || (right.getPartType() == BIN_PART && left.getPartType() == INT_OPERAND);
     }
 
     private static ArithmeticTermType getTermType(Expr.ExprPartsOperation operationType, boolean isLeftTerm) {
@@ -376,11 +387,11 @@ public class VisitorUtils {
         };
     }
 
-    private static Pair<Long, Long> getLimitsForDivision(long left, long right, FilterOperationType type,
-                                                         ArithmeticTermType termType) {
+    private static Pair<Long, Long> getLimitsForDivisionForFilter(long left, long right, FilterOperationType type,
+                                                                  ArithmeticTermType termType) {
         // Prevent division by zero
         if (right == 0) {
-            throw new AerospikeDSLException("Cannot divide by zero");
+            throw new NoApplicableFilterException("Cannot divide by zero");
         }
 
         return switch (termType) {
@@ -521,7 +532,7 @@ public class VisitorUtils {
 
             }
             case STRING_OPERAND -> {
-                if (type != EQ) throw new AerospikeDSLException("Operand type not supported");
+                if (type != FilterOperationType.EQ) throw new NoApplicableFilterException("Operand type not supported");
 
                 if (bin.getExpType() != null &&
                         bin.getExpType().equals(Exp.Type.BLOB)) {
@@ -537,7 +548,7 @@ public class VisitorUtils {
                 }
             }
             default ->
-                    throw new AerospikeDSLException("Operand type not supported: %s".formatted(operand.getPartType()));
+                    throw new NoApplicableFilterException("Operand type not supported: %s".formatted(operand.getPartType()));
         };
     }
 
@@ -559,17 +570,17 @@ public class VisitorUtils {
                 default -> throw new IllegalStateException("Unexpected term type: " + termType);
             };
         } else if (operationType == DIV) {
-            Pair<Long, Long> valueForDiv = getLimitsForDivision(leftValue, rightValue, type, termType);
+            Pair<Long, Long> valueForDiv = getLimitsForDivisionForFilter(leftValue, rightValue, type, termType);
             if (valueForDiv.a == null
                     || valueForDiv.b == null
                     || valueForDiv.a > valueForDiv.b
                     || (valueForDiv.a == 0 && valueForDiv.b == 0)) {
-                throw new AerospikeDSLException("The operation is not supported by secondary index filter");
+                throw new NoApplicableFilterException("The operation is not supported by secondary index filter");
             }
             return getFilterForDivOrFail(binName, valueForDiv, type);
         } else if (operationType == MUL) {
             if (leftValue <= 0) {
-                if (leftValue == 0) throw new AerospikeDSLException("Cannot divide by zero");
+                if (leftValue == 0) throw new NoApplicableFilterException("Cannot divide by zero");
                 type = invertType(type);
             }
             float val = (float) rightValue / leftValue;
@@ -577,7 +588,6 @@ public class VisitorUtils {
         } else {
             throw new UnsupportedOperationException("Not supported");
         }
-
         return getFilterForArithmeticOrFail(binName, value, type);
     }
 
@@ -589,7 +599,8 @@ public class VisitorUtils {
             case LT -> Filter.range(binName, Long.MIN_VALUE, getClosestLongToTheLeft(value));
             case LTEQ -> Filter.range(binName, Long.MIN_VALUE, (long) value);
             case EQ -> Filter.equal(binName, (long) value);
-            default -> throw new AerospikeDSLException("The operation is not supported by secondary index filter");
+            default ->
+                    throw new NoApplicableFilterException("The operation is not supported by secondary index filter");
         };
     }
 
@@ -619,11 +630,178 @@ public class VisitorUtils {
 
     private FilterOperationType invertType(FilterOperationType type) {
         return switch (type) {
-            case GT -> LT;
-            case GTEQ -> LTEQ;
-            case LT -> GT;
-            case LTEQ -> GTEQ;
+            case GT -> FilterOperationType.LT;
+            case GTEQ -> FilterOperationType.LTEQ;
+            case LT -> FilterOperationType.GT;
+            case LTEQ -> FilterOperationType.GTEQ;
             default -> type;
+        };
+    }
+
+    AbstractPart buildExpr(Expr expr, String namespace, Collection<Index> indexes, boolean isFilterExp) {
+        AbstractPart left = expr.getLeft();
+        AbstractPart right = expr.getRight();
+        Expr.ExprPartsOperation opType = expr.getOperationType();
+        Exp exp = null;
+        try {
+            if (!isFilterExp) {
+                expr.setSIndexFilter(getFilter(expr, namespace, indexes));
+            }
+        } catch (NoApplicableFilterException e) {
+            // TODO: add cases with both Filter and Exp needed
+        }
+        if (isFilterExp) {
+            processFilterExpressions(left, right);
+            exp = getExpOrFail(left, right, getExpOperator(opType));
+        }
+        expr.setExp(exp);
+        return expr;
+    }
+
+    private static Filter getFilter(Expr expr, String namespace, Collection<Index> indexes) {
+        List<Expr> exprs = getExprs(expr);
+        Expr chosenExpr = chooseFilter(exprs, namespace, indexes);
+        return chosenExpr == null ? null
+                : getFilterOrFail(chosenExpr.getLeft(),
+                chosenExpr.getRight(),
+                getFilterOperation(chosenExpr.getOperationType())
+        );
+    }
+
+    private static Expr chooseFilter(List<Expr> exprs, String namespace, Collection<Index> indexes) {
+        if (exprs.size() == 1) return exprs.get(0);
+        if (exprs.size() > 1 && (indexes == null || indexes.isEmpty())) return null;
+
+        Expr resultExpr = null;
+        int maxRatio = Integer.MIN_VALUE;
+
+        for (Expr expr : exprs) {
+            BinPart binPart = getBinPart(expr);
+            for (Index index : indexes) {
+                if (binPart.getBinName().equals(index.getBin())
+                        && expTypeToIndexType.get(binPart.getExpType()) == index.getIndexType()) {
+                    if (index.getBinValuesRatio() > maxRatio) {
+                        maxRatio = index.getBinValuesRatio();
+                        resultExpr = expr;
+                    }
+                    break; // Assuming one Index corresponds to one Expr based on the criteria
+                }
+            }
+        }
+
+        return resultExpr;
+    }
+
+    private static BinPart getBinPart(Expr expr) {
+        BinPart result = null;
+        if (expr.getOperationType() == AND || expr.getOperationType() == OR) {
+            Expr leftExpr = (Expr) expr.getLeft();
+            if (leftExpr.getLeft() != null && leftExpr.getLeft().getPartType() == EXPR) {
+                result = getBinPart(leftExpr);
+                if (result != null) return result;
+            }
+
+            if (expr.getRight() != null && expr.getRight().getPartType() == EXPR) {
+                Expr rightExpr = (Expr) expr.getRight();
+                if (rightExpr.getRight() != null && rightExpr.getRight().getPartType() == EXPR) {
+                    result = getBinPart(rightExpr);
+                    if (result != null) return result;
+                }
+            }
+        } else {
+            if (expr.getLeft() != null && expr.getLeft().getPartType() == BIN_PART) {
+                return (BinPart) expr.getLeft();
+            }
+
+            if (expr.getRight() != null && expr.getRight().getPartType() == BIN_PART) {
+                return (BinPart) expr.getRight();
+            }
+        }
+        return result;
+    }
+
+    private static List<Expr> getExprs(Expr expr) {
+        List<Expr> results = new ArrayList<>();
+        if (expr.getOperationType() == AND) {
+            if (expr.getLeft() != null && expr.getLeft().getPartType() == EXPR) {
+                Expr leftExpr = (Expr) expr.getLeft();
+                if (leftExpr.getOperationType() == AND || leftExpr.getOperationType() == OR) {
+                    Stream<Expr> stream = getExprs(leftExpr).stream();
+                    results = Stream.concat(results.stream(), stream).toList();
+                } else {
+                    Stream<Expr> stream = Stream.of(leftExpr);
+                    results = Stream.concat(results.stream(), stream).toList();
+                }
+            }
+
+            if (expr.getRight() != null && expr.getRight().getPartType() == EXPR) {
+                Expr rightExpr = (Expr) expr.getRight();
+                if (rightExpr.getOperationType() == AND || rightExpr.getOperationType() == OR) {
+                    Stream<Expr> stream = getExprs(rightExpr).stream();
+                    results = Stream.concat(results.stream(), stream).toList();
+                } else {
+                    Stream<Expr> stream = Stream.of(rightExpr);
+                    results = Stream.concat(results.stream(), stream).toList();
+                }
+            }
+        } else {
+            return List.of(expr);
+        }
+        return results;
+    }
+
+    private void processFilterExpressions(AbstractPart left, AbstractPart right) {
+        // Process left Expr
+        if (left != null && left.getPartType() == EXPR) {
+            Expr leftExpr = (Expr) left;
+            Exp exp = getExpOrFail(leftExpr.getLeft(), leftExpr.getRight(),
+                    getExpOperator(leftExpr.getOperationType()));
+            left.setExp(exp);
+        }
+
+        // Process right Expr
+        if (right != null && right.getPartType() == EXPR) {
+            Expr rightExpr = (Expr) right;
+            Exp exp = getExpOrFail(rightExpr.getLeft(), rightExpr.getRight(),
+                    getExpOperator(rightExpr.getOperationType()));
+            right.setExp(exp);
+        }
+    }
+
+    private static FilterOperationType getFilterOperation(Expr.ExprPartsOperation exprPartsOperation) {
+        return switch (exprPartsOperation) {
+            case GT -> FilterOperationType.GT;
+            case GTEQ -> FilterOperationType.GTEQ;
+            case LT -> FilterOperationType.LT;
+            case LTEQ -> FilterOperationType.LTEQ;
+            case EQ -> FilterOperationType.EQ;
+            case NOTEQ -> FilterOperationType.NOTEQ;
+            default -> throw new NoApplicableFilterException("ExprPartsOperation has no matching FilterOperationType");
+        };
+    }
+
+    private static BinaryOperator<Exp> getExpOperator(Expr.ExprPartsOperation exprPartsOperation) {
+        return switch (exprPartsOperation) {
+            case ADD -> Exp::add;
+            case SUB -> Exp::sub;
+            case MUL -> Exp::mul;
+            case DIV -> Exp::div;
+            case MOD -> Exp::mod;
+            case INT_XOR -> Exp::intXor;
+//            case INT_NOT -> Exp::intNot; // TODO: unary operator
+            case L_SHIFT -> Exp::lshift;
+            case R_SHIFT -> Exp::rshift;
+            case INT_AND -> Exp::intAnd;
+            case INT_OR -> Exp::intOr;
+            case AND -> Exp::and;
+            case OR -> Exp::or;
+            case EQ -> Exp::eq;
+            case NOTEQ -> Exp::ne;
+            case LT -> Exp::lt;
+            case LTEQ -> Exp::le;
+            case GT -> Exp::gt;
+            case GTEQ -> Exp::ge;
+            default -> throw new NoApplicableFilterException("ExprPartsOperation has no matching BinaryOperator<Exp>");
         };
     }
 }

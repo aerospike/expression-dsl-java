@@ -14,10 +14,6 @@ public class Expr extends AbstractPart {
         super(PartType.EXPR, exp);
     }
 
-    public Expr(SIndexFilter filter) {
-        super(PartType.EXPR, filter);
-    }
-
     public Expr(AbstractPart left, AbstractPart right, ExprPartsOperation operationType) {
         super(PartType.EXPR);
         this.left = left;
@@ -25,10 +21,33 @@ public class Expr extends AbstractPart {
         this.operationType = operationType;
     }
 
+    public Expr(AbstractPart singleOperand, ExprPartsOperation operationType) {
+        super(PartType.EXPR);
+        this.left = singleOperand; // TODO: unary operator
+        this.operationType = operationType;
+    }
+
     public enum ExprPartsOperation {
         ADD,
         SUB,
         DIV,
-        MUL
+        MUL,
+        MOD,
+        INT_XOR,
+        INT_NOT,
+        INT_AND,
+        INT_OR,
+        L_SHIFT,
+        R_SHIFT,
+        AND,
+        OR,
+        EQ,
+        NOTEQ,
+        GT,
+        GTEQ,
+        LT,
+        LTEQ,
+        WITH,
+        WHEN // TODO
     }
 }

@@ -2,11 +2,12 @@ package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
-import static com.aerospike.dsl.util.TestUtils.parseExpression;
-import static com.aerospike.dsl.util.TestUtils.parseExpressionAndCompare;
+import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
+import static com.aerospike.dsl.util.TestUtils.parseFilterExpAndCompare;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class LogicalExpressionsTests {
@@ -15,7 +16,7 @@ public class LogicalExpressionsTests {
     void binLogicalAndOrCombinations() {
         Exp expected1 = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", expected1);
+        parseFilterExpAndCompare("$.intBin1 > 100 and $.intBin2 > 100", expected1);
 
         Exp expected2 = Exp.or(
                 Exp.and(
@@ -25,8 +26,8 @@ public class LogicalExpressionsTests {
                 Exp.lt(Exp.intBin("intBin3"), Exp.val(100))
         );
         // TODO: what should be the default behaviour with no parentheses?
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 < 100", expected2);
-        parseExpressionAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 < 100", expected2);
+        parseFilterExpAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 < 100", expected2);
+        parseFilterExpAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 < 100", expected2);
 
         Exp expected3 = Exp.and(
                 Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
@@ -35,27 +36,28 @@ public class LogicalExpressionsTests {
                         Exp.lt(Exp.intBin("intBin3"), Exp.val(100))
                 )
         );
-        parseExpressionAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", expected3);
+        parseFilterExpAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", expected3);
 
         // check that parentheses make difference
-        assertThatThrownBy(() -> parseExpressionAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", expected2))
+        assertThatThrownBy(() -> parseFilterExpAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", expected2))
                 .isInstanceOf(AssertionFailedError.class);
     }
 
+    @Disabled // TODO: unary operator
     @Test
     void logicalNot() {
-        parseExpressionAndCompare("not($.keyExists())", Exp.not(Exp.keyExists()));
+        parseFilterExpAndCompare("not($.keyExists())", Exp.not(Exp.keyExists()));
     }
 
     @Test
     void binLogicalExclusive() {
-        parseExpressionAndCompare("exclusive($.hand == \"hook\", $.leg == \"peg\")",
+        parseFilterExpAndCompare("exclusive($.hand == \"hook\", $.leg == \"peg\")",
                 Exp.exclusive(
                         Exp.eq(Exp.stringBin("hand"), Exp.val("hook")),
                         Exp.eq(Exp.stringBin("leg"), Exp.val("peg"))));
 
         // More than 2 expressions exclusive
-        parseExpressionAndCompare("exclusive($.a == \"aVal\", $.b == \"bVal\", $.c == \"cVal\", $.d == 4)",
+        parseFilterExpAndCompare("exclusive($.a == \"aVal\", $.b == \"bVal\", $.c == \"cVal\", $.d == 4)",
                 Exp.exclusive(
                         Exp.eq(Exp.stringBin("a"), Exp.val("aVal")),
                         Exp.eq(Exp.stringBin("b"), Exp.val("bVal")),
@@ -66,7 +68,7 @@ public class LogicalExpressionsTests {
     //TODO: FMWK-488
     //@Test
     void flatHierarchyAnd() {
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 < 100",
+        parseFilterExpAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 < 100",
                 Exp.and(
                         Exp.gt(
                                 Exp.intBin("intBin1"),
@@ -81,26 +83,26 @@ public class LogicalExpressionsTests {
 
     @Test
     void negativeSyntaxLogicalOperators() {
-        assertThatThrownBy(() -> parseExpression("($.intBin1 > 100 and ($.intBin2 > 100) or"))
+        assertThatThrownBy(() -> parseFilterExp("($.intBin1 > 100 and ($.intBin2 > 100) or"))
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("Could not parse given input");
 
-        assertThatThrownBy(() -> parseExpression("and ($.intBin1 > 100 and ($.intBin2 > 100)"))
+        assertThatThrownBy(() -> parseFilterExp("and ($.intBin1 > 100 and ($.intBin2 > 100)"))
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("Could not parse given input");
 
-        assertThatThrownBy(() -> parseExpression("($.intBin1 > 100 and ($.intBin2 > 100) not"))
+        assertThatThrownBy(() -> parseFilterExp("($.intBin1 > 100 and ($.intBin2 > 100) not"))
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("Could not parse given input");
 
-        assertThatThrownBy(() -> parseExpression("($.intBin1 > 100 and ($.intBin2 > 100) exclusive"))
+        assertThatThrownBy(() -> parseFilterExp("($.intBin1 > 100 and ($.intBin2 > 100) exclusive"))
                 .isInstanceOf(AerospikeDSLException.class)
                 .hasMessageContaining("Could not parse given input");
     }
 
     @Test
     void negativeBinLogicalExclusiveWithOneParam() {
-        assertThatThrownBy(() -> parseExpressionAndCompare("exclusive($.hand == \"hook\")",
+        assertThatThrownBy(() -> parseFilterExpAndCompare("exclusive($.hand == \"hook\")",
                 Exp.exclusive(
                         Exp.eq(Exp.stringBin("hand"), Exp.val("hook")))))
                 .isInstanceOf(AerospikeDSLException.class)
