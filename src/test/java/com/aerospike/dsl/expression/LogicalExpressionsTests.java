@@ -2,7 +2,6 @@ package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
@@ -43,7 +42,6 @@ public class LogicalExpressionsTests {
                 .isInstanceOf(AssertionFailedError.class);
     }
 
-    @Disabled // TODO: unary operator
     @Test
     void logicalNot() {
         parseFilterExpAndCompare("not($.keyExists())", Exp.not(Exp.keyExists()));

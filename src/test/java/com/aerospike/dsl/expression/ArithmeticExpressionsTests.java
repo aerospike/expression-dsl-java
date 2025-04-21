@@ -2,7 +2,6 @@ package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.exception.AerospikeDSLException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
@@ -98,7 +97,6 @@ public class ArithmeticExpressionsTests {
                 Exp.ne(Exp.intXor(Exp.val(3), Exp.intBin("bananas")), Exp.val(10)));
     }
 
-    @Disabled // TODO: unary operator
     @Test
     void intNot() {
         parseFilterExpAndCompare("(~$.apples) != 10",

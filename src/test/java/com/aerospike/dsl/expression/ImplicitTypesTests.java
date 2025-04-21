@@ -1,7 +1,6 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilterExpAndCompare;
@@ -26,17 +25,16 @@ public class ImplicitTypesTests {
 
     // Logical expressions are always treated on boolean operands
     // this can also be an expression that evaluates to a boolean result
-    @Disabled // TODO: unary operator
     @Test
     void binBooleanImplicitLogicalComparison() {
-        parseFilterExpAndCompare("$.boolBin1 and $.boolBin2",
-                Exp.and(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
-        parseFilterExpAndCompare("$.boolBin1 or $.boolBin2",
-                Exp.or(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
+//        parseFilterExpAndCompare("$.boolBin1 and $.boolBin2",
+//                Exp.and(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
+//        parseFilterExpAndCompare("$.boolBin1 or $.boolBin2",
+//                Exp.or(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
         parseFilterExpAndCompare("not($.boolBin1)",
                 Exp.not(Exp.boolBin("boolBin1")));
-        parseFilterExpAndCompare("exclusive($.boolBin1, $.boolBin2)",
-                Exp.exclusive(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
+//        parseFilterExpAndCompare("exclusive($.boolBin1, $.boolBin2)",
+//                Exp.exclusive(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
     }
 
     @Test

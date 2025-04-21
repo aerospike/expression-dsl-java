@@ -5,12 +5,12 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public class WithOperandsExpr extends AbstractPart {
+public class WithOperands extends AbstractPart {
 
     private final List<WithOperand> operands;
 
-    public WithOperandsExpr(List<WithOperand> operands) {
-        super(PartType.WITH_OPERAND_EXPR);
+    public WithOperands(List<WithOperand> operands) {
+        super(PartType.WITH_OPERANDS_LIST);
         this.operands = operands;
     }
 }

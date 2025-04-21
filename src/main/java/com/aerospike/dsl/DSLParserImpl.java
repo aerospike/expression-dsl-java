@@ -8,12 +8,15 @@ import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.exception.NoApplicableFilterException;
 import com.aerospike.dsl.index.Index;
 import com.aerospike.dsl.model.AbstractPart;
+import com.aerospike.dsl.model.Expr;
 import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.Collection;
+
+import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class DSLParserImpl implements DSLParser {
 
@@ -59,6 +62,9 @@ public class DSLParserImpl implements DSLParser {
             throw new AerospikeDSLException("Could not parse given input, wrong syntax");
         }
 
+        if (filterExprAbstractPart.getPartType() == AbstractPart.PartType.EXPR) {
+            return buildExpr((Expr) filterExprAbstractPart, null, null, true, false).getExp();
+        }
         return filterExprAbstractPart.getExp();
     }
 
@@ -76,10 +82,9 @@ public class DSLParserImpl implements DSLParser {
             throw new AerospikeDSLException("Could not parse given input, wrong syntax");
         }
 
-        Filter sIndexFilter = null;
-        if (sIndexFiltersAbstractPart != null && sIndexFiltersAbstractPart.getSIndexFilter() != null) {
-            sIndexFilter = sIndexFiltersAbstractPart.getSIndexFilter();
+        if (sIndexFiltersAbstractPart != null && sIndexFiltersAbstractPart.getPartType() == AbstractPart.PartType.EXPR) {
+            return buildExpr((Expr) sIndexFiltersAbstractPart, namespace, indexes, false, true).getSIndexFilter();
         }
-        return sIndexFilter;
+        return sIndexFiltersAbstractPart != null ? sIndexFiltersAbstractPart.getSIndexFilter() : null;
     }
 }

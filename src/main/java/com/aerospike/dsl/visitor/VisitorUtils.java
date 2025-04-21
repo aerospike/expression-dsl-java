@@ -7,12 +7,7 @@ import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.exception.NoApplicableFilterException;
 import com.aerospike.dsl.index.Index;
-import com.aerospike.dsl.model.AbstractPart;
-import com.aerospike.dsl.model.BinPart;
-import com.aerospike.dsl.model.Expr;
-import com.aerospike.dsl.model.IntOperand;
-import com.aerospike.dsl.model.MetadataOperand;
-import com.aerospike.dsl.model.StringOperand;
+import com.aerospike.dsl.model.*;
 import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -131,16 +126,62 @@ public class VisitorUtils {
             throw new AerospikeDSLException("Unable to parse right operand");
         }
 
+        // Handle non Bin operands cases
+        Exp leftExp = null;
+        if (left.getPartType() == EXPR) {
+            Expr expr = (Expr) left;
+            if (!expr.isUnary()) {
+                leftExp = getExpOrFail(expr.getLeft(), expr.getRight(), getExpOperator(expr.getOperationType()));
+                left.setExp(leftExp);
+            } else {
+                if (expr.getOperationType() == Expr.ExprPartsOperation.WHEN_OPERANDS) {
+                    leftExp = whenOperandsToExp(expr);
+                    left.setExp(leftExp);
+                } else if (expr.getOperationType() == Expr.ExprPartsOperation.WITH_OPERANDS) {
+                    leftExp = withOperandsToExp(expr);
+                    left.setExp(leftExp);
+                } else if (expr.getOperationType() == Expr.ExprPartsOperation.EXCLUSIVE_OPERANDS) {
+                    leftExp = exclOperandsToExp(expr);
+                    left.setExp(leftExp);
+                } else {
+                    leftExp = getExpOrFail(expr.getLeft(), getUnaryExpOperator(expr.getOperationType()));
+                    left.setExp(leftExp);
+                }
+            }
+        } else {
+            leftExp = left.getExp();
+        }
+        Exp rightExp = null;
+        if (right.getPartType() == EXPR) {
+            Expr expr = (Expr) right;
+            if (!expr.isUnary()) {
+                rightExp = getExpOrFail(expr.getLeft(), expr.getRight(), getExpOperator(expr.getOperationType()));
+                right.setExp(rightExp);
+            } else {
+                if (expr.getOperationType() == Expr.ExprPartsOperation.WHEN_OPERANDS) {
+                    rightExp = whenOperandsToExp(expr);
+                    right.setExp(rightExp);
+                } else if (expr.getOperationType() == Expr.ExprPartsOperation.WITH_OPERANDS) {
+                    rightExp = withOperandsToExp(expr);
+                    right.setExp(rightExp);
+                } else if (expr.getOperationType() == Expr.ExprPartsOperation.EXCLUSIVE_OPERANDS) {
+                    rightExp = exclOperandsToExp(expr);
+                    right.setExp(rightExp);
+                } else {
+                    rightExp = getExpOrFail(expr.getLeft(), getUnaryExpOperator(expr.getOperationType()));
+                    right.setExp(rightExp);
+                }
+            }
+        } else {
+            rightExp = right.getExp();
+        }
+
         if (left.getPartType() == BIN_PART) {
             return getExpLeftBinTypeComparison((BinPart) left, right, operator);
         }
         if (right.getPartType() == BIN_PART) {
             return getExpRightBinTypeComparison(left, (BinPart) right, operator);
         }
-
-        // Handle non Bin operands cases
-        Exp leftExp = left.getExp();
-        Exp rightExp = right.getExp();
         return operator.apply(leftExp, rightExp);
     }
 
@@ -256,14 +297,23 @@ public class VisitorUtils {
     // 1 operand Expressions
     static Exp getExpOrFail(AbstractPart operand, UnaryOperator<Exp> operator) {
         if (operand == null) {
-            throw new AerospikeDSLException("Unable to parse operand");
+            throw new AerospikeDSLException("Unable to parse unary operand");
         }
 
-        // 1 Operand Expression is always a BIN Operand
-        String binName = ((BinPart) operand).getBinName();
+        return switch (operand.getPartType()) {
+            case BIN_PART -> {
+                BinPart binPart = ((BinPart) operand);
+                // There is only 1 case of a single bin expression (Exp::not)
+                yield operator.apply(Exp.bin(binPart.getBinName(), binPart.getExpType()));
+            }
+            case METADATA_OPERAND -> {
+                MetadataOperand metadataOperand = ((MetadataOperand) operand);
 
-        // There is only 1 case of a single operand expression (int not), and it always gets an integer
-        return operator.apply(Exp.bin(binName, Exp.Type.INT));
+                // There is only 1 case of a single operand expression (int not)
+                yield operator.apply(metadataOperand.getExp());
+            }
+            default -> throw new AerospikeDSLException("Unsupported part type for an unary expression");
+        };
     }
 
     static String getPathFunctionParam(ConditionParser.PathFunctionParamContext paramCtx, String paramName) {
@@ -638,27 +688,85 @@ public class VisitorUtils {
         };
     }
 
-    AbstractPart buildExpr(Expr expr, String namespace, Collection<Index> indexes, boolean isFilterExp) {
-        AbstractPart left = expr.getLeft();
-        AbstractPart right = expr.getRight();
-        Expr.ExprPartsOperation opType = expr.getOperationType();
+    public AbstractPart buildExpr(Expr expr, String namespace, Collection<Index> indexes,
+                                  boolean isFilterExpOnly, boolean isSIFilterOnly) {
         Exp exp = null;
+        Filter sIndexFilter = null;
         try {
-            if (!isFilterExp) {
-                expr.setSIndexFilter(getFilter(expr, namespace, indexes));
+            if (!isFilterExpOnly) {
+                sIndexFilter = getSIFilter(expr, namespace, indexes);
             }
         } catch (NoApplicableFilterException e) {
             // TODO: add cases with both Filter and Exp needed
         }
-        if (isFilterExp) {
-            processFilterExpressions(left, right);
-            exp = getExpOrFail(left, right, getExpOperator(opType));
+        expr.setSIndexFilter(sIndexFilter);
+
+        if (!isSIFilterOnly) {
+            exp = getFilterExp(expr);
         }
         expr.setExp(exp);
         return expr;
     }
 
-    private static Filter getFilter(Expr expr, String namespace, Collection<Index> indexes) {
+    private static Exp getFilterExp(Expr expr) {
+        return switch (expr.getOperationType()) {
+            case WITH_OPERANDS -> withOperandsToExp(expr);
+            case WHEN_OPERANDS -> whenOperandsToExp(expr);
+            case EXCLUSIVE_OPERANDS -> exclOperandsToExp(expr);
+            default -> exprToExp(expr);
+        };
+    }
+
+    private static Exp exprToExp(Expr expr) {
+        if (expr.isUnary()) {
+            return getExpOrFail(expr.getLeft(), getUnaryExpOperator(expr.getOperationType()));
+        }
+        return getExpOrFail(expr.getLeft(), expr.getRight(), getExpOperator(expr.getOperationType()));
+    }
+
+    private static Exp withOperandsToExp(Expr expr) {
+        List<Exp> expressions = new ArrayList<>();
+        WithOperands withOperandsList = (WithOperands) expr.getLeft(); // extract unary Expr operand
+        List<WithOperand> operands = withOperandsList.getOperands();
+        for (WithOperand withOperand : operands) {
+            if (!withOperand.isLastPart()) {
+                expressions.add(Exp.def(withOperand.getString(), getExp(withOperand.getPart())));
+            } else {
+                // the last expression is the action (described after "do")
+                expressions.add(getExp(withOperand.getPart()));
+            }
+        }
+        return Exp.let(expressions.toArray(new Exp[0]));
+    }
+
+    private static Exp whenOperandsToExp(Expr expr) {
+        List<Exp> expressions = new ArrayList<>();
+        WhenOperands whenOperandsList = (WhenOperands) expr.getLeft(); // extract unary Expr operand
+        List<AbstractPart> operands = whenOperandsList.getOperands();
+        for (AbstractPart part : operands) {
+            expressions.add(getExp(part));
+        }
+        return Exp.cond(expressions.toArray(new Exp[0]));
+    }
+
+    private static Exp exclOperandsToExp(Expr expr) {
+        List<Exp> expressions = new ArrayList<>();
+        ExclusiveOperands whenOperandsList = (ExclusiveOperands) expr.getLeft(); // extract unary Expr operand
+        List<Expr> operands = whenOperandsList.getOperands();
+        for (Expr part : operands) {
+            expressions.add(getExp(part));
+        }
+        return Exp.exclusive(expressions.toArray(new Exp[0]));
+    }
+
+    private static Exp getExp(AbstractPart part) {
+        if (part.getPartType() == EXPR) {
+            return getFilterExp((Expr) part);
+        }
+        return part.getExp();
+    }
+
+    private static Filter getSIFilter(Expr expr, String namespace, Collection<Index> indexes) {
         List<Expr> exprs = getExprs(expr);
         Expr chosenExpr = chooseFilter(exprs, namespace, indexes);
         return chosenExpr == null ? null
@@ -750,24 +858,6 @@ public class VisitorUtils {
         return results;
     }
 
-    private void processFilterExpressions(AbstractPart left, AbstractPart right) {
-        // Process left Expr
-        if (left != null && left.getPartType() == EXPR) {
-            Expr leftExpr = (Expr) left;
-            Exp exp = getExpOrFail(leftExpr.getLeft(), leftExpr.getRight(),
-                    getExpOperator(leftExpr.getOperationType()));
-            left.setExp(exp);
-        }
-
-        // Process right Expr
-        if (right != null && right.getPartType() == EXPR) {
-            Expr rightExpr = (Expr) right;
-            Exp exp = getExpOrFail(rightExpr.getLeft(), rightExpr.getRight(),
-                    getExpOperator(rightExpr.getOperationType()));
-            right.setExp(exp);
-        }
-    }
-
     private static FilterOperationType getFilterOperation(Expr.ExprPartsOperation exprPartsOperation) {
         return switch (exprPartsOperation) {
             case GT -> FilterOperationType.GT;
@@ -788,7 +878,6 @@ public class VisitorUtils {
             case DIV -> Exp::div;
             case MOD -> Exp::mod;
             case INT_XOR -> Exp::intXor;
-//            case INT_NOT -> Exp::intNot; // TODO: unary operator
             case L_SHIFT -> Exp::lshift;
             case R_SHIFT -> Exp::rshift;
             case INT_AND -> Exp::intAnd;
@@ -802,6 +891,14 @@ public class VisitorUtils {
             case GT -> Exp::gt;
             case GTEQ -> Exp::ge;
             default -> throw new NoApplicableFilterException("ExprPartsOperation has no matching BinaryOperator<Exp>");
+        };
+    }
+
+    private static UnaryOperator<Exp> getUnaryExpOperator(Expr.ExprPartsOperation exprPartsOperation) {
+        return switch (exprPartsOperation) {
+            case INT_NOT -> Exp::intNot;
+            case NOT -> Exp::not;
+            default -> throw new NoApplicableFilterException("ExprPartsOperation has no matching UnaryOperator<Exp>");
         };
     }
 }

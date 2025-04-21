@@ -31,36 +31,42 @@ import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
-    private final boolean isFilterExp;
-    private final boolean isSIndexFilter;
+    private final boolean isFilterExpOnly;
+    private final boolean isSIndexFilterOnly;
     private final String namespace;
     private final Collection<Index> indexes;
 
     public ExpressionConditionVisitor() {
-        this.isFilterExp = false;
-        this.isSIndexFilter = false;
+        this.isFilterExpOnly = false;
+        this.isSIndexFilterOnly = false;
         this.namespace = null;
         this.indexes = null;
     }
 
-    public ExpressionConditionVisitor(boolean isFilterExp, boolean isSIndexFilter) {
-        this.isFilterExp = isFilterExp;
-        this.isSIndexFilter = isSIndexFilter;
+    public ExpressionConditionVisitor(boolean isFilterExpOnly, boolean isSIndexFilterOnly) {
+        if ((isFilterExpOnly && isSIndexFilterOnly) || (!isFilterExpOnly && !isSIndexFilterOnly)) {
+            throw new AerospikeDSLException("Error, expecting either isFilterExpOnly or isSIIndexFilterOnly flag");
+        }
+        this.isFilterExpOnly = isFilterExpOnly;
+        this.isSIndexFilterOnly = isSIndexFilterOnly;
         this.namespace = null;
         this.indexes = null;
     }
 
     public ExpressionConditionVisitor(String namespace, Collection<Index> indexes) {
-        this.isFilterExp = false;
-        this.isSIndexFilter = false;
+        this.isFilterExpOnly = false;
+        this.isSIndexFilterOnly = false;
         this.namespace = namespace;
         this.indexes = indexes;
     }
 
-    public ExpressionConditionVisitor(String namespace, Collection<Index> indexes, boolean isFilterExp,
-                                      boolean isSIndexFilter) {
-        this.isFilterExp = isFilterExp;
-        this.isSIndexFilter = isSIndexFilter;
+    public ExpressionConditionVisitor(String namespace, Collection<Index> indexes, boolean isFilterExpOnly,
+                                      boolean isSIndexFilterOnly) {
+        if ((isFilterExpOnly && isSIndexFilterOnly) || (!isFilterExpOnly && !isSIndexFilterOnly)) {
+            throw new AerospikeDSLException("Error, expecting either isFilterExpOnly or isSIIndexFilterOnly flag");
+        }
+        this.isFilterExpOnly = isFilterExpOnly;
+        this.isSIndexFilterOnly = isSIndexFilterOnly;
         this.namespace = namespace;
         this.indexes = indexes;
     }
@@ -69,7 +75,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public AbstractPart visitWithExpression(ConditionParser.WithExpressionContext ctx) {
         List<WithOperand> expressions = new ArrayList<>();
 
-        // iterate each definition
+        // iterate through each definition
         for (ConditionParser.VariableDefinitionContext vdc : ctx.variableDefinition()) {
             AbstractPart part = visit(vdc.expression());
             WithOperand withOperand = new WithOperand(part, vdc.stringOperand().getText());
@@ -77,24 +83,22 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
         // last expression is the action (described after "do")
         expressions.add(new WithOperand(visit(ctx.expression()), true));
-        return new Expr(new WithOperandsExpr(expressions), Expr.ExprPartsOperation.WITH);
+        return new Expr(new WithOperands(expressions), Expr.ExprPartsOperation.WITH_OPERANDS);
     }
 
     @Override
     public AbstractPart visitWhenExpression(ConditionParser.WhenExpressionContext ctx) {
-        List<Exp> expressions = new ArrayList<>();
-
-        // iterate each condition declaration
+        List<AbstractPart> parts = new ArrayList<>();
+        // iterate through each definition declaration
         for (ConditionParser.ExpressionMappingContext emc : ctx.expressionMapping()) {
             // visit condition
-            expressions.add(visit(emc.expression(0)).getExp());
+            parts.add(visit(emc.expression(0)));
             // visit action
-            expressions.add(visit(emc.expression(1)).getExp());
+            parts.add(visit(emc.expression(1)));
         }
-
         // visit default
-        expressions.add(visit(ctx.expression()).getExp());
-        return new Expr(Exp.cond(expressions.toArray(new Exp[0])));
+        parts.add(visit(ctx.expression()));
+        return new Expr(new WhenOperands(parts), Expr.ExprPartsOperation.WHEN_OPERANDS);
     }
 
     @Override
@@ -120,7 +124,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Expr expr = (Expr) visit(ctx.expression());
 
         logicalSetBinAsBooleanExpr(expr);
-        return new Expr(expr, Expr.ExprPartsOperation.LT); // TODO: unary operator
+        return new Expr(expr, Expr.ExprPartsOperation.NOT);
     }
 
     @Override
@@ -128,15 +132,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         if (ctx.expression().size() < 2) {
             throw new AerospikeDSLException("Exclusive logical operator requires 2 or more expressions");
         }
-        List<Exp> expressions = new ArrayList<>();
-
-        // iterate each condition declaration
+        List<Expr> expressions = new ArrayList<>();
+        // iterate through each definition
         for (ConditionParser.ExpressionContext ec : ctx.expression()) {
             Expr expr = (Expr) visit(ec);
             logicalSetBinAsBooleanExpr(expr);
-            expressions.add(expr.getExp());
+            expressions.add(expr);
         }
-        return new Expr(Exp.exclusive(expressions.toArray(new Exp[0])));
+        return new Expr(new ExclusiveOperands(expressions), Expr.ExprPartsOperation.EXCLUSIVE_OPERANDS);
     }
 
     @Override
@@ -192,7 +195,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        if (!isFilterExp) validateNumericBinForFilter(left, right);
+        if (!isFilterExpOnly) validateNumericBinForFilter(left, right);
         return new Expr(left, right, ADD);
     }
 
@@ -201,7 +204,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        if (!isFilterExp) validateNumericBinForFilter(left, right);
+        if (!isFilterExpOnly) validateNumericBinForFilter(left, right);
         return new Expr(left, right, SUB);
     }
 
@@ -210,7 +213,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        if (!isFilterExp) validateNumericBinForFilter(left, right);
+        if (!isFilterExpOnly) validateNumericBinForFilter(left, right);
         return new Expr(left, right, MUL);
     }
 
@@ -219,7 +222,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.operand(0));
         AbstractPart right = visit(ctx.operand(1));
 
-        if (!isFilterExp) validateNumericBinForFilter(left, right);
+        if (!isFilterExpOnly) validateNumericBinForFilter(left, right);
         return new Expr(left, right, DIV);
     }
 
@@ -545,25 +548,5 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     protected AbstractPart aggregateResult(AbstractPart aggregate, AbstractPart nextResult) {
         return nextResult == null ? aggregate : nextResult;
-    }
-
-    @Override
-    public AbstractPart visitChildren(RuleNode node) {
-        AbstractPart result = defaultResult();
-        int n = node.getChildCount();
-        for (int i=0; i<n; i++) {
-            if (!shouldVisitNextChild(node, result)) {
-                break;
-            }
-
-            ParseTree c = node.getChild(i);
-            AbstractPart childResult = c.accept(this);
-            result = aggregateResult(result, childResult);
-        }
-
-        if (result != null && result.getPartType() == AbstractPart.PartType.EXPR) {
-            return buildExpr((Expr) result, namespace, indexes, isFilterExp);
-        }
-        return result;
     }
 }
