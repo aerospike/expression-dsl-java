@@ -36,10 +36,10 @@ class BinFiltersTests {
     @Test
     void binGT_logical_combinations() {
         List<Index> indexes = List.of(
-                Index.builder().bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
-                Index.builder().bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+                Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
-        parseFilterAndCompare("$.intBin1 > 100 and $.intBin2 < 1000", "test", indexes,
+        parseFilterAndCompare("$.intBin1 > 100 and $.intBin2 < 1000", "test1", indexes,
                 Filter.range("intBin2", Long.MIN_VALUE, 999));
 
         parseFilterAndCompare("$.intBin1 > 100 and $.intBin2 < 1000",

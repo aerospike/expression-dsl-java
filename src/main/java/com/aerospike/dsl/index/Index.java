@@ -17,7 +17,8 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public class Index {
 
+    private final String namespace;
     private final String bin;
     private final IndexType indexType;
-    private int binValuesRatio;
+    private int binValuesRatio = Integer.MIN_VALUE;
 }

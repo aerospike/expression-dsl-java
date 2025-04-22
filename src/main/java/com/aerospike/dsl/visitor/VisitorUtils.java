@@ -738,7 +738,7 @@ public class VisitorUtils {
 
     private static Filter getSIFilter(Expr expr, String namespace, Collection<Index> indexes) {
         List<Expr> exprs = getExprs(expr);
-        Expr chosenExpr = chooseFilter(exprs, namespace, indexes);
+        Expr chosenExpr = chooseExpr(exprs, namespace, indexes);
         return chosenExpr == null ? null
                 : getFilterOrFail(chosenExpr.getLeft(),
                 chosenExpr.getRight(),
@@ -746,18 +746,19 @@ public class VisitorUtils {
         );
     }
 
-    private static Expr chooseFilter(List<Expr> exprs, String namespace, Collection<Index> indexes) {
+    private static Expr chooseExpr(List<Expr> exprs, String namespace, Collection<Index> indexes) {
         if (exprs.size() == 1) return exprs.get(0);
         if (exprs.size() > 1 && (indexes == null || indexes.isEmpty())) return null;
 
         Expr resultExpr = null;
         int maxRatio = Integer.MIN_VALUE;
-
         for (Expr expr : exprs) {
             BinPart binPart = getBinPart(expr);
             for (Index index : indexes) {
                 if (binPart.getBinName().equals(index.getBin())
-                        && expTypeToIndexType.get(binPart.getExpType()) == index.getIndexType()) {
+                        && expTypeToIndexType.get(binPart.getExpType()) == index.getIndexType()
+                        && namespace.equals(index.getNamespace())
+                ) {
                     if (index.getBinValuesRatio() > maxRatio) {
                         maxRatio = index.getBinValuesRatio();
                         resultExpr = expr;

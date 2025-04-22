@@ -16,36 +16,36 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.Collection;
 
-import static com.aerospike.dsl.visitor.VisitorUtils.*;
+import static com.aerospike.dsl.model.AbstractPart.PartType.EXPR;
+import static com.aerospike.dsl.visitor.VisitorUtils.buildExpr;
 
 public class DSLParserImpl implements DSLParser {
 
     @Beta
     public ParsedExpression parseDslExpression(String input) {
         ParseTree parseTree = getParseTree(input);
-        Filter sIndexFilter = parseFilter(parseTree, "test", null);
-        Expression expResult = Exp.build(parseFilterExp(parseTree));
-        return new ParsedExpression(expResult, sIndexFilter);
+        return getParsedExpression(parseTree, null, null);
     }
 
     @Beta
     public ParsedExpression parseDslExpression(String input, String namespace, Collection<Index> indexes) {
         ParseTree parseTree = getParseTree(input);
-        Expression expResult = Exp.build(parseFilterExp(parseTree));
-        Filter sIndexFilter = parseFilter(parseTree, namespace, indexes);
-        return new ParsedExpression(expResult, sIndexFilter);
+        return getParsedExpression(parseTree, namespace, indexes);
     }
 
     @Beta
     public Expression parseFilterExpression(String input) {
-        Exp result = parseFilterExp(getParseTree(input));
-        if (result == null) return null;
-        return Exp.build(result);
+        return getFilterExpression(getParseTree(input), null, null);
+    }
+
+    @Beta
+    public Exp parseFilterExp(String input) {
+        return getFilterExp(getParseTree(input), null, null);
     }
 
     @Beta
     public Filter parseFilter(String input, String namespace, Collection<Index> indexes) {
-        return parseFilter(getParseTree(input), namespace, indexes);
+        return getSIFilter(getParseTree(input), namespace, indexes);
     }
 
     private ParseTree getParseTree(String input) {
@@ -54,37 +54,51 @@ public class DSLParserImpl implements DSLParser {
         return parser.parse();
     }
 
-    private Exp parseFilterExp(ParseTree parseTree) {
-        AbstractPart filterExprAbstractPart = new ExpressionConditionVisitor(true, false).visit(parseTree);
-
-        // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error instead of NPE
-        if (filterExprAbstractPart == null) {
-            throw new AerospikeDSLException("Could not parse given input, wrong syntax");
-        }
-
-        if (filterExprAbstractPart.getPartType() == AbstractPart.PartType.EXPR) {
-            return buildExpr((Expr) filterExprAbstractPart, null, null, true, false).getExp();
-        }
-        return filterExprAbstractPart.getExp();
+    private ParsedExpression getParsedExpression(ParseTree parseTree, String namespace, Collection<Index> indexes) {
+        return getParsedExpression(parseTree, namespace, indexes, false, false);
     }
 
-    private Filter parseFilter(ParseTree parseTree, String namespace, Collection<Index> indexes) {
+    private ParsedExpression getParsedExpression(ParseTree parseTree, String namespace, Collection<Index> indexes,
+                                                 boolean isFilterExpOnly, boolean isSIFilterOnly) {
         boolean isEmptyList = false;
-        AbstractPart sIndexFiltersAbstractPart = null;
+        AbstractPart resultingPart = null;
         try {
-            sIndexFiltersAbstractPart = new ExpressionConditionVisitor(namespace, indexes, false, true).visit(parseTree);
+            resultingPart =
+                    new ExpressionConditionVisitor(namespace, indexes, isFilterExpOnly, isSIFilterOnly).visit(parseTree);
         } catch (NoApplicableFilterException e) {
             isEmptyList = true;
         }
 
         // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error instead of NPE
-        if (!isEmptyList && sIndexFiltersAbstractPart == null) {
+        if (!isEmptyList && resultingPart == null) {
             throw new AerospikeDSLException("Could not parse given input, wrong syntax");
         }
 
-        if (sIndexFiltersAbstractPart != null && sIndexFiltersAbstractPart.getPartType() == AbstractPart.PartType.EXPR) {
-            return buildExpr((Expr) sIndexFiltersAbstractPart, namespace, indexes, false, true).getSIndexFilter();
+        if (resultingPart != null) {
+            if (resultingPart.getPartType() == EXPR) {
+                AbstractPart result =
+                        buildExpr((Expr) resultingPart, namespace, indexes, isFilterExpOnly, isSIFilterOnly);
+                return new ParsedExpression(result.getExp(), result.getSIndexFilter());
+            } else {
+                Filter filter = null;
+                if (!isFilterExpOnly) filter = resultingPart.getSIndexFilter();
+                Exp exp = null;
+                if (!isSIFilterOnly) exp = resultingPart.getExp();
+                return new ParsedExpression(exp, filter);
+            }
         }
-        return sIndexFiltersAbstractPart != null ? sIndexFiltersAbstractPart.getSIndexFilter() : null;
+        return new ParsedExpression(null, null);
+    }
+
+    private Exp getFilterExp(ParseTree parseTree, String namespace, Collection<Index> indexes) {
+        return getParsedExpression(parseTree, namespace, indexes, true, false).getFilterExp();
+    }
+
+    private Expression getFilterExpression(ParseTree parseTree, String namespace, Collection<Index> indexes) {
+        return getParsedExpression(parseTree, namespace, indexes, true, false).getFilterExpression();
+    }
+
+    private Filter getSIFilter(ParseTree parseTree, String namespace, Collection<Index> indexes) {
+        return getParsedExpression(parseTree, namespace, indexes, false, true).getSIFilter();
     }
 }

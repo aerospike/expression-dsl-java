@@ -1,5 +1,6 @@
 package com.aerospike.dsl;
 
+import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
 import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.annotation.Beta;
@@ -19,7 +20,7 @@ import lombok.AllArgsConstructor;
 @SuppressWarnings("LombokGetterMayBeUsed")
 public class ParsedExpression {
 
-    Expression filterExpression;
+    Exp filterExp;
     Filter siFilter;
 
     /**
@@ -27,7 +28,15 @@ public class ParsedExpression {
      * @throws AerospikeDSLException If there was an error
      */
     public Expression getFilterExpression() {
-        return filterExpression;
+        return filterExp == null ? null : Exp.build(filterExp);
+    }
+
+    /**
+     * @return filter {@link Exp}. Can be null
+     * @throws AerospikeDSLException If there was an error
+     */
+    public Exp getFilterExp() {
+        return filterExp;
     }
 
     /**
