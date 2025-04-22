@@ -9,7 +9,11 @@ public class FloatOperand extends AbstractPart implements ParsedOperand {
     private final Double value;
 
     public FloatOperand(Double value) {
-        super(PartType.FLOAT_OPERAND, Exp.val(value));
+        super(PartType.FLOAT_OPERAND);
         this.value = value;
+    }
+
+    public Exp getExp() {
+        return Exp.val(value);
     }
 }

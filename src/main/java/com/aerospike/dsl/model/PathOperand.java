@@ -15,8 +15,13 @@ import static com.aerospike.dsl.util.PathOperandUtils.updateWithCdtTypeDesignato
 @Getter
 public class PathOperand extends AbstractPart {
 
-    public PathOperand(Exp exp) {
-        super(PartType.PATH_OPERAND, exp);
+    private final BasePath basePath;
+    private final PathFunction pathFunction;
+
+    public PathOperand(BasePath basePath, PathFunction pathFunction) {
+        super(PartType.PATH_OPERAND);
+        this.basePath = basePath;
+        this.pathFunction = pathFunction;
     }
 
     public static Exp processPath(BasePath basePath, PathFunction pathFunction) {
@@ -38,5 +43,9 @@ public class PathOperand extends AbstractPart {
             };
         }
         return null;
+    }
+
+    public Exp getExp() {
+        return PathOperand.processPath(basePath, pathFunction);
     }
 }

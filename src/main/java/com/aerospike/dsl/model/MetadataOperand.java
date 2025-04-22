@@ -7,20 +7,23 @@ import lombok.Getter;
 public class MetadataOperand extends Expr {
 
     private final String functionName;
+    private final Integer parameter;
 
     public MetadataOperand(String functionName) {
-        super(constructExp(functionName, null));
+        super();
         this.partType = PartType.METADATA_OPERAND;
         this.functionName = functionName;
+        this.parameter = null;
     }
 
     public MetadataOperand(String functionName, int parameter) {
-        super(constructExp(functionName, parameter));
+        super();
         this.partType = PartType.METADATA_OPERAND;
         this.functionName = functionName;
+        this.parameter = parameter;
     }
 
-    private static Exp constructExp(String functionName, Integer parameter) {
+    private Exp constructMetadataExp(String functionName, Integer parameter) {
         return switch (functionName) {
             case "deviceSize" -> Exp.deviceSize();
             case "memorySize" -> Exp.memorySize();
@@ -58,5 +61,9 @@ public class MetadataOperand extends Expr {
         INT,
         STRING,
         BOOL,
+    }
+
+    public Exp getExp() {
+        return constructMetadataExp(functionName, parameter);
     }
 }

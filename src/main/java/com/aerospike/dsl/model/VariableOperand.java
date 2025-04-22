@@ -9,7 +9,11 @@ public class VariableOperand extends AbstractPart {
     private final String name;
 
     public VariableOperand(String name) {
-        super(PartType.VARIABLE_OPERAND, Exp.var(name));
+        super(PartType.VARIABLE_OPERAND);
         this.name = name;
+    }
+
+    public Exp getExp() {
+        return Exp.var(name);
     }
 }

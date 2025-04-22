@@ -9,7 +9,11 @@ public class BooleanOperand extends AbstractPart implements ParsedOperand {
     private final Boolean value;
 
     public BooleanOperand(Boolean value) {
-        super(PartType.BOOL_OPERAND, Exp.val(value));
+        super(PartType.BOOL_OPERAND);
         this.value = value;
+    }
+
+    public Exp getExp() {
+        return Exp.val(value);
     }
 }

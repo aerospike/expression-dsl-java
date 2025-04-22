@@ -1,6 +1,5 @@
 package com.aerospike.dsl.model;
 
-import com.aerospike.client.exp.Exp;
 import lombok.Getter;
 
 @Getter
@@ -11,8 +10,8 @@ public class Expr extends AbstractPart {
     private ExprPartsOperation operationType;
     private final boolean isUnary;
 
-    public Expr(Exp exp) {
-        super(PartType.EXPR, exp);
+    public Expr() {
+        super(PartType.EXPR);
         this.isUnary = false;
     }
 

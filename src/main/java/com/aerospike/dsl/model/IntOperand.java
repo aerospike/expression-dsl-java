@@ -9,7 +9,11 @@ public class IntOperand extends AbstractPart implements ParsedOperand {
     private final Long value;
 
     public IntOperand(Long value) {
-        super(AbstractPart.PartType.INT_OPERAND, Exp.val(value));
+        super(AbstractPart.PartType.INT_OPERAND);
         this.value = value;
+    }
+
+    public Exp getExp() {
+        return Exp.val(value);
     }
 }

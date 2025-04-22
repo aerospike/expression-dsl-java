@@ -118,7 +118,13 @@ public class VisitorUtils {
     }
 
     // 2 operands Expressions
-    static Exp getExpOrFail(AbstractPart left, AbstractPart right, BinaryOperator<Exp> operator) {
+    static Exp exprToExp(Expr expr) {
+        if (expr.isUnary()) {
+            return getUnaryExpOrFail(expr.getLeft(), getUnaryExpOperator(expr.getOperationType()));
+        }
+
+        AbstractPart left = expr.getLeft();
+        AbstractPart right = expr.getRight();
         if (left == null) {
             throw new AerospikeDSLException("Unable to parse left operand");
         }
@@ -126,56 +132,10 @@ public class VisitorUtils {
             throw new AerospikeDSLException("Unable to parse right operand");
         }
 
-        // Handle non Bin operands cases
-        Exp leftExp = null;
-        if (left.getPartType() == EXPR) {
-            Expr expr = (Expr) left;
-            if (!expr.isUnary()) {
-                leftExp = getExpOrFail(expr.getLeft(), expr.getRight(), getExpOperator(expr.getOperationType()));
-                left.setExp(leftExp);
-            } else {
-                if (expr.getOperationType() == Expr.ExprPartsOperation.WHEN_OPERANDS) {
-                    leftExp = whenOperandsToExp(expr);
-                    left.setExp(leftExp);
-                } else if (expr.getOperationType() == Expr.ExprPartsOperation.WITH_OPERANDS) {
-                    leftExp = withOperandsToExp(expr);
-                    left.setExp(leftExp);
-                } else if (expr.getOperationType() == Expr.ExprPartsOperation.EXCLUSIVE_OPERANDS) {
-                    leftExp = exclOperandsToExp(expr);
-                    left.setExp(leftExp);
-                } else {
-                    leftExp = getExpOrFail(expr.getLeft(), getUnaryExpOperator(expr.getOperationType()));
-                    left.setExp(leftExp);
-                }
-            }
-        } else {
-            leftExp = left.getExp();
-        }
-        Exp rightExp = null;
-        if (right.getPartType() == EXPR) {
-            Expr expr = (Expr) right;
-            if (!expr.isUnary()) {
-                rightExp = getExpOrFail(expr.getLeft(), expr.getRight(), getExpOperator(expr.getOperationType()));
-                right.setExp(rightExp);
-            } else {
-                if (expr.getOperationType() == Expr.ExprPartsOperation.WHEN_OPERANDS) {
-                    rightExp = whenOperandsToExp(expr);
-                    right.setExp(rightExp);
-                } else if (expr.getOperationType() == Expr.ExprPartsOperation.WITH_OPERANDS) {
-                    rightExp = withOperandsToExp(expr);
-                    right.setExp(rightExp);
-                } else if (expr.getOperationType() == Expr.ExprPartsOperation.EXCLUSIVE_OPERANDS) {
-                    rightExp = exclOperandsToExp(expr);
-                    right.setExp(rightExp);
-                } else {
-                    rightExp = getExpOrFail(expr.getLeft(), getUnaryExpOperator(expr.getOperationType()));
-                    right.setExp(rightExp);
-                }
-            }
-        } else {
-            rightExp = right.getExp();
-        }
+        Exp leftExp = getFilterExpression(expr, left, right.getPartType());
+        Exp rightExp = getFilterExpression(expr, right, left.getPartType());
 
+        BinaryOperator<Exp> operator = getExpOperator(expr.getOperationType());
         if (left.getPartType() == BIN_PART) {
             return getExpLeftBinTypeComparison((BinPart) left, right, operator);
         }
@@ -185,117 +145,136 @@ public class VisitorUtils {
         return operator.apply(leftExp, rightExp);
     }
 
+    private static Exp getFilterExpression(Expr expr, AbstractPart part, AbstractPart.PartType secondPartType) {
+        Exp leftExp = null;
+        if (part.getPartType() == EXPR) {
+            List<Expr.ExprPartsOperation> ops = List.of(WITH_OPERANDS, WHEN_OPERANDS, EXCLUSIVE_OPERANDS);
+            if (expr.isUnary()) {
+                if (!ops.contains(expr.getOperationType())) {
+                    leftExp = getUnaryExpOrFail(part, getUnaryExpOperator(expr.getOperationType()));
+                    part.setExp(leftExp);
+                } else {
+                    leftExp = getFilterExp((Expr) part);
+                    part.setExp(leftExp);
+                }
+            } else {
+                leftExp = getFilterExp((Expr) part);
+                part.setExp(leftExp);
+            }
+        } else if (part.getPartType() != BIN_PART && secondPartType != BIN_PART) {
+            leftExp = part.getExp();
+        }
+        return leftExp;
+    }
+
     static Exp getExpLeftBinTypeComparison(BinPart left, AbstractPart right, BinaryOperator<Exp> operator) {
-        String binNameLeft = left.getBinName();
+        Exp leftExp = Exp.bin(left.getBinName(), left.getExpType());
         return switch (right.getPartType()) {
             case INT_OPERAND -> {
                 validateComparableTypes(left.getExpType(), Exp.Type.INT);
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(leftExp, right.getExp());
             }
             case FLOAT_OPERAND -> {
                 validateComparableTypes(left.getExpType(), Exp.Type.FLOAT);
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(leftExp, right.getExp());
             }
             case BOOL_OPERAND -> {
                 validateComparableTypes(left.getExpType(), Exp.Type.BOOL);
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(leftExp, right.getExp());
             }
             case STRING_OPERAND -> {
                 if (left.getExpType() != null &&
                         left.getExpType().equals(Exp.Type.BLOB)) {
                     // Base64 Blob
                     validateComparableTypes(left.getExpType(), Exp.Type.BLOB);
-                    String base64String = ((StringOperand) right).getValue();
-                    byte[] value = Base64.getDecoder().decode(base64String);
-                    yield operator.apply(left.getExp(), Exp.val(value));
+                    StringOperand stringRight = (StringOperand) right;
+                    stringRight.setBlob(true);
+                    yield operator.apply(leftExp, stringRight.getExp());
                 } else {
                     // String
                     validateComparableTypes(left.getExpType(), Exp.Type.STRING);
-                    yield operator.apply(left.getExp(), right.getExp());
+                    yield operator.apply(leftExp, right.getExp());
                 }
             }
             case METADATA_OPERAND -> {
                 // No need to validate, types are determined by metadata function
                 Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) right).getMetadataType().toString());
-                yield operator.apply(
-                        Exp.bin(binNameLeft, binType),
-                        right.getExp()
-                );
+                leftExp = Exp.bin(left.getBinName(), binType);
+                yield operator.apply(leftExp, right.getExp());
             }
-            case EXPR, PATH_OPERAND ->
-                    operator.apply(left.getExp(), right.getExp()); // Can't validate with Expr on one side
-            // Left and right are both bin parts
+            case EXPR, PATH_OPERAND -> operator.apply(leftExp, right.getExp()); // Can't validate with Expr on one side
             case BIN_PART -> {
+                // Left and right are both bin parts
                 // Validate types if possible
                 validateComparableTypes(left.getExpType(), right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(leftExp, right.getExp());
             }
             case LIST_OPERAND -> {
                 validateComparableTypes(left.getExpType(), Exp.Type.LIST);
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(leftExp, right.getExp());
             }
             case MAP_OPERAND -> {
                 validateComparableTypes(left.getExpType(), Exp.Type.MAP);
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(leftExp, right.getExp());
             }
+            case VARIABLE_OPERAND -> operator.apply(leftExp, right.getExp());
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(right.getPartType()));
         };
     }
 
     static Exp getExpRightBinTypeComparison(AbstractPart left, BinPart right, BinaryOperator<Exp> operator) {
-        String binNameRight = right.getBinName();
+        Exp rightExp = Exp.bin(right.getBinName(), right.getExpType());
         return switch (left.getPartType()) {
             case INT_OPERAND -> {
                 validateComparableTypes(Exp.Type.INT, right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(left.getExp(), rightExp);
             }
             case FLOAT_OPERAND -> {
                 validateComparableTypes(Exp.Type.FLOAT, right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(left.getExp(), rightExp);
             }
             case BOOL_OPERAND -> {
                 validateComparableTypes(Exp.Type.BOOL, right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(left.getExp(), rightExp);
             }
             case STRING_OPERAND -> {
                 if (right.getExpType() != null &&
                         right.getExpType().equals(Exp.Type.BLOB)) {
                     // Base64 Blob
                     validateComparableTypes(Exp.Type.BLOB, right.getExpType());
-                    String base64String = ((StringOperand) left).getValue();
-                    byte[] value = Base64.getDecoder().decode(base64String);
-                    yield operator.apply(Exp.val(value), right.getExp());
+                    StringOperand stringLeft = (StringOperand) left;
+                    stringLeft.setBlob(true);
+                    yield operator.apply(stringLeft.getExp(), rightExp);
                 } else {
                     // String
                     validateComparableTypes(Exp.Type.STRING, right.getExpType());
-                    yield operator.apply(left.getExp(), right.getExp());
+                    yield operator.apply(left.getExp(), rightExp);
                 }
             }
             case METADATA_OPERAND -> {
                 // No need to validate, types are determined by metadata function
                 Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) left).getMetadataType().toString());
-                yield operator.apply(
-                        left.getExp(),
-                        Exp.bin(binNameRight, binType)
-                );
+                rightExp = Exp.bin(right.getBinName(), binType);
+                yield operator.apply(left.getExp(), rightExp);
             }
             case EXPR, PATH_OPERAND ->
                     operator.apply(left.getExp(), right.getExp()); // Can't validate with Expr on one side
             // No need for 2 BIN_OPERAND handling since it's covered in the left condition
             case LIST_OPERAND -> {
                 validateComparableTypes(Exp.Type.LIST, right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(left.getExp(), rightExp);
             }
             case MAP_OPERAND -> {
                 validateComparableTypes(Exp.Type.MAP, right.getExpType());
-                yield operator.apply(left.getExp(), right.getExp());
+                yield operator.apply(left.getExp(), rightExp);
             }
+            case VARIABLE_OPERAND -> operator.apply(left.getExp(), rightExp);
             default -> throw new AerospikeDSLException("Operand type not supported: %s".formatted(left.getPartType()));
         };
     }
 
     // 1 operand Expressions
-    static Exp getExpOrFail(AbstractPart operand, UnaryOperator<Exp> operator) {
+    static Exp getUnaryExpOrFail(AbstractPart operand, UnaryOperator<Exp> operator) {
         if (operand == null) {
             throw new AerospikeDSLException("Unable to parse unary operand");
         }
@@ -303,13 +282,11 @@ public class VisitorUtils {
         return switch (operand.getPartType()) {
             case BIN_PART -> {
                 BinPart binPart = ((BinPart) operand);
-                // There is only 1 case of a single bin expression (Exp::not)
+                // There is only 1 case of a single bin expression
                 yield operator.apply(Exp.bin(binPart.getBinName(), binPart.getExpType()));
             }
             case METADATA_OPERAND -> {
                 MetadataOperand metadataOperand = ((MetadataOperand) operand);
-
-                // There is only 1 case of a single operand expression (int not)
                 yield operator.apply(metadataOperand.getExp());
             }
             default -> throw new AerospikeDSLException("Unsupported part type for an unary expression");
@@ -715,13 +692,6 @@ public class VisitorUtils {
             case EXCLUSIVE_OPERANDS -> exclOperandsToExp(expr);
             default -> exprToExp(expr);
         };
-    }
-
-    private static Exp exprToExp(Expr expr) {
-        if (expr.isUnary()) {
-            return getExpOrFail(expr.getLeft(), getUnaryExpOperator(expr.getOperationType()));
-        }
-        return getExpOrFail(expr.getLeft(), expr.getRight(), getExpOperator(expr.getOperationType()));
     }
 
     private static Exp withOperandsToExp(Expr expr) {

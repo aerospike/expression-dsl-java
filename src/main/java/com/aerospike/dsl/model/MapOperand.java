@@ -11,7 +11,11 @@ public class MapOperand extends AbstractPart implements ParsedOperand {
     private final TreeMap<Object, Object> value;
 
     public MapOperand(TreeMap<Object, Object> map) {
-        super(PartType.MAP_OPERAND, Exp.val(map));
+        super(PartType.MAP_OPERAND);
         this.value = map;
+    }
+
+    public Exp getExp() {
+        return Exp.val(value);
     }
 }

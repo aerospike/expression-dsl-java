@@ -11,7 +11,11 @@ public class ListOperand extends AbstractPart implements ParsedOperand {
     private final List<Object> value;
 
     public ListOperand(List<Object> list) {
-        super(PartType.LIST_OPERAND, Exp.val(list));
+        super(PartType.LIST_OPERAND);
         this.value = list;
+    }
+
+    public Exp getExp() {
+        return Exp.val(value);
     }
 }

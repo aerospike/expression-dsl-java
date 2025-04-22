@@ -19,11 +19,6 @@ public abstract class AbstractPart {
         this.exp = null;
     }
 
-    protected AbstractPart(PartType partType, Exp exp) {
-        this.partType = partType;
-        this.exp = exp;
-    }
-
     protected AbstractPart(PartType partType, Filter filter) {
         this.partType = partType;
         this.sIndexFilter = filter;
