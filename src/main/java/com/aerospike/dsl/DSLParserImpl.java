@@ -15,9 +15,11 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.aerospike.dsl.model.AbstractPart.PartType.EXPR;
-import static com.aerospike.dsl.visitor.VisitorUtils.buildExpr;
+import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class DSLParserImpl implements DSLParser {
 
@@ -62,9 +64,13 @@ public class DSLParserImpl implements DSLParser {
                                                  boolean isFilterExpOnly, boolean isSIFilterOnly) {
         boolean isEmptyList = false;
         AbstractPart resultingPart = null;
+        Map<String, Index> indexesMap = new HashMap<>();
+        if (indexes != null && !indexes.isEmpty()) {
+            indexes.forEach(idx -> indexesMap.put(idx.getNamespace() + INDEX_NAME_SEPARATOR + idx.getBin(), idx));
+        }
         try {
             resultingPart =
-                    new ExpressionConditionVisitor(namespace, indexes, isFilterExpOnly, isSIFilterOnly).visit(parseTree);
+                    new ExpressionConditionVisitor(isFilterExpOnly, isSIFilterOnly).visit(parseTree);
         } catch (NoApplicableFilterException e) {
             isEmptyList = true;
         }
@@ -77,7 +83,7 @@ public class DSLParserImpl implements DSLParser {
         if (resultingPart != null) {
             if (resultingPart.getPartType() == EXPR) {
                 AbstractPart result =
-                        buildExpr((Expr) resultingPart, namespace, indexes, isFilterExpOnly, isSIFilterOnly);
+                        buildExpr((Expr) resultingPart, namespace, indexesMap, isFilterExpOnly, isSIFilterOnly);
                 return new ParsedExpression(result.getExp(), result.getSIndexFilter());
             } else {
                 Filter filter = null;

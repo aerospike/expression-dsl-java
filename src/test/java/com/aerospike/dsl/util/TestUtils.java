@@ -4,6 +4,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
 import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.DSLParserImpl;
+import com.aerospike.dsl.ParsedExpression;
 import com.aerospike.dsl.index.Index;
 import lombok.experimental.UtilityClass;
 
@@ -38,5 +39,18 @@ public class TestUtils {
     public static void parseFilterAndCompare(String input, String namespace, List<Index> indexes, Filter expected) {
         Filter actualFilter = parser.parseFilter(input, namespace, indexes);
         assertEquals(actualFilter, expected);
+    }
+
+    public static void parseExpressionAndCompare(String input, ParsedExpression expected) {
+        ParsedExpression actualExpression = parser.parseDslExpression(input, null, null);
+        assertEquals(actualExpression.getFilterExpression(), expected.getFilterExpression());
+        assertEquals(actualExpression.getSIFilter(), expected.getSIFilter());
+    }
+
+    public static void parseExpressionAndCompare(String input, String namespace, List<Index> indexes,
+                                                 ParsedExpression expected) {
+        ParsedExpression actualExpression = parser.parseDslExpression(input, namespace, indexes);
+        assertEquals(actualExpression.getFilterExpression(), expected.getFilterExpression());
+        assertEquals(actualExpression.getSIFilter(), expected.getSIFilter());
     }
 }

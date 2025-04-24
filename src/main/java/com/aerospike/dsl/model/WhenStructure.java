@@ -5,12 +5,12 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public class WhenOperands extends AbstractPart {
+public class WhenStructure extends AbstractPart {
 
     private final List<AbstractPart> operands;
 
-    public WhenOperands(List<AbstractPart> operands) {
-        super(PartType.WHEN_OPERANDS_LIST);
+    public WhenStructure(List<AbstractPart> operands) {
+        super(PartType.WHEN_STRUCTURE);
         this.operands = operands;
     }
 }

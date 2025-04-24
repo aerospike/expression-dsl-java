@@ -14,7 +14,9 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -30,8 +32,9 @@ import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.*;
 @UtilityClass
 public class VisitorUtils {
 
-    Map<Exp.Type, IndexType> expTypeToIndexType = Map.of(Exp.Type.INT, IndexType.NUMERIC,
-            Exp.Type.STRING, IndexType.STRING);
+    public final String INDEX_NAME_SEPARATOR = "||||";
+    private final Map<Exp.Type, IndexType> expTypeToIndexType = Map.of(Exp.Type.INT, IndexType.NUMERIC,
+            Exp.Type.STRING, IndexType.STRING, Exp.Type.BLOB, IndexType.BLOB);
 
     protected enum FilterOperationType {
         GT,
@@ -665,7 +668,7 @@ public class VisitorUtils {
         };
     }
 
-    public AbstractPart buildExpr(Expr expr, String namespace, Collection<Index> indexes,
+    public AbstractPart buildExpr(Expr expr, String namespace, Map<String, Index> indexes,
                                   boolean isFilterExpOnly, boolean isSIFilterOnly) {
         Exp exp = null;
         Filter sIndexFilter = null;
@@ -673,8 +676,7 @@ public class VisitorUtils {
             if (!isFilterExpOnly) {
                 sIndexFilter = getSIFilter(expr, namespace, indexes);
             }
-        } catch (NoApplicableFilterException e) {
-            // TODO: add cases with both Filter and Exp needed
+        } catch (NoApplicableFilterException ignored) {
         }
         expr.setSIndexFilter(sIndexFilter);
 
@@ -686,6 +688,9 @@ public class VisitorUtils {
     }
 
     private static Exp getFilterExp(Expr expr) {
+        // if a Filter is already set in an OR query
+        if (expr.getOperationType() == OR && expr.getSIndexFilter() != null) return null;
+
         return switch (expr.getOperationType()) {
             case WITH_OPERANDS -> withOperandsToExp(expr);
             case WHEN_OPERANDS -> whenOperandsToExp(expr);
@@ -696,7 +701,7 @@ public class VisitorUtils {
 
     private static Exp withOperandsToExp(Expr expr) {
         List<Exp> expressions = new ArrayList<>();
-        WithOperands withOperandsList = (WithOperands) expr.getLeft(); // extract unary Expr operand
+        WithStructure withOperandsList = (WithStructure) expr.getLeft(); // extract unary Expr operand
         List<WithOperand> operands = withOperandsList.getOperands();
         for (WithOperand withOperand : operands) {
             if (!withOperand.isLastPart()) {
@@ -711,7 +716,7 @@ public class VisitorUtils {
 
     private static Exp whenOperandsToExp(Expr expr) {
         List<Exp> expressions = new ArrayList<>();
-        WhenOperands whenOperandsList = (WhenOperands) expr.getLeft(); // extract unary Expr operand
+        WhenStructure whenOperandsList = (WhenStructure) expr.getLeft(); // extract unary Expr operand
         List<AbstractPart> operands = whenOperandsList.getOperands();
         for (AbstractPart part : operands) {
             expressions.add(getExp(part));
@@ -721,7 +726,7 @@ public class VisitorUtils {
 
     private static Exp exclOperandsToExp(Expr expr) {
         List<Exp> expressions = new ArrayList<>();
-        ExclusiveOperands whenOperandsList = (ExclusiveOperands) expr.getLeft(); // extract unary Expr operand
+        ExclusiveStructure whenOperandsList = (ExclusiveStructure) expr.getLeft(); // extract unary Expr operand
         List<Expr> operands = whenOperandsList.getOperands();
         for (Expr part : operands) {
             expressions.add(getExp(part));
@@ -736,8 +741,8 @@ public class VisitorUtils {
         return part.getExp();
     }
 
-    private static Filter getSIFilter(Expr expr, String namespace, Collection<Index> indexes) {
-        List<Expr> exprs = getExprs(expr);
+    private static Filter getSIFilter(Expr expr, String namespace, Map<String, Index> indexes) {
+        List<Expr> exprs = flattenExprs(expr);
         Expr chosenExpr = chooseExpr(exprs, namespace, indexes);
         return chosenExpr == null ? null
                 : getFilterOrFail(chosenExpr.getLeft(),
@@ -746,29 +751,40 @@ public class VisitorUtils {
         );
     }
 
-    private static Expr chooseExpr(List<Expr> exprs, String namespace, Collection<Index> indexes) {
+    private static Expr chooseExpr(List<Expr> exprs, String namespace, Map<String, Index> indexes) {
         if (exprs.size() == 1) return exprs.get(0);
         if (exprs.size() > 1 && (indexes == null || indexes.isEmpty())) return null;
 
-        Expr resultExpr = null;
-        int maxRatio = Integer.MIN_VALUE;
+        Map<Integer, List<Expr>> exprsPerCardinality = new HashMap<>();
         for (Expr expr : exprs) {
             BinPart binPart = getBinPart(expr);
-            for (Index index : indexes) {
-                if (binPart.getBinName().equals(index.getBin())
-                        && expTypeToIndexType.get(binPart.getExpType()) == index.getIndexType()
-                        && namespace.equals(index.getNamespace())
-                ) {
-                    if (index.getBinValuesRatio() > maxRatio) {
-                        maxRatio = index.getBinValuesRatio();
-                        resultExpr = expr;
+                Index index = indexes.get(namespace + INDEX_NAME_SEPARATOR + binPart.getBinName());
+                if (index == null) continue;
+                if (expTypeToIndexType.get(binPart.getExpType()) == index.getIndexType()) {
+                    List<Expr> exprsList = exprsPerCardinality.get(index.getBinValuesRatio());
+                    if (exprsList != null) {
+                        exprsList.add(expr);
+                    } else {
+                        exprsList = new ArrayList<>();
+                        exprsList.add(expr);
                     }
-                    break; // Assuming one Index corresponds to one Expr based on the criteria
+                    exprsPerCardinality.put(index.getBinValuesRatio(), exprsList);
                 }
-            }
         }
 
-        return resultExpr;
+        // Find the entry with the largest key and put it in a new Map
+        Map<Integer, List<Expr>> largestCardinalityMap = exprsPerCardinality.entrySet().stream()
+                .max(Map.Entry.comparingByKey())
+                .map(entry -> Map.of(entry.getKey(), entry.getValue()))
+                .orElse(Collections.emptyMap());
+        List<Expr> largestCardinalityExprs = largestCardinalityMap.values().iterator().next();
+        if (largestCardinalityExprs.size() > 1) {
+            // Choosing alphabetically
+            return largestCardinalityExprs.stream()
+                    .min(Comparator.comparing(expr -> getBinPart(expr).getBinName()))
+                    .orElse(null);
+        }
+        return largestCardinalityExprs.get(0);
     }
 
     private static BinPart getBinPart(Expr expr) {
@@ -799,13 +815,13 @@ public class VisitorUtils {
         return result;
     }
 
-    private static List<Expr> getExprs(Expr expr) {
+    private static List<Expr> flattenExprs(Expr expr) {
         List<Expr> results = new ArrayList<>();
-        if (expr.getOperationType() == AND) {
+        if (expr.getOperationType() == AND || expr.getOperationType() == OR) {
             if (expr.getLeft() != null && expr.getLeft().getPartType() == EXPR) {
                 Expr leftExpr = (Expr) expr.getLeft();
                 if (leftExpr.getOperationType() == AND || leftExpr.getOperationType() == OR) {
-                    Stream<Expr> stream = getExprs(leftExpr).stream();
+                    Stream<Expr> stream = flattenExprs(leftExpr).stream();
                     results = Stream.concat(results.stream(), stream).toList();
                 } else {
                     Stream<Expr> stream = Stream.of(leftExpr);
@@ -816,7 +832,7 @@ public class VisitorUtils {
             if (expr.getRight() != null && expr.getRight().getPartType() == EXPR) {
                 Expr rightExpr = (Expr) expr.getRight();
                 if (rightExpr.getOperationType() == AND || rightExpr.getOperationType() == OR) {
-                    Stream<Expr> stream = getExprs(rightExpr).stream();
+                    Stream<Expr> stream = flattenExprs(rightExpr).stream();
                     results = Stream.concat(results.stream(), stream).toList();
                 } else {
                     Stream<Expr> stream = Stream.of(rightExpr);

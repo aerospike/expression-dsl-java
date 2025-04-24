@@ -4,7 +4,6 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.ConditionBaseVisitor;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
-import com.aerospike.dsl.index.Index;
 import com.aerospike.dsl.model.*;
 import com.aerospike.dsl.model.cdt.list.ListIndex;
 import com.aerospike.dsl.model.cdt.list.ListIndexRange;
@@ -21,7 +20,6 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -32,43 +30,12 @@ import static com.aerospike.dsl.visitor.VisitorUtils.*;
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
     private final boolean isFilterExpOnly;
-    private final boolean isSIndexFilterOnly;
-    private final String namespace;
-    private final Collection<Index> indexes;
-
-    public ExpressionConditionVisitor() {
-        this.isFilterExpOnly = false;
-        this.isSIndexFilterOnly = false;
-        this.namespace = null;
-        this.indexes = null;
-    }
 
     public ExpressionConditionVisitor(boolean isFilterExpOnly, boolean isSIndexFilterOnly) {
-        if ((isFilterExpOnly && isSIndexFilterOnly) || (!isFilterExpOnly && !isSIndexFilterOnly)) {
+        if (isFilterExpOnly && isSIndexFilterOnly) {
             throw new AerospikeDSLException("Error, expecting either isFilterExpOnly or isSIIndexFilterOnly flag");
         }
         this.isFilterExpOnly = isFilterExpOnly;
-        this.isSIndexFilterOnly = isSIndexFilterOnly;
-        this.namespace = null;
-        this.indexes = null;
-    }
-
-    public ExpressionConditionVisitor(String namespace, Collection<Index> indexes) {
-        this.isFilterExpOnly = false;
-        this.isSIndexFilterOnly = false;
-        this.namespace = namespace;
-        this.indexes = indexes;
-    }
-
-    public ExpressionConditionVisitor(String namespace, Collection<Index> indexes, boolean isFilterExpOnly,
-                                      boolean isSIndexFilterOnly) {
-        if ((isFilterExpOnly && isSIndexFilterOnly) || (!isFilterExpOnly && !isSIndexFilterOnly)) {
-            throw new AerospikeDSLException("Error, expecting either isFilterExpOnly or isSIIndexFilterOnly flag");
-        }
-        this.isFilterExpOnly = isFilterExpOnly;
-        this.isSIndexFilterOnly = isSIndexFilterOnly;
-        this.namespace = namespace;
-        this.indexes = indexes;
     }
 
     @Override
@@ -83,7 +50,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
         // last expression is the action (described after "do")
         expressions.add(new WithOperand(visit(ctx.expression()), true));
-        return new Expr(new WithOperands(expressions), Expr.ExprPartsOperation.WITH_OPERANDS);
+        return new Expr(new WithStructure(expressions), Expr.ExprPartsOperation.WITH_OPERANDS);
     }
 
     @Override
@@ -98,7 +65,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
         // visit default
         parts.add(visit(ctx.expression()));
-        return new Expr(new WhenOperands(parts), Expr.ExprPartsOperation.WHEN_OPERANDS);
+        return new Expr(new WhenStructure(parts), Expr.ExprPartsOperation.WHEN_OPERANDS);
     }
 
     @Override
@@ -139,7 +106,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             logicalSetBinAsBooleanExpr(expr);
             expressions.add(expr);
         }
-        return new Expr(new ExclusiveOperands(expressions), Expr.ExprPartsOperation.EXCLUSIVE_OPERANDS);
+        return new Expr(new ExclusiveStructure(expressions), Expr.ExprPartsOperation.EXCLUSIVE_OPERANDS);
     }
 
     @Override

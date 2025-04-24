@@ -5,7 +5,6 @@ import com.aerospike.client.exp.Expression;
 import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.annotation.Beta;
 import com.aerospike.dsl.exception.AerospikeDSLException;
-import lombok.AllArgsConstructor;
 
 
 /**
@@ -15,20 +14,29 @@ import lombok.AllArgsConstructor;
  * <br>
  * List of Filters can be an empty if no suitable secondary index Filter was found.
  */
-@AllArgsConstructor
 @Beta
 @SuppressWarnings("LombokGetterMayBeUsed")
 public class ParsedExpression {
 
-    Exp filterExp;
-    Filter siFilter;
+    private final Exp filterExp;
+    private Expression filterExpression;
+    private final Filter siFilter;
+
+    public ParsedExpression(Exp filterExp, Filter siFilter) {
+        this.filterExp = filterExp;
+        this.siFilter = siFilter;
+    }
 
     /**
      * @return filter {@link Expression}. Can be null
      * @throws AerospikeDSLException If there was an error
      */
     public Expression getFilterExpression() {
-        return filterExp == null ? null : Exp.build(filterExp);
+        if (filterExp == null) {
+            return null;
+        }
+        if (filterExpression == null) filterExpression = Exp.build(filterExp);
+        return filterExpression;
     }
 
     /**

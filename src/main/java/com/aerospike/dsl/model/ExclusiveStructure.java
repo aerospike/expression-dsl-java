@@ -5,12 +5,12 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public class ExclusiveOperands extends AbstractPart {
+public class ExclusiveStructure extends AbstractPart {
 
     private final List<Expr> operands;
 
-    public ExclusiveOperands(List<Expr> operands) {
-        super(PartType.EXCLUSIVE_OPERANDS_LIST);
+    public ExclusiveStructure(List<Expr> operands) {
+        super(PartType.EXCLUSIVE_STRUCTURE);
         this.operands = operands;
     }
 }
