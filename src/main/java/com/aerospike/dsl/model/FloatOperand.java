@@ -14,6 +14,7 @@ public class FloatOperand extends AbstractPart implements ParsedOperand {
     }
 
     public Exp getExp() {
-        return Exp.val(value);
+        if (exp == null) exp = Exp.val(value);
+        return exp;
     }
 }

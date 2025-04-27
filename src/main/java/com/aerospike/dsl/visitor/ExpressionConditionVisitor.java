@@ -50,7 +50,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
         // last expression is the action (described after "do")
         expressions.add(new WithOperand(visit(ctx.expression()), true));
-        return new Expr(new WithStructure(expressions), Expr.ExprPartsOperation.WITH_OPERANDS);
+        return new Expr(new WithStructure(expressions), Expr.ExprPartsOperation.WITH_STRUCTURE_HOLDER);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
         // visit default
         parts.add(visit(ctx.expression()));
-        return new Expr(new WhenStructure(parts), Expr.ExprPartsOperation.WHEN_OPERANDS);
+        return new Expr(new WhenStructure(parts), Expr.ExprPartsOperation.WHEN_STRUCTURE_HOLDER);
     }
 
     @Override
@@ -106,7 +106,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             logicalSetBinAsBooleanExpr(expr);
             expressions.add(expr);
         }
-        return new Expr(new ExclusiveStructure(expressions), Expr.ExprPartsOperation.EXCLUSIVE_OPERANDS);
+        return new Expr(new ExclusiveStructure(expressions), Expr.ExprPartsOperation.EXCLUSIVE_STRUCTURE_HOLDER);
     }
 
     @Override

@@ -33,8 +33,17 @@ import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.*;
 public class VisitorUtils {
 
     public final String INDEX_NAME_SEPARATOR = "||||";
-    private final Map<Exp.Type, IndexType> expTypeToIndexType = Map.of(Exp.Type.INT, IndexType.NUMERIC,
-            Exp.Type.STRING, IndexType.STRING, Exp.Type.BLOB, IndexType.BLOB);
+    private final Map<Exp.Type, IndexType> expTypeToIndexType = Map.of(
+            Exp.Type.INT, IndexType.NUMERIC,
+            Exp.Type.STRING, IndexType.STRING,
+            Exp.Type.BLOB, IndexType.BLOB
+    );
+    private final List<Expr.ExprPartsOperation> CTRL_STRUCTURE_HOLDERS = List.of(
+            WITH_STRUCTURE_HOLDER,
+            WHEN_STRUCTURE_HOLDER,
+            EXCLUSIVE_STRUCTURE_HOLDER
+    );
+
 
     protected enum FilterOperationType {
         GT,
@@ -151,9 +160,9 @@ public class VisitorUtils {
     private static Exp getFilterExpression(Expr expr, AbstractPart part, AbstractPart.PartType secondPartType) {
         Exp leftExp = null;
         if (part.getPartType() == EXPR) {
-            List<Expr.ExprPartsOperation> ops = List.of(WITH_OPERANDS, WHEN_OPERANDS, EXCLUSIVE_OPERANDS);
             if (expr.isUnary()) {
-                if (!ops.contains(expr.getOperationType())) {
+                if (!CTRL_STRUCTURE_HOLDERS.contains(expr.getOperationType())) {
+                    // If the expression holds a control structure
                     leftExp = getUnaryExpOrFail(part, getUnaryExpOperator(expr.getOperationType()));
                     part.setExp(leftExp);
                 } else {
@@ -692,14 +701,14 @@ public class VisitorUtils {
         if (expr.getOperationType() == OR && expr.getSIndexFilter() != null) return null;
 
         return switch (expr.getOperationType()) {
-            case WITH_OPERANDS -> withOperandsToExp(expr);
-            case WHEN_OPERANDS -> whenOperandsToExp(expr);
-            case EXCLUSIVE_OPERANDS -> exclOperandsToExp(expr);
+            case WITH_STRUCTURE_HOLDER -> withStructureHolderToExp(expr);
+            case WHEN_STRUCTURE_HOLDER -> whenStructureHolderToExp(expr);
+            case EXCLUSIVE_STRUCTURE_HOLDER -> exclStructureHolderToExp(expr);
             default -> exprToExp(expr);
         };
     }
 
-    private static Exp withOperandsToExp(Expr expr) {
+    private static Exp withStructureHolderToExp(Expr expr) {
         List<Exp> expressions = new ArrayList<>();
         WithStructure withOperandsList = (WithStructure) expr.getLeft(); // extract unary Expr operand
         List<WithOperand> operands = withOperandsList.getOperands();
@@ -714,7 +723,7 @@ public class VisitorUtils {
         return Exp.let(expressions.toArray(new Exp[0]));
     }
 
-    private static Exp whenOperandsToExp(Expr expr) {
+    private static Exp whenStructureHolderToExp(Expr expr) {
         List<Exp> expressions = new ArrayList<>();
         WhenStructure whenOperandsList = (WhenStructure) expr.getLeft(); // extract unary Expr operand
         List<AbstractPart> operands = whenOperandsList.getOperands();
@@ -724,7 +733,7 @@ public class VisitorUtils {
         return Exp.cond(expressions.toArray(new Exp[0]));
     }
 
-    private static Exp exclOperandsToExp(Expr expr) {
+    private static Exp exclStructureHolderToExp(Expr expr) {
         List<Exp> expressions = new ArrayList<>();
         ExclusiveStructure whenOperandsList = (ExclusiveStructure) expr.getLeft(); // extract unary Expr operand
         List<Expr> operands = whenOperandsList.getOperands();
@@ -743,7 +752,7 @@ public class VisitorUtils {
 
     private static Filter getSIFilter(Expr expr, String namespace, Map<String, Index> indexes) {
         List<Expr> exprs = flattenExprs(expr);
-        Expr chosenExpr = chooseExpr(exprs, namespace, indexes);
+        Expr chosenExpr = chooseExprForFilter(exprs, namespace, indexes);
         return chosenExpr == null ? null
                 : getFilterOrFail(chosenExpr.getLeft(),
                 chosenExpr.getRight(),
@@ -751,7 +760,7 @@ public class VisitorUtils {
         );
     }
 
-    private static Expr chooseExpr(List<Expr> exprs, String namespace, Map<String, Index> indexes) {
+    private static Expr chooseExprForFilter(List<Expr> exprs, String namespace, Map<String, Index> indexes) {
         if (exprs.size() == 1) return exprs.get(0);
         if (exprs.size() > 1 && (indexes == null || indexes.isEmpty())) return null;
 

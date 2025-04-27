@@ -14,6 +14,7 @@ public class VariableOperand extends AbstractPart {
     }
 
     public Exp getExp() {
-        return Exp.var(name);
+        if (exp == null) exp = Exp.var(name);
+        return exp;
     }
 }

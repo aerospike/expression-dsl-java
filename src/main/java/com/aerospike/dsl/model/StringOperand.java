@@ -19,6 +19,11 @@ public class StringOperand extends AbstractPart implements ParsedOperand {
     }
 
     public Exp getExp() {
+        if (exp == null) exp = getStringExp();
+        return exp;
+    }
+
+    private Exp getStringExp() {
         if (isBlob) {
             byte[] byteValue = Base64.getDecoder().decode(value);
             return Exp.val(byteValue);

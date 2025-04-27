@@ -51,8 +51,8 @@ public class Expr extends AbstractPart {
         GTEQ,
         LT,
         LTEQ,
-        WITH_OPERANDS, // unary
-        WHEN_OPERANDS, // unary
-        EXCLUSIVE_OPERANDS // unary
+        WITH_STRUCTURE_HOLDER, // unary
+        WHEN_STRUCTURE_HOLDER, // unary
+        EXCLUSIVE_STRUCTURE_HOLDER // unary
     }
 }

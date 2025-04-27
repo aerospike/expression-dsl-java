@@ -20,6 +20,7 @@ public class BinPart extends Expr {
     }
 
     public Exp getExp() {
-        return Exp.bin(this.binName, expType);
+        if (exp == null) exp = Exp.bin(this.binName, expType);
+        return exp;
     }
 }

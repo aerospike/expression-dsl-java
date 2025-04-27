@@ -14,6 +14,7 @@ public class BooleanOperand extends AbstractPart implements ParsedOperand {
     }
 
     public Exp getExp() {
+        if (exp == null) exp = Exp.val(value);
         return Exp.val(value);
     }
 }

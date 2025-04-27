@@ -64,6 +64,7 @@ public class MetadataOperand extends Expr {
     }
 
     public Exp getExp() {
-        return constructMetadataExp(functionName, parameter);
+        if (exp == null) exp = constructMetadataExp(functionName, parameter);
+        return exp;
     }
 }
