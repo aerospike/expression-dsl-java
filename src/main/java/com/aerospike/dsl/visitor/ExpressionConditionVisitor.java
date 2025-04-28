@@ -4,33 +4,25 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.ConditionBaseVisitor;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
-import com.aerospike.dsl.model.*;
-import com.aerospike.dsl.model.cdt_part.list.ListIndex;
-import com.aerospike.dsl.model.cdt_part.list.ListIndexRange;
-import com.aerospike.dsl.model.cdt_part.list.ListRank;
-import com.aerospike.dsl.model.cdt_part.list.ListRankRange;
-import com.aerospike.dsl.model.cdt_part.list.ListRankRangeRelative;
-import com.aerospike.dsl.model.cdt_part.list.ListTypeDesignator;
-import com.aerospike.dsl.model.cdt_part.list.ListValue;
-import com.aerospike.dsl.model.cdt_part.list.ListValueList;
-import com.aerospike.dsl.model.cdt_part.list.ListValueRange;
-import com.aerospike.dsl.model.cdt_part.map.*;
-import com.aerospike.dsl.model.cdt.ListOperand;
-import com.aerospike.dsl.model.cdt.MapOperand;
-import com.aerospike.dsl.model.ctrl_structure.ExclusiveStructure;
-import com.aerospike.dsl.model.ctrl_structure.WhenStructure;
-import com.aerospike.dsl.model.ctrl_structure.WithOperand;
-import com.aerospike.dsl.model.ctrl_structure.WithStructure;
-import com.aerospike.dsl.model.path.BasePath;
-import com.aerospike.dsl.model.path.BinPart;
-import com.aerospike.dsl.model.MetadataOperand;
-import com.aerospike.dsl.model.path.Path;
-import com.aerospike.dsl.model.path.PathFunction;
-import com.aerospike.dsl.model.simple.BooleanOperand;
-import com.aerospike.dsl.model.simple.FloatOperand;
-import com.aerospike.dsl.model.simple.IntOperand;
-import com.aerospike.dsl.model.simple.StringOperand;
-import com.aerospike.dsl.model.simple.VariableOperand;
+import com.aerospike.dsl.part.*;
+import com.aerospike.dsl.part.cdt.list.ListIndex;
+import com.aerospike.dsl.part.cdt.list.ListIndexRange;
+import com.aerospike.dsl.part.cdt.list.ListRank;
+import com.aerospike.dsl.part.cdt.list.ListRankRange;
+import com.aerospike.dsl.part.cdt.list.ListRankRangeRelative;
+import com.aerospike.dsl.part.cdt.list.ListTypeDesignator;
+import com.aerospike.dsl.part.cdt.list.ListValue;
+import com.aerospike.dsl.part.cdt.list.ListValueList;
+import com.aerospike.dsl.part.cdt.list.ListValueRange;
+import com.aerospike.dsl.part.cdt.map.*;
+import com.aerospike.dsl.part.operand.*;
+import com.aerospike.dsl.part.controlstructure.ExclusiveStructure;
+import com.aerospike.dsl.part.controlstructure.WhenStructure;
+import com.aerospike.dsl.part.controlstructure.WithStructure;
+import com.aerospike.dsl.part.path.BasePath;
+import com.aerospike.dsl.part.path.BinPart;
+import com.aerospike.dsl.part.path.Path;
+import com.aerospike.dsl.part.path.PathFunction;
 import com.aerospike.dsl.util.TypeUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
@@ -312,7 +304,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     public ListOperand readChildrenIntoListOperand(RuleNode listNode) {
         int size = listNode.getChildCount();
-        List<Object> list = new ArrayList<>();
+        List<Object> values = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             ParseTree child = listNode.getChild(i);
             if (!shouldVisitListElement(i, size, child)) {
@@ -325,13 +317,13 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             }
 
             try {
-                list.add(((ParsedOperand) operand).getValue());
+                values.add(((ParsedValueOperand) operand).getValue());
             } catch (ClassCastException e) {
                 throw new AerospikeDSLException("List constant contains elements of different type");
             }
         }
 
-        return new ListOperand(list);
+        return new ListOperand(values);
     }
 
     @Override
@@ -343,8 +335,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         if (ctx.getChild(0) == null || ctx.getChild(2) == null) {
             throw new AerospikeDSLException("Unable to parse map operand");
         }
-        Object key = ((ParsedOperand) visit(ctx.getChild(0))).getValue();
-        Object value = ((ParsedOperand) visit(ctx.getChild(2))).getValue();
+        Object key = ((ParsedValueOperand) visit(ctx.getChild(0))).getValue();
+        Object value = ((ParsedValueOperand) visit(ctx.getChild(2))).getValue();
         TreeMap<Object, Object> map = new TreeMap<>();
         map.put(key, value);
         return map;

@@ -1,12 +1,9 @@
 package com.aerospike.dsl;
 
-import com.aerospike.client.exp.Exp;
-import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.annotation.Beta;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.exception.NoApplicableFilterException;
-import com.aerospike.dsl.model.AbstractPart;
-import com.aerospike.dsl.model.ExpressionContainer;
+import com.aerospike.dsl.part.AbstractPart;
 import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -16,21 +13,20 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.aerospike.dsl.model.AbstractPart.PartType.EXPRESSION_CONTAINER;
 import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class DSLParserImpl implements DSLParser {
 
     @Beta
-    public ParsedExpression parseExpression(String input) {
-        ParseTree parseTree = getParseTree(input);
-        return getParsedExpression(parseTree, null, null);
+    public ParsedExpression parseExpression(String dslString) {
+        ParseTree parseTree = getParseTree(dslString);
+        return getParsedExpression(parseTree, null);
     }
 
     @Beta
-    public ParsedExpression parseExpression(String input, String namespace, Collection<Index> indexes) {
+    public ParsedExpression parseExpression(String input, IndexFilterInput indexFilterInput) {
         ParseTree parseTree = getParseTree(input);
-        return getParsedExpression(parseTree, namespace, indexes);
+        return getParsedExpression(parseTree, indexFilterInput);
     }
 
     private ParseTree getParseTree(String input) {
@@ -39,10 +35,13 @@ public class DSLParserImpl implements DSLParser {
         return parser.parse();
     }
 
-    private ParsedExpression getParsedExpression(ParseTree parseTree, String namespace, Collection<Index> indexes) {
+    private ParsedExpression getParsedExpression(ParseTree parseTree, IndexFilterInput indexFilterInput) {
         boolean hasFilterParsingError = false;
         AbstractPart resultingPart = null;
         Map<String, Index> indexesMap = new HashMap<>();
+        String namespace = indexFilterInput == null ? null : indexFilterInput.getNamespace();
+        Collection<Index> indexes = indexFilterInput == null ? null : indexFilterInput.getIndexes();
+
         if (indexes != null && !indexes.isEmpty()) {
             indexes.forEach(idx -> indexesMap.put(idx.getNamespace() + INDEX_NAME_SEPARATOR + idx.getBin(), idx));
         }
@@ -59,21 +58,5 @@ public class DSLParserImpl implements DSLParser {
         }
         // Transfer the parsed tree along with namespace and indexes Map
         return new ParsedExpression(resultingPart, namespace, indexesMap);
-    }
-
-    public static Pair<Filter, Exp> getResultPair(AbstractPart resultingPart, String namespace,
-                                                  Map<String, Index> indexesMap) {
-        if (resultingPart != null) {
-            if (resultingPart.getPartType() == EXPRESSION_CONTAINER) {
-                AbstractPart result =
-                        buildExpr((ExpressionContainer) resultingPart, namespace, indexesMap);
-                return new Pair<>(result.getFilter(), result.getExp());
-            } else {
-                Filter filter = resultingPart.getFilter();
-                Exp exp = resultingPart.getExp();
-                return new Pair<>(filter, exp);
-            }
-        }
-        return new Pair<>(null, null);
     }
 }

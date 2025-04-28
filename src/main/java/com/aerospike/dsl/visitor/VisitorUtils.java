@@ -7,15 +7,15 @@ import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.exception.NoApplicableFilterException;
 import com.aerospike.dsl.Index;
-import com.aerospike.dsl.model.*;
-import com.aerospike.dsl.model.path.BinPart;
-import com.aerospike.dsl.model.ctrl_structure.ExclusiveStructure;
-import com.aerospike.dsl.model.simple.IntOperand;
-import com.aerospike.dsl.model.MetadataOperand;
-import com.aerospike.dsl.model.simple.StringOperand;
-import com.aerospike.dsl.model.ctrl_structure.WhenStructure;
-import com.aerospike.dsl.model.ctrl_structure.WithOperand;
-import com.aerospike.dsl.model.ctrl_structure.WithStructure;
+import com.aerospike.dsl.part.*;
+import com.aerospike.dsl.part.path.BinPart;
+import com.aerospike.dsl.part.controlstructure.ExclusiveStructure;
+import com.aerospike.dsl.part.operand.IntOperand;
+import com.aerospike.dsl.part.operand.MetadataOperand;
+import com.aerospike.dsl.part.operand.StringOperand;
+import com.aerospike.dsl.part.controlstructure.WhenStructure;
+import com.aerospike.dsl.part.operand.WithOperand;
+import com.aerospike.dsl.part.controlstructure.WithStructure;
 import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -32,8 +32,8 @@ import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import static com.aerospike.dsl.model.AbstractPart.PartType.*;
-import static com.aerospike.dsl.model.ExpressionContainer.ExprPartsOperation.*;
+import static com.aerospike.dsl.part.AbstractPart.PartType.*;
+import static com.aerospike.dsl.part.ExpressionContainer.ExprPartsOperation.*;
 import static com.aerospike.dsl.util.ValidationUtils.validateComparableTypes;
 import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.*;
 
@@ -222,7 +222,8 @@ public class VisitorUtils {
                 leftExp = Exp.bin(left.getBinName(), binType);
                 yield operator.apply(leftExp, right.getExp());
             }
-            case EXPRESSION_CONTAINER, PATH_OPERAND -> operator.apply(leftExp, right.getExp()); // Can't validate with Expr on one side
+            case EXPRESSION_CONTAINER, PATH_OPERAND ->
+                    operator.apply(leftExp, right.getExp()); // Can't validate with Expr on one side
             case BIN_PART -> {
                 // Left and right are both bin parts
                 // Validate types if possible
@@ -695,7 +696,7 @@ public class VisitorUtils {
         };
     }
 
-    public AbstractPart buildExpr(ExpressionContainer expr, String namespace, Map<String, Index> indexes) {
+    public static AbstractPart buildExpr(ExpressionContainer expr, String namespace, Map<String, Index> indexes) {
         Exp exp;
         Filter sIndexFilter = null;
         try {
@@ -774,24 +775,24 @@ public class VisitorUtils {
     }
 
     private static ExpressionContainer chooseExprForFilter(List<ExpressionContainer> exprs, String namespace, Map<String, Index> indexes) {
-        if (exprs.size() == 1) return exprs.get(0);
-        if (exprs.size() > 1 && (indexes == null || indexes.isEmpty())) return null;
+        if (indexes == null || indexes.isEmpty()) return null;
 
         Map<Integer, List<ExpressionContainer>> exprsPerCardinality = new HashMap<>();
         for (ExpressionContainer expr : exprs) {
             BinPart binPart = getBinPart(expr);
-                Index index = indexes.get(namespace + INDEX_NAME_SEPARATOR + binPart.getBinName());
-                if (index == null) continue;
-                if (expTypeToIndexType.get(binPart.getExpType()) == index.getIndexType()) {
-                    List<ExpressionContainer> exprsList = exprsPerCardinality.get(index.getBinValuesRatio());
-                    if (exprsList != null) {
-                        exprsList.add(expr);
-                    } else {
-                        exprsList = new ArrayList<>();
-                        exprsList.add(expr);
-                    }
-                    exprsPerCardinality.put(index.getBinValuesRatio(), exprsList);
+            if (binPart == null) return null; // no bin found
+            Index index = indexes.get(namespace + INDEX_NAME_SEPARATOR + binPart.getBinName());
+            if (index == null) continue;
+            if (expTypeToIndexType.get(binPart.getExpType()) == index.getIndexType()) {
+                List<ExpressionContainer> exprsList = exprsPerCardinality.get(index.getBinValuesRatio());
+                if (exprsList != null) {
+                    exprsList.add(expr);
+                } else {
+                    exprsList = new ArrayList<>();
+                    exprsList.add(expr);
                 }
+                exprsPerCardinality.put(index.getBinValuesRatio(), exprsList);
+            }
         }
 
         // Find the entry with the largest key and put it in a new Map
@@ -826,8 +827,14 @@ public class VisitorUtils {
                 }
             }
         } else {
-            if (expr.getLeft() != null && expr.getLeft().getPartType() == BIN_PART) {
-                return (BinPart) expr.getLeft();
+            if (expr.getLeft() != null) {
+                if (expr.getLeft().getPartType() == BIN_PART) {
+                    return (BinPart) expr.getLeft();
+                }
+                if (expr.getLeft().getPartType() == EXPRESSION_CONTAINER) {
+                    result = getBinPart((ExpressionContainer) expr.getLeft());
+                    if (result != null) return result;
+                }
             }
 
             if (expr.getRight() != null && expr.getRight().getPartType() == BIN_PART) {

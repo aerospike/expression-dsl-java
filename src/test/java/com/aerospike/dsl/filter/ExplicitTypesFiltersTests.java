@@ -1,11 +1,15 @@
 package com.aerospike.dsl.filter;
 
 import com.aerospike.client.query.Filter;
+import com.aerospike.client.query.IndexType;
+import com.aerospike.dsl.Index;
+import com.aerospike.dsl.IndexFilterInput;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
+import java.util.List;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilter;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,27 +17,38 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ExplicitTypesFiltersTests {
 
+    String NAMESPACE = "test1";
+    List<Index> INDEXES = List.of(
+            Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+            Index.builder().namespace("test1").bin("stringBin1").indexType(IndexType.STRING).binValuesRatio(1).build(),
+            Index.builder().namespace("test1").bin("blobBin1").indexType(IndexType.BLOB).binValuesRatio(1).build()
+    );
+    IndexFilterInput INDEX_FILTER_INPUT = IndexFilterInput.of(NAMESPACE, INDEXES);
+
     @Test
     void integerComparison() {
-        TestUtils.parseFilterAndCompare("$.intBin1.get(type: INT) > 5",
+        // Namespace and indexes must be given to create a Filter
+        TestUtils.parseFilterAndCompare("$.intBin1.get(type: INT) > 5", null);
+
+        TestUtils.parseFilterAndCompare("$.intBin1.get(type: INT) > 5", INDEX_FILTER_INPUT,
                 Filter.range("intBin1", 6, Long.MAX_VALUE));
 
-        TestUtils.parseFilterAndCompare("5 < $.intBin1.get(type: INT)",
+        TestUtils.parseFilterAndCompare("5 < $.intBin1.get(type: INT)", INDEX_FILTER_INPUT,
                 Filter.range("intBin1", 6, Long.MAX_VALUE));
     }
 
     @Test
     void stringComparison() {
-        TestUtils.parseFilterAndCompare("$.stringBin1.get(type: STRING) == \"yes\"",
+        TestUtils.parseFilterAndCompare("$.stringBin1.get(type: STRING) == \"yes\"", INDEX_FILTER_INPUT,
                 Filter.equal("stringBin1", "yes"));
 
-        TestUtils.parseFilterAndCompare("$.stringBin1.get(type: STRING) == 'yes'",
+        TestUtils.parseFilterAndCompare("$.stringBin1.get(type: STRING) == 'yes'", INDEX_FILTER_INPUT,
                 Filter.equal("stringBin1", "yes"));
 
-        TestUtils.parseFilterAndCompare("\"yes\" == $.stringBin1.get(type: STRING)",
+        TestUtils.parseFilterAndCompare("\"yes\" == $.stringBin1.get(type: STRING)", INDEX_FILTER_INPUT,
                 Filter.equal("stringBin1", "yes"));
 
-        TestUtils.parseFilterAndCompare("'yes' == $.stringBin1.get(type: STRING)",
+        TestUtils.parseFilterAndCompare("'yes' == $.stringBin1.get(type: STRING)", INDEX_FILTER_INPUT,
                 Filter.equal("stringBin1", "yes"));
     }
 
@@ -49,11 +64,11 @@ public class ExplicitTypesFiltersTests {
     void blobComparison() {
         byte[] data = new byte[]{1, 2, 3};
         String encodedString = Base64.getEncoder().encodeToString(data);
-        TestUtils.parseFilterAndCompare("$.blobBin1.get(type: BLOB) == \"" + encodedString + "\"",
+        TestUtils.parseFilterAndCompare("$.blobBin1.get(type: BLOB) == \"" + encodedString + "\"", INDEX_FILTER_INPUT,
                 Filter.equal("blobBin1", data));
 
         // Reverse
-        TestUtils.parseFilterAndCompare("\"" + encodedString + "\" == $.blobBin1.get(type: BLOB)",
+        TestUtils.parseFilterAndCompare("\"" + encodedString + "\" == $.blobBin1.get(type: BLOB)", INDEX_FILTER_INPUT,
                 Filter.equal("blobBin1", data));
     }
 

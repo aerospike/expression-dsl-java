@@ -1,8 +1,7 @@
 package com.aerospike.dsl;
 
+import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.exception.AerospikeDSLException;
-
-import java.util.Collection;
 
 /**
  * Contains API to convert dot separated String path into an Aerospike filter -
@@ -84,11 +83,11 @@ public interface DSLParser {
      *   </tr>
      * </table>
      *
-     * @param input String consisting of dot separated elements, typically bin name and optional context
-     * @return ParsedExpression object
+     * @param dslString String consisting of dot separated elements, typically bin name and optional context
+     * @return {@link ParsedExpression} object
      * @throws AerospikeDSLException in case of invalid syntax
      */
-    ParsedExpression parseExpression(String input);
+    ParsedExpression parseExpression(String dslString);
 
     /**
      * Parse String DSL path into Aerospike filter Expression.
@@ -156,11 +155,11 @@ public interface DSLParser {
      *   </tr>
      * </table>
      *
-     * @param input     String consisting of dot separated elements, typically bin name and optional context
-     * @param namespace Namespace to use
-     * @param indexes   Collection of {@link Index} objects that represent created secondary indexes
-     * @return ParsedExpression object
+     * @param dslString        String consisting of dot separated elements, typically bin name and optional context
+     * @param indexFilterInput Class containing namespace and collection of {@link Index} objects that represent
+     *                         created secondary indexes. Required for creating {@link Filter}. Can be null
+     * @return {@link ParsedExpression} object
      * @throws AerospikeDSLException in case of or invalid syntax
      */
-    ParsedExpression parseExpression(String input, String namespace, Collection<Index> indexes);
+    ParsedExpression parseExpression(String dslString, IndexFilterInput indexFilterInput);
 }
