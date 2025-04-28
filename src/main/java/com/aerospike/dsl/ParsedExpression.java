@@ -32,10 +32,13 @@ public class ParsedExpression {
 
     /**
      * @return Pair of secondary index {@link Filter} and filter {@link Exp}. Each can be null in case of an invalid or
-     * not supported DSL string
+     * unsupported DSL string
      * @throws AerospikeDSLException If there was an error
      */
     public Pair<Filter, Exp> getResultPair() {
-        return DSLParserImpl.getResultPair(resultingPart, namespace, indexesMap);
+        if (resultPair == null) {
+            resultPair = DSLParserImpl.getResultPair(resultingPart, namespace, indexesMap);
+        }
+        return resultPair;
     }
 }
