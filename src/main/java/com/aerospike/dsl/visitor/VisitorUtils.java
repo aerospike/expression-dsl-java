@@ -837,8 +837,14 @@ public class VisitorUtils {
                 }
             }
 
-            if (expr.getRight() != null && expr.getRight().getPartType() == BIN_PART) {
-                return (BinPart) expr.getRight();
+            if (expr.getRight() != null) {
+                if (expr.getRight().getPartType() == BIN_PART) {
+                    return (BinPart) expr.getRight();
+                }
+                if (expr.getRight().getPartType() == EXPRESSION_CONTAINER) {
+                    result = getBinPart((ExpressionContainer) expr.getRight());
+                    if (result != null) return result;
+                }
             }
         }
         return result;
