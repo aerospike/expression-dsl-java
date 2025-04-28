@@ -5,14 +5,14 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.model.AbstractPart;
-import com.aerospike.dsl.model.BasePath;
-import com.aerospike.dsl.model.BinPart;
-import com.aerospike.dsl.model.PathFunction;
-import com.aerospike.dsl.model.cdt.CdtPart;
-import com.aerospike.dsl.model.cdt.list.ListPart;
-import com.aerospike.dsl.model.cdt.list.ListTypeDesignator;
-import com.aerospike.dsl.model.cdt.map.MapPart;
-import com.aerospike.dsl.model.cdt.map.MapTypeDesignator;
+import com.aerospike.dsl.model.path.BasePath;
+import com.aerospike.dsl.model.path.BinPart;
+import com.aerospike.dsl.model.path.PathFunction;
+import com.aerospike.dsl.model.cdt_part.CdtPart;
+import com.aerospike.dsl.model.cdt_part.list.ListPart;
+import com.aerospike.dsl.model.cdt_part.list.ListTypeDesignator;
+import com.aerospike.dsl.model.cdt_part.map.MapPart;
+import com.aerospike.dsl.model.cdt_part.map.MapTypeDesignator;
 import lombok.experimental.UtilityClass;
 
 import java.util.ArrayList;
@@ -21,9 +21,9 @@ import java.util.function.UnaryOperator;
 
 import static com.aerospike.dsl.model.AbstractPart.PartType.LIST_PART;
 import static com.aerospike.dsl.model.AbstractPart.PartType.MAP_PART;
-import static com.aerospike.dsl.model.PathFunction.PathFunctionType.*;
-import static com.aerospike.dsl.model.cdt.list.ListPart.ListPartType.*;
-import static com.aerospike.dsl.model.cdt.map.MapPart.MapPartType.MAP_TYPE_DESIGNATOR;
+import static com.aerospike.dsl.model.path.PathFunction.PathFunctionType.*;
+import static com.aerospike.dsl.model.cdt_part.list.ListPart.ListPartType.*;
+import static com.aerospike.dsl.model.cdt_part.map.MapPart.MapPartType.MAP_TYPE_DESIGNATOR;
 
 @UtilityClass
 public class PathOperandUtils {
@@ -201,15 +201,13 @@ public class PathOperandUtils {
         return MapExp.size(Exp.bin(bin.getBinName(), basePath.getBinType()), context);
     }
 
-    public static BasePath updateWithCdtTypeDesignator(BasePath basePath, PathFunction pathFunction) {
+    public static void updateWithCdtTypeDesignator(BasePath basePath, PathFunction pathFunction) {
         if (mustHaveCdtDesignator(pathFunction, basePath.getParts())) {
             // For cases like list.count() and map.count() with no explicit designator ([] is for List, {} is for Map)
             // When the last path part is CDT and potentially ambiguous, we apply List designator by default
             AbstractPart lastPathPart = new ListTypeDesignator();
             basePath.getParts().add(lastPathPart);
-            return basePath;
         }
-        return basePath;
     }
 
     private static boolean mustHaveCdtDesignator(PathFunction pathFunction,

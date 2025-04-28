@@ -148,7 +148,9 @@ public class ExplicitTypesFiltersTests {
     }
 
     @Test
-    void differentBinTypes_nullResult() {
-        assertThat(parseFilter("$.stringBin1.get(type: STRING) == $.floatBin2.get(type: FLOAT)")).isNull();
+    void negativeTwoDifferentBinTypesComparison() {
+        assertThatThrownBy(() -> parseFilter("$.stringBin1.get(type: STRING) == $.floatBin2.get(type: FLOAT)"))
+                .isInstanceOf(AerospikeDSLException.class)
+                .hasMessage("Cannot compare STRING to FLOAT");
     }
 }

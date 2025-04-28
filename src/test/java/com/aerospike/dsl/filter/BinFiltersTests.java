@@ -2,7 +2,7 @@ package com.aerospike.dsl.filter;
 
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
-import com.aerospike.dsl.index.Index;
+import com.aerospike.dsl.Index;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

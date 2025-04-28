@@ -4,7 +4,7 @@ import com.aerospike.client.exp.Exp;
 import lombok.Getter;
 
 @Getter
-public class MetadataOperand extends Expr {
+public class MetadataOperand extends ExpressionContainer {
 
     private final String functionName;
     private final Integer parameter;
@@ -40,6 +40,10 @@ public class MetadataOperand extends Expr {
         };
     }
 
+    public Exp getExp() {
+        return constructMetadataExp(functionName, parameter);
+    }
+
     public MetadataReturnType getMetadataType() {
         return switch (functionName) {
             case "deviceSize",
@@ -61,10 +65,5 @@ public class MetadataOperand extends Expr {
         INT,
         STRING,
         BOOL,
-    }
-
-    public Exp getExp() {
-        if (exp == null) exp = constructMetadataExp(functionName, parameter);
-        return exp;
     }
 }

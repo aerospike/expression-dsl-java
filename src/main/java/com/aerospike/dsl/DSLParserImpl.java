@@ -1,14 +1,12 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.Expression;
 import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.annotation.Beta;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.exception.NoApplicableFilterException;
-import com.aerospike.dsl.index.Index;
 import com.aerospike.dsl.model.AbstractPart;
-import com.aerospike.dsl.model.Expr;
+import com.aerospike.dsl.model.ExpressionContainer;
 import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -18,36 +16,21 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.aerospike.dsl.model.AbstractPart.PartType.EXPR;
+import static com.aerospike.dsl.model.AbstractPart.PartType.EXPRESSION_CONTAINER;
 import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class DSLParserImpl implements DSLParser {
 
     @Beta
-    public ParsedExpression parseDslExpression(String input) {
+    public ParsedExpression parseExpression(String input) {
         ParseTree parseTree = getParseTree(input);
         return getParsedExpression(parseTree, null, null);
     }
 
     @Beta
-    public ParsedExpression parseDslExpression(String input, String namespace, Collection<Index> indexes) {
+    public ParsedExpression parseExpression(String input, String namespace, Collection<Index> indexes) {
         ParseTree parseTree = getParseTree(input);
         return getParsedExpression(parseTree, namespace, indexes);
-    }
-
-    @Beta
-    public Expression parseFilterExpression(String input) {
-        return getFilterExpression(getParseTree(input), null, null);
-    }
-
-    @Beta
-    public Exp parseFilterExp(String input) {
-        return getFilterExp(getParseTree(input), null, null);
-    }
-
-    @Beta
-    public Filter parseFilter(String input, String namespace, Collection<Index> indexes) {
-        return getSIFilter(getParseTree(input), namespace, indexes);
     }
 
     private ParseTree getParseTree(String input) {
@@ -57,12 +40,7 @@ public class DSLParserImpl implements DSLParser {
     }
 
     private ParsedExpression getParsedExpression(ParseTree parseTree, String namespace, Collection<Index> indexes) {
-        return getParsedExpression(parseTree, namespace, indexes, false, false);
-    }
-
-    private ParsedExpression getParsedExpression(ParseTree parseTree, String namespace, Collection<Index> indexes,
-                                                 boolean isFilterExpOnly, boolean isSIFilterOnly) {
-        boolean isEmptyList = false;
+        boolean hasFilterParsingError = false;
         AbstractPart resultingPart = null;
         Map<String, Index> indexesMap = new HashMap<>();
         if (indexes != null && !indexes.isEmpty()) {
@@ -70,41 +48,32 @@ public class DSLParserImpl implements DSLParser {
         }
         try {
             resultingPart =
-                    new ExpressionConditionVisitor(isFilterExpOnly, isSIFilterOnly).visit(parseTree);
+                    new ExpressionConditionVisitor().visit(parseTree);
         } catch (NoApplicableFilterException e) {
-            isEmptyList = true;
+            hasFilterParsingError = true;
         }
 
-        // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error instead of NPE
-        if (!isEmptyList && resultingPart == null) {
+        // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error
+        if (!hasFilterParsingError && resultingPart == null) {
             throw new AerospikeDSLException("Could not parse given input, wrong syntax");
         }
+        // Transfer the parsed tree along with namespace and indexes Map
+        return new ParsedExpression(resultingPart, namespace, indexesMap);
+    }
 
+    public static Pair<Filter, Exp> getResultPair(AbstractPart resultingPart, String namespace,
+                                                  Map<String, Index> indexesMap) {
         if (resultingPart != null) {
-            if (resultingPart.getPartType() == EXPR) {
+            if (resultingPart.getPartType() == EXPRESSION_CONTAINER) {
                 AbstractPart result =
-                        buildExpr((Expr) resultingPart, namespace, indexesMap, isFilterExpOnly, isSIFilterOnly);
-                return new ParsedExpression(result.getExp(), result.getSIndexFilter());
+                        buildExpr((ExpressionContainer) resultingPart, namespace, indexesMap);
+                return new Pair<>(result.getFilter(), result.getExp());
             } else {
-                Filter filter = null;
-                if (!isFilterExpOnly) filter = resultingPart.getSIndexFilter();
-                Exp exp = null;
-                if (!isSIFilterOnly) exp = resultingPart.getExp();
-                return new ParsedExpression(exp, filter);
+                Filter filter = resultingPart.getFilter();
+                Exp exp = resultingPart.getExp();
+                return new Pair<>(filter, exp);
             }
         }
-        return new ParsedExpression(null, null);
-    }
-
-    private Exp getFilterExp(ParseTree parseTree, String namespace, Collection<Index> indexes) {
-        return getParsedExpression(parseTree, namespace, indexes, true, false).getFilterExp();
-    }
-
-    private Expression getFilterExpression(ParseTree parseTree, String namespace, Collection<Index> indexes) {
-        return getParsedExpression(parseTree, namespace, indexes, true, false).getFilterExpression();
-    }
-
-    private Filter getSIFilter(ParseTree parseTree, String namespace, Collection<Index> indexes) {
-        return getParsedExpression(parseTree, namespace, indexes, false, true).getSIFilter();
+        return new Pair<>(null, null);
     }
 }

@@ -3,8 +3,7 @@ package com.aerospike.dsl.parsedExpression;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
-import com.aerospike.dsl.ParsedExpression;
-import com.aerospike.dsl.index.Index;
+import com.aerospike.dsl.Index;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -19,8 +18,7 @@ public class LogicalParsedExpressionTests {
         Filter filter = null;
         Exp exp = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", expected);
+        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", filter, exp);
     }
 
     @Test
@@ -33,8 +31,7 @@ public class LogicalParsedExpressionTests {
         Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", namespace, indexes, expected);
+        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", filter, exp, namespace, indexes);
     }
 
     @Test
@@ -48,8 +45,7 @@ public class LogicalParsedExpressionTests {
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", namespace, indexes, expected);
+        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", filter, exp, namespace, indexes);
     }
 
     @Test
@@ -60,8 +56,7 @@ public class LogicalParsedExpressionTests {
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", namespace, indexes, expected);
+        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", filter, exp, namespace, indexes);
     }
 
     @Test
@@ -79,8 +74,8 @@ public class LogicalParsedExpressionTests {
                         Exp.gt(Exp.intBin("intBin2"), Exp.val(100))),
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", namespace, indexes, expected);
+        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
+                namespace, indexes);
     }
 
     @Test
@@ -91,6 +86,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(100).build()
         );
         String namespace = "test1";
+        // Filter is chosen alphabetically because the same cardinality is given
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(
                 Exp.and(
@@ -98,8 +94,8 @@ public class LogicalParsedExpressionTests {
                         Exp.gt(Exp.intBin("intBin2"), Exp.val(100))),
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", namespace, indexes, expected);
+        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
+                namespace, indexes);
     }
 
     @Test
@@ -110,6 +106,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).build()
         );
         String namespace = "test1";
+        // Filter is chosen alphabetically because no cardinality is given
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(
                 Exp.and(
@@ -117,8 +114,8 @@ public class LogicalParsedExpressionTests {
                         Exp.gt(Exp.intBin("intBin2"), Exp.val(100))),
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", namespace, indexes, expected);
+        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
+                namespace, indexes);
     }
 
     @Test
@@ -139,8 +136,8 @@ public class LogicalParsedExpressionTests {
                         Exp.gt(Exp.intBin("intBin2"), Exp.val(100))),
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", namespace, indexes, expected);
+        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
+                namespace, indexes);
     }
 
     @Test
@@ -157,8 +154,8 @@ public class LogicalParsedExpressionTests {
                         Exp.gt(Exp.intBin("intBin2"), Exp.val(100))),
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", namespace, indexes, expected);
+        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
+                namespace, indexes);
     }
 
     @Test
@@ -166,8 +163,7 @@ public class LogicalParsedExpressionTests {
         Filter filter = null;
         Exp exp = Exp.or(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100", expected);
+        parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100", filter, exp);
     }
 
     @Test
@@ -177,10 +173,12 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
         String namespace = "test1";
-        Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
-        Exp exp = null;
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100", namespace, indexes, expected);
+        Filter filter = null;
+        Exp exp = Exp.or(
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
+        );
+        parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100", filter, exp, namespace, indexes);
     }
 
     @Test
@@ -189,10 +187,12 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         String namespace = "test1";
-        Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
-        Exp exp = null;
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100", namespace, indexes, expected);
+        Filter filter = null;
+        Exp exp = Exp.or(
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
+        );
+        parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100", filter, exp, namespace, indexes);
     }
 
     @Test
@@ -203,69 +203,58 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         String namespace = "test1";
-        Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
-        Exp exp = null;
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100 or $.intBin3 > 100", namespace, indexes, expected);
-    }
-
-    @Test
-    void binLogical_OR_3_all_indexes_no_cardinality() {
-        List<Index> indexes = List.of(
-                Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).build()
+        Filter filter = null;
+        Exp exp = Exp.or(
+                Exp.or(
+                    Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                    Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
+            ),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
-        String namespace = "test1";
-        Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
-        Exp exp = null;
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100 or $.intBin3 > 100", namespace, indexes, expected);
+        parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100 or $.intBin3 > 100", filter, exp,
+                namespace, indexes);
     }
 
     @Test
-    void binLogical_OR_3_all_indexes_same_cardinality() {
-        List<Index> indexes = List.of(
-                Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(100).build(),
-                Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(100).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(100).build()
-        );
-        String namespace = "test1";
-        Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
-        Exp exp = null;
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100 or $.intBin3 > 100", namespace, indexes, expected);
-    }
-
-    @Test
-    void binLogical_AND_OR_indexed() {
+    void binLogical_prioritizedAND_OR_indexed() {
         List<Index> indexes = List.of(
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
         String namespace = "test1";
-        Filter filter = Filter.range("intBin3", 101, Long.MAX_VALUE);
-        Exp exp = null;
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 > 100", namespace, indexes, expected);
-        parseExpressionAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 > 100", namespace, indexes, expected);
+        Filter filter = null;
+        Exp exp = Exp.or(
+                Exp.and(
+                        Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
+                ),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
+        );
+        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 > 100", filter, exp,
+                namespace, indexes);
+        parseExpressionAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 > 100", filter, exp,
+                namespace, indexes);
     }
 
-    @Disabled // TODO: complex logical structures
+    @Disabled // TODO: complex logical structures, different grouping
     @Test
-    void binLogical_AND_indexed_OR() {
+    void binLogical_AND_prioritizedOR_indexed() {
         List<Index> indexes = List.of(
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
-                Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+                Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         String namespace = "test1";
-        Filter filter = Filter.range("intBin3", 101, Long.MAX_VALUE);
-        Exp exp = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
-                Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));;
-        ParsedExpression expected = new ParsedExpression(exp, filter);
-        parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 > 100", namespace, indexes, expected);
-        parseExpressionAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 > 100", namespace, indexes, expected);
+        Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
+        Exp exp = Exp.or(
+                Exp.and(
+                        Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
+                ),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
+        );
+        parseExpressionAndCompare("$.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 > 100)", filter, exp,
+                namespace, indexes);
     }
 }
