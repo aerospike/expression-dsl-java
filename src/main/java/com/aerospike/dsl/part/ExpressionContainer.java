@@ -5,14 +5,17 @@ import lombok.Getter;
 @Getter
 public class ExpressionContainer extends AbstractPart {
 
-    protected AbstractPart left;
-    protected AbstractPart right;
-    private ExprPartsOperation operationType;
+    private final AbstractPart left;
+    private final AbstractPart right;
+    private final ExprPartsOperation operationType;
     private final boolean isUnary;
 
     public ExpressionContainer() {
         super(PartType.EXPRESSION_CONTAINER);
         this.isUnary = false;
+        this.left = null;
+        this.right = null;
+        this.operationType = null;
     }
 
     public ExpressionContainer(AbstractPart left, AbstractPart right, ExprPartsOperation operationType) {
@@ -26,6 +29,7 @@ public class ExpressionContainer extends AbstractPart {
     public ExpressionContainer(AbstractPart singleOperand, ExprPartsOperation operationType) {
         super(PartType.EXPRESSION_CONTAINER);
         this.left = singleOperand;
+        this.right = null;
         this.operationType = operationType;
         this.isUnary = true;
     }

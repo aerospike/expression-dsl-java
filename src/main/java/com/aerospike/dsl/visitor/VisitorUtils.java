@@ -4,18 +4,19 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.ConditionParser;
+import com.aerospike.dsl.Index;
 import com.aerospike.dsl.exception.AerospikeDSLException;
 import com.aerospike.dsl.exception.NoApplicableFilterException;
-import com.aerospike.dsl.Index;
-import com.aerospike.dsl.part.*;
-import com.aerospike.dsl.part.path.BinPart;
+import com.aerospike.dsl.part.AbstractPart;
+import com.aerospike.dsl.part.ExpressionContainer;
 import com.aerospike.dsl.part.controlstructure.ExclusiveStructure;
+import com.aerospike.dsl.part.controlstructure.WhenStructure;
+import com.aerospike.dsl.part.controlstructure.WithStructure;
 import com.aerospike.dsl.part.operand.IntOperand;
 import com.aerospike.dsl.part.operand.MetadataOperand;
 import com.aerospike.dsl.part.operand.StringOperand;
-import com.aerospike.dsl.part.controlstructure.WhenStructure;
 import com.aerospike.dsl.part.operand.WithOperand;
-import com.aerospike.dsl.part.controlstructure.WithStructure;
+import com.aerospike.dsl.part.path.BinPart;
 import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -32,6 +33,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
+import static com.aerospike.dsl.DSLParserImpl.INDEX_NAME_SEPARATOR;
 import static com.aerospike.dsl.part.AbstractPart.PartType.*;
 import static com.aerospike.dsl.part.ExpressionContainer.ExprPartsOperation.*;
 import static com.aerospike.dsl.util.ValidationUtils.validateComparableTypes;
@@ -40,40 +42,16 @@ import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.*;
 @UtilityClass
 public class VisitorUtils {
 
-    public final String INDEX_NAME_SEPARATOR = ".";
     private final Map<Exp.Type, IndexType> expTypeToIndexType = Map.of(
             Exp.Type.INT, IndexType.NUMERIC,
             Exp.Type.STRING, IndexType.STRING,
             Exp.Type.BLOB, IndexType.BLOB
     );
-    private final List<ExpressionContainer.ExprPartsOperation> CTRL_STRUCTURE_HOLDERS = List.of(
+    private final List<ExpressionContainer.ExprPartsOperation> CTRL_STRUCTURES = List.of(
             ExpressionContainer.ExprPartsOperation.WITH_STRUCTURE,
             ExpressionContainer.ExprPartsOperation.WHEN_STRUCTURE,
             ExpressionContainer.ExprPartsOperation.EXCLUSIVE_STRUCTURE
     );
-
-
-    protected enum FilterOperationType {
-        GT,
-        GTEQ,
-        LT,
-        LTEQ,
-        EQ,
-        NOTEQ
-    }
-
-    protected enum ArithmeticTermType {
-        ADDEND,
-        SUBTR,
-        MIN,
-        DIFFERENCE,
-        DIVIDEND,
-        DIVISOR,
-        QUOTIENT,
-        MULTIPLICAND,
-        MULTIPLIER,
-        PRODUCT
-    }
 
     static String extractVariableName(String variableReference) {
         if (variableReference.startsWith("${") && variableReference.endsWith("}")) {
@@ -169,7 +147,7 @@ public class VisitorUtils {
         Exp leftExp = null;
         if (part.getPartType() == EXPRESSION_CONTAINER) {
             if (expr.isUnary()) {
-                if (!CTRL_STRUCTURE_HOLDERS.contains(expr.getOperationType())) {
+                if (!CTRL_STRUCTURES.contains(expr.getOperationType())) {
                     // If the expression holds a control structure
                     leftExp = getUnaryExpOrFail(part, getUnaryExpOperator(expr.getOperationType()));
                     part.setExp(leftExp);
@@ -922,5 +900,27 @@ public class VisitorUtils {
             case NOT -> Exp::not;
             default -> throw new NoApplicableFilterException("ExprPartsOperation has no matching UnaryOperator<Exp>");
         };
+    }
+
+    protected enum FilterOperationType {
+        GT,
+        GTEQ,
+        LT,
+        LTEQ,
+        EQ,
+        NOTEQ
+    }
+
+    protected enum ArithmeticTermType {
+        ADDEND,
+        SUBTR,
+        MIN,
+        DIFFERENCE,
+        DIVIDEND,
+        DIVISOR,
+        QUOTIENT,
+        MULTIPLICAND,
+        MULTIPLIER,
+        PRODUCT
     }
 }

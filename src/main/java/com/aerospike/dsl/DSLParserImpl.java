@@ -13,9 +13,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.aerospike.dsl.visitor.VisitorUtils.*;
-
 public class DSLParserImpl implements DSLParser {
+
+    public static final String INDEX_NAME_SEPARATOR = ".";
 
     @Beta
     public ParsedExpression parseExpression(String dslString) {
