@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.ParseException;
+import com.aerospike.dsl.exceptions.DslParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import java.util.List;
@@ -43,7 +43,7 @@ public class MapKeyList extends MapPart {
 
             return new MapKeyList(isInverted, keyListStrings);
         }
-        throw new ParseException("Could not translate MapKeyList from ctx: %s".formatted(ctx));
+        throw new DslParseException("Could not translate MapKeyList from ctx: %s".formatted(ctx));
     }
 
     @Override

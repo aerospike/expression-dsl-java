@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.ParseException;
+import com.aerospike.dsl.exceptions.DslParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
@@ -57,7 +57,7 @@ public class ListRankRangeRelative extends ListPart {
 
             return new ListRankRangeRelative(isInverted, start, end, relativeValue);
         }
-        throw new ParseException("Could not translate ListRankRangeRelative from ctx: %s".formatted(ctx));
+        throw new DslParseException("Could not translate ListRankRangeRelative from ctx: %s".formatted(ctx));
     }
 
     @Override
@@ -72,7 +72,7 @@ public class ListRankRangeRelative extends ListPart {
         } else if (relative instanceof Integer rel) {
             relativeExp = Exp.val(rel);
         } else {
-            throw new ParseException("Unsupported value relative rank");
+            throw new DslParseException("Unsupported value relative rank");
         }
 
         Exp startExp = Exp.val(start);

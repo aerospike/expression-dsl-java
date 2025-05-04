@@ -1,7 +1,7 @@
 package com.aerospike.dsl.parts.cdt.list;
 
 import com.aerospike.client.cdt.ListReturnType;
-import com.aerospike.dsl.exceptions.ParseException;
+import com.aerospike.dsl.exceptions.DslParseException;
 import com.aerospike.dsl.parts.path.PathFunction;
 import com.aerospike.dsl.parts.cdt.CdtPart;
 import lombok.Getter;
@@ -27,7 +27,7 @@ public abstract class ListPart extends CdtPart {
             case REVERSE_INDEX -> ListReturnType.REVERSE_INDEX;
             case REVERSE_RANK -> ListReturnType.REVERSE_RANK;
             default ->
-                    throw new ParseException("Unsupported Return Param for List CDT: %s".formatted(returnParam));
+                    throw new DslParseException("Unsupported Return Param for List CDT: %s".formatted(returnParam));
         };
     }
 

@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.ParseException;
+import com.aerospike.dsl.exceptions.DslParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import java.util.Optional;
@@ -45,7 +45,7 @@ public class MapKeyRange extends MapPart {
 
             return new MapKeyRange(isInverted, startKey, endKey);
         }
-        throw new ParseException("Could not translate MapKeyRange from ctx: %s".formatted(ctx));
+        throw new DslParseException("Could not translate MapKeyRange from ctx: %s".formatted(ctx));
     }
 
     @Override

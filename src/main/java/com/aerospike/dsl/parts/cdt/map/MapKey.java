@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.ParseException;
+import com.aerospike.dsl.exceptions.DslParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
@@ -25,7 +25,7 @@ public class MapKey extends MapPart {
         if (ctx.NAME_IDENTIFIER() != null) {
             return new MapKey(ctx.NAME_IDENTIFIER().getText());
         }
-        throw new ParseException("Could not translate MapKey from ctx: %s".formatted(ctx));
+        throw new DslParseException("Could not translate MapKey from ctx: %s".formatted(ctx));
     }
 
     @Override

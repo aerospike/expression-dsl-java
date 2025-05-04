@@ -1,7 +1,7 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exceptions.ParseException;
+import com.aerospike.dsl.exceptions.DslParseException;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseExp;
@@ -59,7 +59,7 @@ class BinExpressionsTests {
     @Test
     void negativeStringBinEquals() {
         assertThatThrownBy(() -> parseExp("$.strBin == yes"))
-                .isInstanceOf(ParseException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessage("Unable to parse right operand");
     }
 

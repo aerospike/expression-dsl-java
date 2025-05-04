@@ -29,8 +29,8 @@ public class TestUtils {
         return parser.parseExpression(input).getResult().getFilter();
     }
 
-    public static Filter parseFilter(String input, IndexContext indexFilterInput) {
-        return parser.parseExpression(input, indexFilterInput).getResult().getFilter();
+    public static Filter parseFilter(String input, IndexContext indexContext) {
+        return parser.parseExpression(input, indexContext).getResult().getFilter();
     }
 
     public static void parseFilterAndCompare(String input, Filter expected) {
@@ -38,8 +38,8 @@ public class TestUtils {
         assertEquals(actualFilter, expected);
     }
 
-    public static void parseFilterAndCompare(String input, IndexContext indexFilterInput, Filter expected) {
-        Filter actualFilter = parseFilter(input, indexFilterInput);
+    public static void parseFilterAndCompare(String input, IndexContext indexContext, Filter expected) {
+        Filter actualFilter = parseFilter(input, indexContext);
         assertEquals(actualFilter, expected);
     }
 
@@ -50,8 +50,8 @@ public class TestUtils {
         assertEquals(actualExp == null ? null : Exp.build(actualExp), exp == null ? null : Exp.build(exp));
     }
 
-    public static void parseExpressionAndCompare(String input, Filter filter, Exp exp, IndexContext indexFilterInput) {
-        ParsedExpression actualExpression = parser.parseExpression(input, indexFilterInput);
+    public static void parseExpressionAndCompare(String input, Filter filter, Exp exp, IndexContext indexContext) {
+        ParsedExpression actualExpression = parser.parseExpression(input, indexContext);
         assertEquals(actualExpression.getResult().getFilter(), filter);
         Exp actualExp = actualExpression.getResult().getExp();
         assertEquals(actualExp == null ? null : Exp.build(actualExp), exp == null ? null : Exp.build(exp));

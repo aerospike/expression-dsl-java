@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.ParseException;
+import com.aerospike.dsl.exceptions.DslParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
@@ -52,7 +52,7 @@ public class MapIndexRangeRelative extends MapPart {
             }
             return new MapIndexRangeRelative(isInverted, start, end, relativeKey);
         }
-        throw new ParseException("Could not translate MapIndexRangeRelative from ctx: %s".formatted(ctx));
+        throw new DslParseException("Could not translate MapIndexRangeRelative from ctx: %s".formatted(ctx));
     }
 
     @Override

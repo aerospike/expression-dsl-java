@@ -1,7 +1,7 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exceptions.ParseException;
+import com.aerospike.dsl.exceptions.DslParseException;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseExp;
@@ -118,7 +118,7 @@ public class ArithmeticExpressionsTests {
     @Test
     void negativeArithmetic() {
         assertThatThrownBy(() -> parseExp("($.apples.get(type: STRING) + 5) > 10"))
-                .isInstanceOf(ParseException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Cannot compare STRING to INT");
 
         // TODO: should throw an exception (cannot use arithmetic operations on Strings)

@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.ParseException;
+import com.aerospike.dsl.exceptions.DslParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
@@ -56,7 +56,7 @@ public class MapRankRangeRelative extends MapPart {
 
             return new MapRankRangeRelative(isInverted, start, end, relativeValue);
         }
-        throw new ParseException("Could not translate MapRankRangeRelative from ctx: %s".formatted(ctx));
+        throw new DslParseException("Could not translate MapRankRangeRelative from ctx: %s".formatted(ctx));
     }
 
     @Override
@@ -71,7 +71,7 @@ public class MapRankRangeRelative extends MapPart {
         } else if (relative instanceof Integer rel) {
             relativeExp = Exp.val(rel);
         } else {
-            throw new ParseException("Unsupported value relative rank");
+            throw new DslParseException("Unsupported value relative rank");
         }
 
         Exp startExp = Exp.val(start);

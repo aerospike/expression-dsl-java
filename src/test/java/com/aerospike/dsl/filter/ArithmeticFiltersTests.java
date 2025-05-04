@@ -4,7 +4,7 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
-import com.aerospike.dsl.exceptions.ParseException;
+import com.aerospike.dsl.exceptions.DslParseException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
@@ -49,7 +49,7 @@ public class ArithmeticFiltersTests {
 
         assertThat(parseFilter("(5.2 + $.bananas) > 10.2")).isNull(); // not supported by secondary index filter
         assertThatThrownBy(() -> parseFilter("($.apples + $.bananas + 5) > 10"))
-                .isInstanceOf(ParseException.class) // not supported by the current grammar
+                .isInstanceOf(DslParseException.class) // not supported by the current grammar
                 .hasMessageContaining("Could not parse given input, wrong syntax");
     }
 
@@ -86,7 +86,7 @@ public class ArithmeticFiltersTests {
 
         assertThat(parseFilter("($.apples - $.bananas) > 10")).isNull(); // not supported by secondary index filter
         assertThatThrownBy(() -> parseFilter("($.apples - $.bananas - 5) > 10"))
-                .isInstanceOf(ParseException.class) // not supported by the current grammar
+                .isInstanceOf(DslParseException.class) // not supported by the current grammar
                 .hasMessageContaining("Could not parse given input, wrong syntax");
     }
 
@@ -127,7 +127,7 @@ public class ArithmeticFiltersTests {
                 Filter.range("bananas", 0 / 9 + 1, Long.MAX_VALUE));
 
         assertThatThrownBy(() -> parseFilter("($.apples * $.bananas - 5) > 10"))
-                .isInstanceOf(ParseException.class) // not supported by the current grammar
+                .isInstanceOf(DslParseException.class) // not supported by the current grammar
                 .hasMessageContaining("Could not parse given input, wrong syntax");
     }
 
