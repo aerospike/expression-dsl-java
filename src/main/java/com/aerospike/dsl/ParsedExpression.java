@@ -12,7 +12,8 @@ import lombok.Getter;
 import java.util.Map;
 
 import static com.aerospike.dsl.part.AbstractPart.PartType.EXPRESSION_CONTAINER;
-import static com.aerospike.dsl.visitor.VisitorUtils.buildExpr;
+import static com.aerospike.dsl.visitor.VisitorUtils.*;
+
 
 /**
  * A class to build and store the results of DSL expression parsing: secondary index {@link Filter}
@@ -45,7 +46,7 @@ public class ParsedExpression {
         return result;
     }
 
-    private Result getResultPair() {
+    public Result getResultPair() {
         if (expressionTree != null) {
             if (expressionTree.getPartType() == EXPRESSION_CONTAINER) {
                 AbstractPart result = buildExpr((ExpressionContainer) expressionTree, namespace, indexesMap);

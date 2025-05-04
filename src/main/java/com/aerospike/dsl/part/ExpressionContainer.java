@@ -1,14 +1,19 @@
 package com.aerospike.dsl.part;
 
 import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
 @Getter
 public class ExpressionContainer extends AbstractPart {
 
-    private final AbstractPart left;
-    private final AbstractPart right;
-    private final ExprPartsOperation operationType;
+    protected final AbstractPart left;
+    protected final AbstractPart right;
     private final boolean isUnary;
+    private final ExprPartsOperation operationType;
+    @Setter()
+    @Accessors(fluent = true)
+    private boolean hasSIndexFilter;
 
     public ExpressionContainer() {
         super(PartType.EXPRESSION_CONTAINER);

@@ -30,8 +30,7 @@ public class LogicalParsedExpressionTests {
         );
         String namespace = "test1";
         Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
-        Exp exp = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
-                Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
+        Exp exp = Exp.gt(Exp.intBin("intBin1"), Exp.val(100));
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", filter, exp,
                 IndexFilterInput.of(namespace, indexes));
     }
@@ -45,8 +44,7 @@ public class LogicalParsedExpressionTests {
         String namespace = "test1";
         // Filter is chosen alphabetically because no cardinality is given
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
-        Exp exp = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
-                Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
+        Exp exp = Exp.gt(Exp.intBin("intBin2"), Exp.val(100));
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", filter, exp,
                 IndexFilterInput.of(namespace, indexes));
     }
@@ -57,8 +55,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build());
         String namespace = "test1";
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
-        Exp exp = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
-                Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
+        Exp exp = Exp.gt(Exp.intBin("intBin2"), Exp.val(100));
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", filter, exp,
                 IndexFilterInput.of(namespace, indexes));
     }
@@ -73,9 +70,7 @@ public class LogicalParsedExpressionTests {
         String namespace = "test1";
         Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(
-                Exp.and(
-                        Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
-                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100))),
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
@@ -93,9 +88,7 @@ public class LogicalParsedExpressionTests {
         // Filter is chosen alphabetically because the same cardinality is given
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(
-                Exp.and(
-                        Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
-                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100))),
+                Exp.gt(Exp.intBin("intBin2"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
@@ -113,9 +106,7 @@ public class LogicalParsedExpressionTests {
         // Filter is chosen alphabetically because no cardinality is given
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(
-                Exp.and(
-                        Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
-                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100))),
+                Exp.gt(Exp.intBin("intBin2"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
@@ -135,10 +126,8 @@ public class LogicalParsedExpressionTests {
         // The only matching index with full data is for intBin3
         Filter filter = Filter.range("intBin3", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(
-                Exp.and(
                         Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
-                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100))),
-                Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
+                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
                 IndexFilterInput.of(namespace, indexes));
@@ -153,9 +142,7 @@ public class LogicalParsedExpressionTests {
         String namespace = "test1";
         Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(
-                Exp.and(
-                        Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
-                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100))),
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,

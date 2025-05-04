@@ -11,8 +11,8 @@ public abstract class AbstractPart {
 
     protected Exp.Type expType;
     protected PartType partType;
-    private Exp exp;
-    private Filter filter;
+    protected Exp exp;
+    protected Filter filter;
 
     protected AbstractPart(PartType partType) {
         this.partType = partType;

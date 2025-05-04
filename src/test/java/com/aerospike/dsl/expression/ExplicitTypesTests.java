@@ -301,7 +301,7 @@ public class ExplicitTypesTests {
                         Exp.eq(Exp.val(List.of("yes", "of course")), Exp.mapBin("mapBin1")))
         )
                 .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Cannot compare LIST to MAP");
+                .hasMessage("Cannot compare MAP to LIST");
 
         // Map key can only be Integer or String
         assertThatThrownBy(() ->

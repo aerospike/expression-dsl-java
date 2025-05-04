@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 
-import static com.aerospike.dsl.util.ParsingUtils.unquote;
+import static com.aerospike.dsl.util.ParsingUtils.*;
 import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
@@ -420,7 +420,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitVariable(ConditionParser.VariableContext ctx) {
         String text = ctx.VARIABLE_REFERENCE().getText();
-        return new VariableOperand(extractVariableName(text));
+        return new VariableOperand(extractVariableNameOrFail(text));
     }
 
     private AbstractPart overrideType(AbstractPart part, ParseTree ctx) {
