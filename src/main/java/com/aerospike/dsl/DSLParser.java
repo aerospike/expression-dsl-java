@@ -1,7 +1,7 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.query.Filter;
-import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.AerospikeDSLException;
 
 /**
  * Contains API to convert dot separated String path into an Aerospike filter -
@@ -161,5 +161,5 @@ public interface DSLParser {
      * @return {@link ParsedExpression} object
      * @throws AerospikeDSLException in case of or invalid syntax
      */
-    ParsedExpression parseExpression(String dslString, IndexFilterInput indexFilterInput);
+    ParsedExpression parseExpression(String dslString, IndexContext indexFilterInput);
 }

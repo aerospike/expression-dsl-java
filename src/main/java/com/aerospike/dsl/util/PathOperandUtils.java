@@ -4,26 +4,26 @@ import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
-import com.aerospike.dsl.part.AbstractPart;
-import com.aerospike.dsl.part.path.BasePath;
-import com.aerospike.dsl.part.path.BinPart;
-import com.aerospike.dsl.part.path.PathFunction;
-import com.aerospike.dsl.part.cdt.CdtPart;
-import com.aerospike.dsl.part.cdt.list.ListPart;
-import com.aerospike.dsl.part.cdt.list.ListTypeDesignator;
-import com.aerospike.dsl.part.cdt.map.MapPart;
-import com.aerospike.dsl.part.cdt.map.MapTypeDesignator;
+import com.aerospike.dsl.parts.AbstractPart;
+import com.aerospike.dsl.parts.path.BasePath;
+import com.aerospike.dsl.parts.path.BinPart;
+import com.aerospike.dsl.parts.path.PathFunction;
+import com.aerospike.dsl.parts.cdt.CdtPart;
+import com.aerospike.dsl.parts.cdt.list.ListPart;
+import com.aerospike.dsl.parts.cdt.list.ListTypeDesignator;
+import com.aerospike.dsl.parts.cdt.map.MapPart;
+import com.aerospike.dsl.parts.cdt.map.MapTypeDesignator;
 import lombok.experimental.UtilityClass;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
-import static com.aerospike.dsl.part.AbstractPart.PartType.LIST_PART;
-import static com.aerospike.dsl.part.AbstractPart.PartType.MAP_PART;
-import static com.aerospike.dsl.part.path.PathFunction.PathFunctionType.*;
-import static com.aerospike.dsl.part.cdt.list.ListPart.ListPartType.*;
-import static com.aerospike.dsl.part.cdt.map.MapPart.MapPartType.MAP_TYPE_DESIGNATOR;
+import static com.aerospike.dsl.parts.AbstractPart.PartType.LIST_PART;
+import static com.aerospike.dsl.parts.AbstractPart.PartType.MAP_PART;
+import static com.aerospike.dsl.parts.path.PathFunction.PathFunctionType.*;
+import static com.aerospike.dsl.parts.cdt.list.ListPart.ListPartType.*;
+import static com.aerospike.dsl.parts.cdt.map.MapPart.MapPartType.MAP_TYPE_DESIGNATOR;
 
 @UtilityClass
 public class PathOperandUtils {

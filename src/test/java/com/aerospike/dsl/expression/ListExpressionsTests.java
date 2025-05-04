@@ -4,7 +4,7 @@ import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
-import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

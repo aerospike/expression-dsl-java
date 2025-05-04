@@ -3,8 +3,8 @@ package com.aerospike.dsl.filter;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.Index;
-import com.aerospike.dsl.IndexFilterInput;
-import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.IndexContext;
+import com.aerospike.dsl.exceptions.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
@@ -22,7 +22,7 @@ public class ArithmeticFiltersTests {
             Index.builder().namespace("test1").bin("apples").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
             Index.builder().namespace("test1").bin("bananas").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
     );
-    IndexFilterInput INDEX_FILTER_INPUT = IndexFilterInput.of(NAMESPACE, INDEXES);
+    IndexContext INDEX_FILTER_INPUT = IndexContext.of(NAMESPACE, INDEXES);
 
     @Test
     void add() {

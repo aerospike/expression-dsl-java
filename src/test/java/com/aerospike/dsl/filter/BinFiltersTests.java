@@ -3,7 +3,7 @@ package com.aerospike.dsl.filter;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.Index;
-import com.aerospike.dsl.IndexFilterInput;
+import com.aerospike.dsl.IndexContext;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -19,7 +19,7 @@ class BinFiltersTests {
             Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
             Index.builder().namespace("test1").bin("stringBin1").indexType(IndexType.STRING).binValuesRatio(1).build()
     );
-    IndexFilterInput INDEX_FILTER_INPUT = IndexFilterInput.of(NAMESPACE, INDEXES);
+    IndexContext INDEX_FILTER_INPUT = IndexContext.of(NAMESPACE, INDEXES);
 
     @Test
     void binGT() {
@@ -47,7 +47,7 @@ class BinFiltersTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
-        parseFilterAndCompare("$.intBin1 > 100 and $.intBin2 < 1000", IndexFilterInput.of(NAMESPACE, indexes),
+        parseFilterAndCompare("$.intBin1 > 100 and $.intBin2 < 1000", IndexContext.of(NAMESPACE, indexes),
                 Filter.range("intBin2", Long.MIN_VALUE, 999));
 
         parseFilterAndCompare("$.intBin1 > 100 and $.intBin2 < 1000",

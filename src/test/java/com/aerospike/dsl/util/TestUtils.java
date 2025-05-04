@@ -4,12 +4,9 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
 import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.DSLParserImpl;
-import com.aerospike.dsl.Index;
-import com.aerospike.dsl.IndexFilterInput;
+import com.aerospike.dsl.IndexContext;
 import com.aerospike.dsl.ParsedExpression;
 import lombok.experimental.UtilityClass;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -32,7 +29,7 @@ public class TestUtils {
         return parser.parseExpression(input).getResult().getFilter();
     }
 
-    public static Filter parseFilter(String input, IndexFilterInput indexFilterInput) {
+    public static Filter parseFilter(String input, IndexContext indexFilterInput) {
         return parser.parseExpression(input, indexFilterInput).getResult().getFilter();
     }
 
@@ -41,7 +38,7 @@ public class TestUtils {
         assertEquals(actualFilter, expected);
     }
 
-    public static void parseFilterAndCompare(String input, IndexFilterInput indexFilterInput, Filter expected) {
+    public static void parseFilterAndCompare(String input, IndexContext indexFilterInput, Filter expected) {
         Filter actualFilter = parseFilter(input, indexFilterInput);
         assertEquals(actualFilter, expected);
     }
@@ -53,7 +50,7 @@ public class TestUtils {
         assertEquals(actualExp == null ? null : Exp.build(actualExp), exp == null ? null : Exp.build(exp));
     }
 
-    public static void parseExpressionAndCompare(String input, Filter filter, Exp exp, IndexFilterInput indexFilterInput) {
+    public static void parseExpressionAndCompare(String input, Filter filter, Exp exp, IndexContext indexFilterInput) {
         ParsedExpression actualExpression = parser.parseExpression(input, indexFilterInput);
         assertEquals(actualExpression.getResult().getFilter(), filter);
         Exp actualExp = actualExpression.getResult().getExp();

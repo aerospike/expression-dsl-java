@@ -1,21 +1,21 @@
 package com.aerospike.dsl;
 
 import com.aerospike.dsl.annotation.Beta;
-import com.aerospike.dsl.exception.AerospikeDSLException;
-import com.aerospike.dsl.exception.NoApplicableFilterException;
-import com.aerospike.dsl.part.AbstractPart;
+import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.NoApplicableFilterException;
+import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DSLParserImpl implements DSLParser {
-
-    public static final String INDEX_NAME_SEPARATOR = ".";
 
     @Beta
     public ParsedExpression parseExpression(String dslString) {
@@ -24,7 +24,7 @@ public class DSLParserImpl implements DSLParser {
     }
 
     @Beta
-    public ParsedExpression parseExpression(String input, IndexFilterInput indexFilterInput) {
+    public ParsedExpression parseExpression(String input, IndexContext indexFilterInput) {
         ParseTree parseTree = getParseTree(input);
         return getParsedExpression(parseTree, indexFilterInput);
     }
@@ -35,19 +35,33 @@ public class DSLParserImpl implements DSLParser {
         return parser.parse();
     }
 
-    private ParsedExpression getParsedExpression(ParseTree parseTree, IndexFilterInput indexFilterInput) {
+    private ParsedExpression getParsedExpression(ParseTree parseTree, IndexContext indexContext) {
+        String namespace;
+        Collection<Index> indexes;
+        if (indexContext != null) {
+            namespace = indexContext.getNamespace();
+            indexes = indexContext.getIndexes();
+        } else {
+            namespace = null;
+            indexes = null;
+        }
+
         boolean hasFilterParsingError = false;
         AbstractPart resultingPart = null;
-        Map<String, Index> indexesMap = new HashMap<>();
-        String namespace = indexFilterInput == null ? null : indexFilterInput.getNamespace();
-        Collection<Index> indexes = indexFilterInput == null ? null : indexFilterInput.getIndexes();
+        Map<String, List<Index>> indexesMap = new HashMap<>();
 
         if (indexes != null && !indexes.isEmpty()) {
-            indexes.forEach(idx -> indexesMap.put(idx.getNamespace() + INDEX_NAME_SEPARATOR + idx.getBin(), idx));
+            indexes.forEach(idx -> {
+                    // Filtering the indexes with the given namespace
+                    if (idx.getNamespace() != null && idx.getNamespace().equals(namespace)) {
+                        // Group the indexes by bin name
+                        indexesMap.computeIfAbsent(idx.getBin(), k -> new ArrayList<>()).add(idx);
+                    }
+                }
+            );
         }
         try {
-            resultingPart =
-                    new ExpressionConditionVisitor().visit(parseTree);
+            resultingPart = new ExpressionConditionVisitor().visit(parseTree);
         } catch (NoApplicableFilterException e) {
             hasFilterParsingError = true;
         }
@@ -57,6 +71,6 @@ public class DSLParserImpl implements DSLParser {
             throw new AerospikeDSLException("Could not parse given input, wrong syntax");
         }
         // Transfer the parsed tree along with namespace and indexes Map
-        return new ParsedExpression(resultingPart, namespace, indexesMap);
+        return new ParsedExpression(resultingPart, indexesMap);
     }
 }

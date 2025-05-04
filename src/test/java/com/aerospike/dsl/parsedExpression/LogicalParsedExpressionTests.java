@@ -4,7 +4,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.Index;
-import com.aerospike.dsl.IndexFilterInput;
+import com.aerospike.dsl.IndexContext;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +32,7 @@ public class LogicalParsedExpressionTests {
         Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
         Exp exp = Exp.gt(Exp.intBin("intBin1"), Exp.val(100));
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -46,7 +46,7 @@ public class LogicalParsedExpressionTests {
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
         Exp exp = Exp.gt(Exp.intBin("intBin2"), Exp.val(100));
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -57,7 +57,7 @@ public class LogicalParsedExpressionTests {
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
         Exp exp = Exp.gt(Exp.intBin("intBin2"), Exp.val(100));
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class LogicalParsedExpressionTests {
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -92,7 +92,7 @@ public class LogicalParsedExpressionTests {
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -110,7 +110,7 @@ public class LogicalParsedExpressionTests {
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class LogicalParsedExpressionTests {
                         Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -146,7 +146,7 @@ public class LogicalParsedExpressionTests {
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -170,7 +170,7 @@ public class LogicalParsedExpressionTests {
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -185,7 +185,7 @@ public class LogicalParsedExpressionTests {
                 Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -205,7 +205,7 @@ public class LogicalParsedExpressionTests {
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 or $.intBin2 > 100 or $.intBin3 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Test
@@ -225,9 +225,9 @@ public class LogicalParsedExpressionTests {
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
         parseExpressionAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 > 100", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 
     @Disabled // TODO: complex logical structures, different grouping
@@ -248,6 +248,6 @@ public class LogicalParsedExpressionTests {
                 Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
         );
         parseExpressionAndCompare("$.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 > 100)", filter, exp,
-                IndexFilterInput.of(namespace, indexes));
+                IndexContext.of(namespace, indexes));
     }
 }

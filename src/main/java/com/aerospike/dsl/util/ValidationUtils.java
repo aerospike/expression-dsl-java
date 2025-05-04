@@ -1,7 +1,7 @@
 package com.aerospike.dsl.util;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.AerospikeDSLException;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass

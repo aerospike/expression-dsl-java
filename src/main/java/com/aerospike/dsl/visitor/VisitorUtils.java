@@ -5,19 +5,19 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.Index;
-import com.aerospike.dsl.exception.AerospikeDSLException;
-import com.aerospike.dsl.exception.NoApplicableFilterException;
-import com.aerospike.dsl.part.AbstractPart;
-import com.aerospike.dsl.part.ExpressionContainer;
-import com.aerospike.dsl.part.ExpressionContainer.ExprPartsOperation;
-import com.aerospike.dsl.part.controlstructure.ExclusiveStructure;
-import com.aerospike.dsl.part.controlstructure.WhenStructure;
-import com.aerospike.dsl.part.controlstructure.WithStructure;
-import com.aerospike.dsl.part.operand.IntOperand;
-import com.aerospike.dsl.part.operand.MetadataOperand;
-import com.aerospike.dsl.part.operand.StringOperand;
-import com.aerospike.dsl.part.operand.WithOperand;
-import com.aerospike.dsl.part.path.BinPart;
+import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.NoApplicableFilterException;
+import com.aerospike.dsl.parts.AbstractPart;
+import com.aerospike.dsl.parts.ExpressionContainer;
+import com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation;
+import com.aerospike.dsl.parts.controlstructure.ExclusiveStructure;
+import com.aerospike.dsl.parts.controlstructure.WhenStructure;
+import com.aerospike.dsl.parts.controlstructure.WithStructure;
+import com.aerospike.dsl.parts.operand.IntOperand;
+import com.aerospike.dsl.parts.operand.MetadataOperand;
+import com.aerospike.dsl.parts.operand.StringOperand;
+import com.aerospike.dsl.parts.operand.WithOperand;
+import com.aerospike.dsl.parts.path.BinPart;
 import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -35,15 +35,14 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-import static com.aerospike.dsl.part.AbstractPart.PartType.*;
-import static com.aerospike.dsl.part.ExpressionContainer.ExprPartsOperation.*;
+import static com.aerospike.dsl.parts.AbstractPart.PartType.*;
+import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.*;
 import static com.aerospike.dsl.util.ValidationUtils.validateComparableTypes;
 import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.*;
 
 @UtilityClass
 public class VisitorUtils {
 
-    public final String INDEX_NAME_SEPARATOR = ".";
     private final Map<Exp.Type, IndexType> expTypeToIndexType = Map.of(
             Exp.Type.INT, IndexType.NUMERIC,
             Exp.Type.STRING, IndexType.STRING,
@@ -226,6 +225,7 @@ public class VisitorUtils {
      * @return {@code true} if the child should be visited as a list element, {@code false} otherwise
      */
     static boolean shouldVisitListElement(int i, int size, ParseTree child) {
+        //noinspection GrazieInspection
         return size > 0 // size is not 0
                 && i != 0 // not the first element ('[')
                 && i != size - 1 // not the last element (']')
@@ -242,6 +242,7 @@ public class VisitorUtils {
      * @return {@code true} if the child should be visited as a map element, {@code false} otherwise
      */
     static boolean shouldVisitMapElement(int i, int size, ParseTree child) {
+        //noinspection GrazieInspection
         return size > 0 // size is not 0
                 && i != 0 // not the first element ('{')
                 && i != size - 1 // not the last element ('}')
@@ -925,17 +926,16 @@ public class VisitorUtils {
      * Builds a secondary index {@link Filter} and a filter {@link Exp} for a given {@link ExpressionContainer}.
      * This is the main entry point for enriching the parsed expression tree with query filters.
      *
-     * @param expr      The {@link ExpressionContainer} representing the expression tree
-     * @param namespace The namespace in use
-     * @param indexes   A map of available secondary indexes, keyed by namespace and bin name
+     * @param expr    The {@link ExpressionContainer} representing the expression tree
+     * @param indexes A map of available secondary indexes, keyed by bin name
      * @return The updated {@link ExpressionContainer} with the generated {@link Filter} and {@link Exp}.
      * Either of them can be null if there is no suitable filter
      */
-    public static AbstractPart buildExpr(ExpressionContainer expr, String namespace, Map<String, Index> indexes) {
+    public static AbstractPart buildExpr(ExpressionContainer expr, Map<String, List<Index>> indexes) {
         Exp exp;
         Filter sIndexFilter = null;
         try {
-            sIndexFilter = getSIFilter(expr, namespace, indexes);
+            sIndexFilter = getSIFilter(expr, indexes);
         } catch (NoApplicableFilterException ignored) {
         }
         expr.setFilter(sIndexFilter);
@@ -1112,17 +1112,16 @@ public class VisitorUtils {
      * for secondary index filters), the method attempts to find the most suitable
      * expression within the tree to apply a filter based on index availability and cardinality.
      *
-     * @param expr      The {@link ExpressionContainer} representing the expression tree
-     * @param namespace The namespace in use
-     * @param indexes   A map of available secondary indexes, keyed by namespace and bin name
+     * @param expr    The {@link ExpressionContainer} representing the expression tree
+     * @param indexes A map of available secondary indexes, keyed by bin name
      * @return A secondary index {@link Filter}, or {@code null} if no applicable filter can be generated
      * @throws NoApplicableFilterException if the expression operation type is not supported
      */
-    private static Filter getSIFilter(ExpressionContainer expr, String namespace, Map<String, Index> indexes) {
+    private static Filter getSIFilter(ExpressionContainer expr, Map<String, List<Index>> indexes) {
         // If it is an OR query
         if (expr.getOperationType() == OR) return null;
 
-        ExpressionContainer chosenExpr = chooseExprForFilter(expr, namespace, indexes);
+        ExpressionContainer chosenExpr = chooseExprForFilter(expr, indexes);
         if (chosenExpr == null) return null;
         return getFilterOrFail(
                 chosenExpr.getLeft(),
@@ -1141,17 +1140,16 @@ public class VisitorUtils {
      * as having a secondary index filter applied.
      *
      * @param exprContainer The root {@link ExpressionContainer} of the expression tree
-     * @param namespace     The namespace in use
-     * @param indexes       A map of available secondary indexes, keyed by namespace and bin name
+     * @param indexes       A map of available secondary indexes, keyed by bin name
      * @return The chosen {@link ExpressionContainer} for secondary index filtering,
      * or {@code null} if no suitable expression is found
      */
-    private static ExpressionContainer chooseExprForFilter(ExpressionContainer exprContainer, String namespace,
-                                                           Map<String, Index> indexes) {
+    private static ExpressionContainer chooseExprForFilter(ExpressionContainer exprContainer,
+                                                           Map<String, List<Index>> indexes) {
         if (indexes == null || indexes.isEmpty()) return null;
 
         Map<Integer, List<ExpressionContainer>> exprsPerCardinality =
-                getExpressionsPerCardinality(exprContainer, namespace, indexes);
+                getExpressionsPerCardinality(exprContainer, indexes);
 
         // Find the entry with the largest key (cardinality)
         Map<Integer, List<ExpressionContainer>> largestCardinalityMap = exprsPerCardinality.entrySet().stream()
@@ -1183,15 +1181,13 @@ public class VisitorUtils {
      * correspond to a bin with a secondary index, grouped by the index's cardinality.
      *
      * @param exprContainer The root {@link ExpressionContainer} of the expression tree
-     * @param namespace     The namespace in use
-     * @param indexes       A map of available secondary indexes, keyed by namespace and bin name
+     * @param indexes       A map of available secondary indexes, keyed by bin name
      * @return A map where keys are secondary index cardinalities (bin values ratio)
      * and values are lists of {@link ExpressionContainer}s associated with bins
      * having that cardinality
      */
     private static Map<Integer, List<ExpressionContainer>> getExpressionsPerCardinality(ExpressionContainer exprContainer,
-                                                                                        String namespace,
-                                                                                        Map<String, Index> indexes) {
+                                                                                        Map<String, List<Index>> indexes) {
         Map<Integer, List<ExpressionContainer>> exprsPerCardinality = new HashMap<>();
         final BinPart[] binPartPrev = {null};
         Consumer<AbstractPart> exprsPerCardinalityCollector = part -> {
@@ -1206,28 +1202,38 @@ public class VisitorUtils {
                     return; // the same bin
                 }
 
-                Index index = indexes.get(namespace + INDEX_NAME_SEPARATOR + binPart.getBinName());
-                if (index == null) return;
-                if (expTypeToIndexType.get(binPart.getExpType()) == index.getIndexType()) {
-                    List<ExpressionContainer> exprsList = exprsPerCardinality.get(index.getBinValuesRatio());
-                    if (exprsList != null) {
-                        exprsList.add(expr);
-                    } else {
-                        exprsList = new ArrayList<>();
-                        exprsList.add(expr);
-                    }
-                    exprsPerCardinality.put(index.getBinValuesRatio(), exprsList);
-                }
+                updateExpressionsPerCardinality(exprsPerCardinality, expr, binPart, indexes);
             }
         };
         traverseTree(exprContainer, exprsPerCardinalityCollector, null);
         return exprsPerCardinality;
     }
 
+    private static void updateExpressionsPerCardinality(Map<Integer, List<ExpressionContainer>> exprsPerCardinality,
+                                                 ExpressionContainer expr, BinPart binPart,
+                                                 Map<String, List<Index>> indexes) {
+        List<Index> indexesByBin = indexes.get(binPart.getBinName());
+        if (indexesByBin == null || indexesByBin.isEmpty()) return;
+
+        for (Index idx : indexesByBin) {
+            // Iterate over all indexes for the same bin
+            if (expTypeToIndexType.get(binPart.getExpType()) == idx.getIndexType()) {
+                List<ExpressionContainer> exprsList = exprsPerCardinality.get(idx.getBinValuesRatio());
+                if (exprsList != null) {
+                    exprsList.add(expr);
+                } else {
+                    exprsList = new ArrayList<>();
+                    exprsList.add(expr);
+                }
+                exprsPerCardinality.put(idx.getBinValuesRatio(), exprsList);
+            }
+        }
+    }
+
     /**
      * The method traverses the expression tree starting from the given {@link ExpressionContainer},
      * searching for a {@link BinPart}. It limits the search depth and stops
-     * traversing a branch if a logical expression (AND or OR) is found.
+     * traversing a branch if a logical expression (AND / OR) is found.
      *
      * @param expr  The {@link ExpressionContainer} to start searching from
      * @param depth The maximum depth to traverse
@@ -1254,7 +1260,7 @@ public class VisitorUtils {
 
     /**
      * Traverses the AbstractPart nodes tree and applies the visitor function to each node.
-     * Uses a pre-order traversal (root-left-right).
+     * Uses a pre-order traversal (top-down, root-left-right).
      * The visitor function can be used to modify the node's state or to extract information.
      *
      * @param part          The current node being visited (start with the root)

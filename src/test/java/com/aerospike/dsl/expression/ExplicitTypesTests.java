@@ -1,7 +1,7 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.AerospikeDSLException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
