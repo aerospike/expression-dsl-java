@@ -1209,9 +1209,25 @@ public class VisitorUtils {
         return exprsPerCardinality;
     }
 
+    /**
+     * Updates a map of expression containers grouped by the cardinality of the indexes associated with an
+     * expression container's bin part.
+     * This method iterates through the indexes related to the provided {@code binPart}.
+     * For each index that matches the expression type of the {@code binPart}, it adds the given {@code expr}
+     * to the {@code exprsPerCardinality} map.
+     *
+     * @param exprsPerCardinality A map where keys are integer ratios (representing index cardinality)
+     *                            and values are lists of {@link ExpressionContainer} objects. The map is updated by this method
+     * @param expr                The {@link ExpressionContainer} to be added to the appropriate list
+     *                            within {@code exprsPerCardinality}
+     * @param binPart             The {@link BinPart} associated with the expression, used to find
+     *                            relevant indexes and determine the expression type
+     * @param indexes             A map where keys are bin names and values are lists of
+     *                            {@link Index} objects associated with that bin
+     */
     private static void updateExpressionsPerCardinality(Map<Integer, List<ExpressionContainer>> exprsPerCardinality,
-                                                 ExpressionContainer expr, BinPart binPart,
-                                                 Map<String, List<Index>> indexes) {
+                                                        ExpressionContainer expr, BinPart binPart,
+                                                        Map<String, List<Index>> indexes) {
         List<Index> indexesByBin = indexes.get(binPart.getBinName());
         if (indexesByBin == null || indexesByBin.isEmpty()) return;
 
