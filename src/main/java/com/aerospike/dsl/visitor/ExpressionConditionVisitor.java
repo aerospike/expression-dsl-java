@@ -3,7 +3,7 @@ package com.aerospike.dsl.visitor;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.ConditionBaseVisitor;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import com.aerospike.dsl.parts.*;
 import com.aerospike.dsl.parts.cdt.list.ListIndex;
 import com.aerospike.dsl.parts.cdt.list.ListIndexRange;
@@ -96,7 +96,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitExclusiveExpression(ConditionParser.ExclusiveExpressionContext ctx) {
         if (ctx.expression().size() < 2) {
-            throw new AerospikeDSLException("Exclusive logical operator requires 2 or more expressions");
+            throw new ParseException("Exclusive logical operator requires 2 or more expressions");
         }
         List<ExpressionContainer> expressions = new ArrayList<>();
         // iterate through each definition
@@ -313,13 +313,13 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
             AbstractPart operand = visit(child); // delegate to a dedicated visitor
             if (operand == null) {
-                throw new AerospikeDSLException("Unable to parse list operand");
+                throw new ParseException("Unable to parse list operand");
             }
 
             try {
                 values.add(((ParsedValueOperand) operand).getValue());
             } catch (ClassCastException e) {
-                throw new AerospikeDSLException("List constant contains elements of different type");
+                throw new ParseException("List constant contains elements of different type");
             }
         }
 
@@ -333,7 +333,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     public TreeMap<Object, Object> getOrderedMapPair(ParseTree ctx) {
         if (ctx.getChild(0) == null || ctx.getChild(2) == null) {
-            throw new AerospikeDSLException("Unable to parse map operand");
+            throw new ParseException("Unable to parse map operand");
         }
         Object key = ((ParsedValueOperand) visit(ctx.getChild(0))).getValue();
         Object value = ((ParsedValueOperand) visit(ctx.getChild(2))).getValue();
@@ -356,7 +356,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             try {
                 mapOfPair.forEach(map::putIfAbsent); // put contents of the current map pair to the resulting map
             } catch (ClassCastException e) {
-                throw new AerospikeDSLException("Map constant contains elements of different type");
+                throw new ParseException("Map constant contains elements of different type");
             }
         }
 
@@ -406,12 +406,12 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             switch (part.getPartType()) {
                 case BIN_PART -> binPart = (BinPart) overrideType(part, ctx);
                 case LIST_PART, MAP_PART -> parts.add(overrideType(part, ctx));
-                default -> throw new AerospikeDSLException("Unexpected path part: %s".formatted(part.getPartType()));
+                default -> throw new ParseException("Unexpected path part: %s".formatted(part.getPartType()));
             }
         }
 
         if (binPart == null) {
-            throw new AerospikeDSLException("Expecting bin to be the first path part from the left");
+            throw new ParseException("Expecting bin to be the first path part from the left");
         }
 
         return new BasePath(binPart, parts);
@@ -484,7 +484,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         if (ctx.listRankRange() != null) return ListRankRange.from(ctx.listRankRange());
         if (ctx.listRankRangeRelative() != null)
             return ListRankRangeRelative.from(ctx.listRankRangeRelative());
-        throw new AerospikeDSLException("Unexpected list part: %s".formatted(ctx.getText()));
+        throw new ParseException("Unexpected list part: %s".formatted(ctx.getText()));
     }
 
     @Override
@@ -504,7 +504,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             return MapRankRangeRelative.from(ctx.mapRankRangeRelative());
         if (ctx.mapIndexRangeRelative() != null)
             return MapIndexRangeRelative.from(ctx.mapIndexRangeRelative());
-        throw new AerospikeDSLException("Unexpected map part: %s".formatted(ctx.getText()));
+        throw new ParseException("Unexpected map part: %s".formatted(ctx.getText()));
     }
 
     @Override

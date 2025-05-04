@@ -1,7 +1,7 @@
 package com.aerospike.dsl;
 
 import com.aerospike.dsl.annotation.Beta;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import com.aerospike.dsl.exceptions.NoApplicableFilterException;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
@@ -24,9 +24,9 @@ public class DSLParserImpl implements DSLParser {
     }
 
     @Beta
-    public ParsedExpression parseExpression(String input, IndexContext indexFilterInput) {
+    public ParsedExpression parseExpression(String input, IndexContext indexContext) {
         ParseTree parseTree = getParseTree(input);
-        return getParsedExpression(parseTree, indexFilterInput);
+        return getParsedExpression(parseTree, indexContext);
     }
 
     private ParseTree getParseTree(String input) {
@@ -68,7 +68,7 @@ public class DSLParserImpl implements DSLParser {
 
         // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error
         if (!hasFilterParsingError && resultingPart == null) {
-            throw new AerospikeDSLException("Could not parse given input, wrong syntax");
+            throw new ParseException("Could not parse given input, wrong syntax");
         }
         // Transfer the parsed tree along with namespace and indexes Map
         return new ParsedExpression(resultingPart, indexesMap);

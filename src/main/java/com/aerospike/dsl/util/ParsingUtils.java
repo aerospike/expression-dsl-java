@@ -1,6 +1,6 @@
 package com.aerospike.dsl.util;
 
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
@@ -35,13 +35,13 @@ public class ParsingUtils {
      *
      * @param methodName The method name string
      * @return The extracted type string
-     * @throws AerospikeDSLException if the method name is not in the correct format
+     * @throws ParseException if the method name is not in the correct format
      */
     public static String extractTypeFromMethod(String methodName) {
         if (methodName.startsWith("as") && methodName.endsWith("()")) {
             return methodName.substring(2, methodName.length() - 2);
         } else {
-            throw new AerospikeDSLException("Invalid method name: %s".formatted(methodName));
+            throw new ParseException("Invalid method name: %s".formatted(methodName));
         }
     }
 

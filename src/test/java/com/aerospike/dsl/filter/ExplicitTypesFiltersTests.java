@@ -4,7 +4,7 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +56,7 @@ public class ExplicitTypesFiltersTests {
     void stringComparisonNegativeTest() {
         // A String constant must be quoted
         assertThatThrownBy(() -> parseFilter("$.stringBin1.get(type: STRING) == yes"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Unable to parse right operand");
     }
 
@@ -89,7 +89,7 @@ public class ExplicitTypesFiltersTests {
     @Test
     void negativeBooleanComparison() {
         assertThatThrownBy(() -> parseFilter("$.boolBin1.get(type: BOOL) == 5"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Cannot compare BOOL to INT");
     }
 
@@ -102,7 +102,7 @@ public class ExplicitTypesFiltersTests {
     @Test
     void listComparison_constantOnRightSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter("$.listBin1.get(type: LIST) == [yes, of course]"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Unable to parse list operand");
     }
 
@@ -114,7 +114,7 @@ public class ExplicitTypesFiltersTests {
     @Test
     void listComparison_constantOnLeftSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter("[yes, of course] == $.listBin1.get(type: LIST)"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Could not parse given input, wrong syntax");
     }
 
@@ -126,7 +126,7 @@ public class ExplicitTypesFiltersTests {
     @Test
     void mapComparison_constantOnRightSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter("$.mapBin1.get(type: MAP) == {yes, of course}"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Unable to parse map operand");
     }
 
@@ -138,7 +138,7 @@ public class ExplicitTypesFiltersTests {
     @Test
     void mapComparison_constantOnLeftSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter("{yes, of course} == $.mapBin1.get(type: MAP)"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Could not parse given input, wrong syntax");
     }
 
@@ -165,7 +165,7 @@ public class ExplicitTypesFiltersTests {
     @Test
     void negativeTwoDifferentBinTypesComparison() {
         assertThatThrownBy(() -> parseFilter("$.stringBin1.get(type: STRING) == $.floatBin2.get(type: FLOAT)"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Cannot compare STRING to FLOAT");
     }
 }

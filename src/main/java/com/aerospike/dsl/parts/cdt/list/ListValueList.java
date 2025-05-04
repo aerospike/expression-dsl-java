@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import java.util.List;
@@ -44,7 +44,7 @@ public class ListValueList extends ListPart {
 
             return new ListValueList(isInverted, valueListObjects);
         }
-        throw new AerospikeDSLException("Could not translate ListValueList from ctx: %s".formatted(ctx));
+        throw new ParseException("Could not translate ListValueList from ctx: %s".formatted(ctx));
     }
 
     @Override

@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 public class MapValueRange extends MapPart {
@@ -38,7 +38,7 @@ public class MapValueRange extends MapPart {
 
             return new MapValueRange(isInverted, startValue, endValue);
         }
-        throw new AerospikeDSLException("Could not translate MapValueRange from ctx: %s".formatted(ctx));
+        throw new ParseException("Could not translate MapValueRange from ctx: %s".formatted(ctx));
     }
 
     @Override

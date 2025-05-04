@@ -3,7 +3,7 @@ package com.aerospike.dsl;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.annotation.Beta;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.ExpressionContainer;
 import lombok.Getter;
@@ -35,16 +35,16 @@ public class ParsedExpression {
     /**
      * @return Pair of secondary index {@link Filter} and filter {@link Exp}. Each can be null in case of invalid or
      * unsupported DSL string
-     * @throws AerospikeDSLException If there was an error
+     * @throws ParseException If there was an error
      */
     public ParseResult getResult() {
         if (result == null) {
-            result = getResultPair();
+            result = getParseResult();
         }
         return result;
     }
 
-    public ParseResult getResultPair() {
+    private ParseResult getParseResult() {
         if (expressionTree != null) {
             if (expressionTree.getPartType() == EXPRESSION_CONTAINER) {
                 AbstractPart result = buildExpr((ExpressionContainer) expressionTree, indexesMap);

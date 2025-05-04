@@ -5,7 +5,7 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.Index;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import com.aerospike.dsl.exceptions.NoApplicableFilterException;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.ExpressionContainer;
@@ -258,7 +258,7 @@ public class VisitorUtils {
      * @param operator  The binary operator to apply
      * @param binIsLeft Whether the bin is on the left side of the comparison
      * @return The resulting expression
-     * @throws AerospikeDSLException if the operand type is not supported
+     * @throws ParseException if the operand type is not supported
      */
     private static Exp getExpBinComparison(BinPart binPart, AbstractPart otherPart,
                                            BinaryOperator<Exp> operator, boolean binIsLeft) {
@@ -300,7 +300,7 @@ public class VisitorUtils {
                 yield otherPart.getExp();
             }
             default ->
-                    throw new AerospikeDSLException("Operand type not supported: %s".formatted(otherPart.getPartType()));
+                    throw new ParseException("Operand type not supported: %s".formatted(otherPart.getPartType()));
         };
 
         return binIsLeft ? operator.apply(binExp, otherExp) : operator.apply(otherExp, binExp);
@@ -312,7 +312,7 @@ public class VisitorUtils {
      * @param binPart       The {@link BinPart} involved in the comparison
      * @param stringOperand The {@link StringOperand} involved in the comparison
      * @return The {@link Exp} generated from the {@link StringOperand}
-     * @throws AerospikeDSLException if type validation fails (e.g., comparing a non-string/blob bin with a String)
+     * @throws ParseException if type validation fails (e.g., comparing a non-string/blob bin with a String)
      */
     private static Exp handleStringOperandComparison(BinPart binPart, StringOperand stringOperand) {
         boolean isBlobType = binPart.getExpType() != null && binPart.getExpType().equals(Exp.Type.BLOB);
@@ -334,7 +334,7 @@ public class VisitorUtils {
      * @param right    The {@link AbstractPart} on the right side of the comparison
      * @param operator The binary operator to apply
      * @return The resulting {@link Exp} for the comparison
-     * @throws AerospikeDSLException if an unsupported operand type is encountered or type validation fails
+     * @throws ParseException if an unsupported operand type is encountered or type validation fails
      */
     private static Exp getExpLeftBinTypeComparison(BinPart left, AbstractPart right, BinaryOperator<Exp> operator) {
         return getExpBinComparison(left, right, operator, true);
@@ -347,7 +347,7 @@ public class VisitorUtils {
      * @param right    The {@link BinPart} on the right side of the comparison
      * @param operator The binary operator to apply
      * @return The resulting {@link Exp} for the comparison
-     * @throws AerospikeDSLException if an unsupported operand type is encountered or type validation fails
+     * @throws ParseException if an unsupported operand type is encountered or type validation fails
      */
     private static Exp getExpRightBinTypeComparison(AbstractPart left, BinPart right, BinaryOperator<Exp> operator) {
         return getExpBinComparison(right, left, operator, false);
@@ -405,7 +405,7 @@ public class VisitorUtils {
      * @return A {@link Pair} representing the lower and upper bounds of the range for the bin.
      * A {@code null} value in the pair indicates no bound on that side
      * @throws NoApplicableFilterException if division by zero occurs or the term type is unsupported
-     * @throws AerospikeDSLException       if undefined division (0/0) occurs
+     * @throws ParseException       if undefined division (0/0) occurs
      */
     private static Pair<Long, Long> getLimitsForDivisionForFilter(long left, long right, FilterOperationType type,
                                                                   ArithmeticTermType termType) {
@@ -430,7 +430,7 @@ public class VisitorUtils {
      * @param operationType The type of the filter operation
      * @return A {@link Pair} representing the lower and upper bounds of the range for the bin.
      * A {@code null} value in the pair indicates no bound on that side
-     * @throws AerospikeDSLException if undefined division (0/0) occurs or if the operation type is not supported
+     * @throws ParseException if undefined division (0/0) occurs or if the operation type is not supported
      */
     private static Pair<Long, Long> LimitsForBinDividend(long left, long right,
                                                          FilterOperationType operationType) {
@@ -438,7 +438,7 @@ public class VisitorUtils {
             // both operands are positive
             return getLimitsForBinDividendWithLeftNumberPositive(operationType, left, right);
         } else if (left == 0 && right == 0) {
-            throw new AerospikeDSLException("Undefined division for 0 / 0");
+            throw new ParseException("Undefined division for 0 / 0");
         } else if (left < 0 && right < 0) {
             // both operands are negative
             return getLimitsForBinDividendWithLeftNumberNegative(operationType, left, right);
@@ -449,7 +449,7 @@ public class VisitorUtils {
             // left negative, right positive
             return getLimitsForBinDividendWithLeftNumberNegative(operationType, left, right);
         } else if (left != 0) {
-            throw new AerospikeDSLException("Division by zero is not allowed");
+            throw new ParseException("Division by zero is not allowed");
         } else {
             return new Pair<>(null, null);
         }
@@ -462,7 +462,7 @@ public class VisitorUtils {
      * @param left          The value of the dividend
      * @param right         The value of the divisor
      * @return A {@link Pair} representing the lower and upper bounds of the range for the bin
-     * @throws AerospikeDSLException if the operation type is not supported for division
+     * @throws ParseException if the operation type is not supported for division
      */
     private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberNegative(FilterOperationType operationType,
                                                                                   long left, long right) {
@@ -476,7 +476,7 @@ public class VisitorUtils {
             case LTEQ:
                 yield new Pair<>(left * right, Long.MAX_VALUE);
             default:
-                throw new AerospikeDSLException("OperationType not supported for division: " + operationType);
+                throw new ParseException("OperationType not supported for division: " + operationType);
         };
     }
 
@@ -487,7 +487,7 @@ public class VisitorUtils {
      * @param left          The value of the dividend
      * @param right         The value of the divisor
      * @return A {@link Pair} representing the lower and upper bounds of the range for the bin
-     * @throws AerospikeDSLException if the operation type is not supported for division
+     * @throws ParseException if the operation type is not supported for division
      */
     private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberPositive(FilterOperationType operationType,
                                                                                   long left, long right) {
@@ -501,7 +501,7 @@ public class VisitorUtils {
             case LTEQ:
                 yield new Pair<>(Long.MIN_VALUE, left * right);
             default:
-                throw new AerospikeDSLException("OperationType not supported for division: " + operationType);
+                throw new ParseException("OperationType not supported for division: " + operationType);
         };
     }
 
@@ -513,7 +513,7 @@ public class VisitorUtils {
      * @param operationType The type of the filter operation
      * @return A {@link Pair} representing the lower and upper bounds of the range for the bin.
      * A {@code null} value in the pair indicates no bound on that side
-     * @throws AerospikeDSLException if division by zero occurs or if the operation type is not supported
+     * @throws ParseException if division by zero occurs or if the operation type is not supported
      */
     private static Pair<Long, Long> getLimitsForBinDivisor(long left, long right, FilterOperationType operationType) {
         if (left > 0 && right > 0) {
@@ -526,10 +526,10 @@ public class VisitorUtils {
                 case LT, LTEQ:
                     yield new Pair<>(null, null);
                 default:
-                    throw new AerospikeDSLException("OperationType not supported for division: " + operationType);
+                    throw new ParseException("OperationType not supported for division: " + operationType);
             };
         } else if (left == 0 && right == 0) {
-            throw new AerospikeDSLException("Cannot divide by zero");
+            throw new ParseException("Cannot divide by zero");
         } else if (left < 0 && right < 0) {
             // both operands are negative
             return switch (operationType) {
@@ -540,7 +540,7 @@ public class VisitorUtils {
                 case LTEQ:
                     yield new Pair<>(1L, left / right);
                 default:
-                    throw new AerospikeDSLException("OperationType not supported for division: " + operationType);
+                    throw new ParseException("OperationType not supported for division: " + operationType);
             };
         } else if (left > 0 && right < 0) {
             // left positive, right negative
@@ -552,7 +552,7 @@ public class VisitorUtils {
                 case LTEQ:
                     yield new Pair<>(left / right, -1L);
                 default:
-                    throw new AerospikeDSLException("OperationType not supported for division: " + operationType);
+                    throw new ParseException("OperationType not supported for division: " + operationType);
             };
         } else if (right > 0 && left < 0) {
             // right positive, left negative
@@ -564,10 +564,10 @@ public class VisitorUtils {
                 case LT, LTEQ:
                     yield new Pair<>(null, null);
                 default:
-                    throw new AerospikeDSLException("OperationType not supported for division: " + operationType);
+                    throw new ParseException("OperationType not supported for division: " + operationType);
             };
         } else if (left != 0) {
-            throw new AerospikeDSLException("Division by zero is not allowed");
+            throw new ParseException("Division by zero is not allowed");
         } else {
             return new Pair<>(null, null);
         }
@@ -581,14 +581,14 @@ public class VisitorUtils {
      *                A {@code null} value in the pair indicates no bound on that side
      * @param type    The type of the filter operation
      * @return A {@link Filter} representing the condition
-     * @throws AerospikeDSLException if the operation type is not supported for generating a filter
+     * @throws ParseException if the operation type is not supported for generating a filter
      */
     private static Filter getFilterForDivOrFail(String binName, Pair<Long, Long> value, FilterOperationType type) {
         // Based on the operation type, generate the appropriate filter range
         return switch (type) {
             case GT, GTEQ, LT, LTEQ -> Filter.range(binName, value.a, value.b);  // Range from 1 to value - 1
             case EQ -> Filter.equal(binName, value.a);  // Exact match for equality case
-            default -> throw new AerospikeDSLException("OperationType not supported for division: " + type);
+            default -> throw new ParseException("OperationType not supported for division: " + type);
         };
     }
 
@@ -627,7 +627,7 @@ public class VisitorUtils {
      * @param type    The type of the filter operation (must be {@link FilterOperationType#EQ})
      * @return An Aerospike {@link Filter} for the string or blob comparison
      * @throws NoApplicableFilterException if the filter operation type is not equality
-     * @throws AerospikeDSLException       if type validation fails or base64 decoding fails
+     * @throws ParseException       if type validation fails or base64 decoding fails
      */
     private static Filter handleStringOperand(BinPart bin, String binName, StringOperand operand,
                                               FilterOperationType type) {
@@ -654,7 +654,7 @@ public class VisitorUtils {
      * @param right The right operand
      * @param type  The filter operation type
      * @return The appropriate Filter, or null if no filter can be created
-     * @throws AerospikeDSLException if operands are invalid
+     * @throws ParseException if operands are invalid
      */
     private static Filter getFilterOrFail(AbstractPart left, AbstractPart right, FilterOperationType type) {
         validateOperands(left, right);
@@ -689,7 +689,7 @@ public class VisitorUtils {
      * @param otherOperand The other operand in the filter condition
      * @param type         The type of the filter operation
      * @return A {@link Filter} if one can be generated from the nested expression, otherwise {@code null}
-     * @throws AerospikeDSLException       if operands within the nested expression are null
+     * @throws ParseException       if operands within the nested expression are null
      * @throws NoApplicableFilterException if the nested expression structure is not supported for filtering
      */
     private static Filter handleExpressionOperand(ExpressionContainer expr, AbstractPart otherOperand,
@@ -755,7 +755,7 @@ public class VisitorUtils {
      * @param binOnLeft       {@code true} if the bin is on the left side of the arithmetic operation, {@code false} otherwise
      * @return A {@link Filter} for the arithmetic condition
      * @throws NoApplicableFilterException if operands are not integers or if the operation is not supported
-     * @throws AerospikeDSLException       if type validation fails
+     * @throws ParseException       if type validation fails
      */
     private static Filter handleBinArithmeticExpression(BinPart bin, AbstractPart operand,
                                                         AbstractPart externalOperand,
@@ -783,14 +783,14 @@ public class VisitorUtils {
      *
      * @param left  The left {@link AbstractPart}
      * @param right The right {@link AbstractPart}
-     * @throws AerospikeDSLException if either the left or right operand is null
+     * @throws ParseException if either the left or right operand is null
      */
     private static void validateOperands(AbstractPart left, AbstractPart right) {
         if (left == null) {
-            throw new AerospikeDSLException("Left operand cannot be null");
+            throw new ParseException("Left operand cannot be null");
         }
         if (right == null) {
-            throw new AerospikeDSLException("Right operand cannot be null");
+            throw new ParseException("Right operand cannot be null");
         }
     }
 
@@ -807,7 +807,7 @@ public class VisitorUtils {
      * @return A secondary index {@link Filter}
      * @throws NoApplicableFilterException if the operation is not supported by secondary index filters,
      *                                     division by zero occurs, or the calculated range is invalid
-     * @throws AerospikeDSLException       if undefined division (0/0) occurs or other issues arise
+     * @throws ParseException       if undefined division (0/0) occurs or other issues arise
      */
     private static Filter applyFilterOperator(String binName, IntOperand leftOperand, IntOperand rightOperand,
                                               ExprPartsOperation operationType, FilterOperationType type,
@@ -1023,7 +1023,7 @@ public class VisitorUtils {
      *
      * @param expr The expression to process
      * @return The processed Exp
-     * @throws AerospikeDSLException if left or right operands are null in a binary expression
+     * @throws ParseException if left or right operands are null in a binary expression
      */
     private static Exp processExpression(ExpressionContainer expr) {
         // For unary expressions
@@ -1039,10 +1039,10 @@ public class VisitorUtils {
         AbstractPart left = expr.getLeft();
         AbstractPart right = expr.getRight();
         if (left == null) {
-            throw new AerospikeDSLException("Unable to parse left operand");
+            throw new ParseException("Unable to parse left operand");
         }
         if (right == null) {
-            throw new AerospikeDSLException("Unable to parse right operand");
+            throw new ParseException("Unable to parse right operand");
         }
 
         // Process operands

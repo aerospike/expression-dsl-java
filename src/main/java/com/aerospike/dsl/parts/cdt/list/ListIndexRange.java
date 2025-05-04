@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
@@ -39,7 +39,7 @@ public class ListIndexRange extends ListPart {
 
             return new ListIndexRange(isInverted, start, end);
         }
-        throw new AerospikeDSLException("Could not translate ListIndexRange from ctx: %s".formatted(ctx));
+        throw new ParseException("Could not translate ListIndexRange from ctx: %s".formatted(ctx));
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
@@ -45,7 +45,7 @@ public class ExplicitTypesTests {
         // A String constant must be quoted
         assertThatThrownBy(() -> parseExpAndCompare("$.stringBin1.get(type: STRING) == yes",
                 Exp.eq(Exp.stringBin("stringBin1"), Exp.val("yes"))))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Unable to parse right operand");
     }
 
@@ -82,7 +82,7 @@ public class ExplicitTypesTests {
     @Test
     void negativeBooleanComparison() {
         assertThatThrownBy(() -> parseExp("$.boolBin1.get(type: BOOL) == 5"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessageContaining("Cannot compare BOOL to INT");
     }
 
@@ -122,7 +122,7 @@ public class ExplicitTypesTests {
                 parseExpAndCompare("$.listBin1.get(type: LIST) == [yes, of course]",
                         Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of("yes", "of course"))))
         )
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Unable to parse list operand");
     }
 
@@ -162,7 +162,7 @@ public class ExplicitTypesTests {
                 parseExpAndCompare("[yes, of course] == $.listBin1.get(type: LIST)",
                         Exp.eq(Exp.val(List.of("yes", "of course")), Exp.listBin("listBin1")))
         )
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Could not parse given input, wrong syntax");
     }
 
@@ -228,14 +228,14 @@ public class ExplicitTypesTests {
                 parseExpAndCompare("$.mapBin1.get(type: MAP) == {yes, of course}",
                         Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes", "of course"))))
         )
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Unable to parse map operand");
 
         assertThatThrownBy(() ->
                 parseExpAndCompare("$.mapBin1.get(type: MAP) == ['yes', 'of course']",
                         Exp.eq(Exp.mapBin("mapBin1"), Exp.val(List.of("yes", "of course"))))
         )
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Cannot compare MAP to LIST");
 
         // Map key can only be Integer or String
@@ -243,7 +243,7 @@ public class ExplicitTypesTests {
                 parseExpAndCompare("$.mapBin1.get(type: MAP) == {[100]:[100]}",
                         Exp.eq(Exp.mapBin("mapBin1"), Exp.val(List.of("yes", "of course"))))
         )
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Unable to parse map operand");
     }
 
@@ -293,14 +293,14 @@ public class ExplicitTypesTests {
                 parseExpAndCompare("{yes, of course} == $.mapBin1.get(type: MAP)",
                         Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("of course", "yes"))))
         )
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Could not parse given input, wrong syntax");
 
         assertThatThrownBy(() ->
                 parseExpAndCompare("['yes', 'of course'] == $.mapBin1.get(type: MAP)", // incorrect: must be {}
                         Exp.eq(Exp.val(List.of("yes", "of course")), Exp.mapBin("mapBin1")))
         )
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Cannot compare MAP to LIST");
 
         // Map key can only be Integer or String
@@ -308,7 +308,7 @@ public class ExplicitTypesTests {
                 parseExpAndCompare("{[100]:[100]} == $.mapBin1.get(type: MAP)",
                         Exp.eq(Exp.val(List.of("yes", "of course")), Exp.mapBin("mapBin1")))
         )
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Could not parse given input, wrong syntax");
     }
 
@@ -339,7 +339,7 @@ public class ExplicitTypesTests {
     @Test
     void negativeTwoDifferentBinTypesComparison() {
         assertThatThrownBy(() -> parseExp("$.stringBin1.get(type: STRING) == $.floatBin2.get(type: FLOAT)"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessageContaining("Cannot compare STRING to FLOAT");
     }
 

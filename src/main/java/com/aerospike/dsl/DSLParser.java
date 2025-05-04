@@ -1,7 +1,7 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.query.Filter;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 
 /**
  * Contains API to convert dot separated String path into an Aerospike filter -
@@ -85,7 +85,7 @@ public interface DSLParser {
      *
      * @param dslString String consisting of dot separated elements, typically bin name and optional context
      * @return {@link ParsedExpression} object
-     * @throws AerospikeDSLException in case of invalid syntax
+     * @throws ParseException in case of invalid syntax
      */
     ParsedExpression parseExpression(String dslString);
 
@@ -155,11 +155,11 @@ public interface DSLParser {
      *   </tr>
      * </table>
      *
-     * @param dslString        String consisting of dot separated elements, typically bin name and optional context
-     * @param indexFilterInput Class containing namespace and collection of {@link Index} objects that represent
-     *                         created secondary indexes. Required for creating {@link Filter}. Can be null
+     * @param dslString    String consisting of dot separated elements, typically bin name and optional context
+     * @param indexContext Class containing namespace and collection of {@link Index} objects that represent
+     *                     existing secondary indexes. Required for creating {@link Filter}. Can be null
      * @return {@link ParsedExpression} object
-     * @throws AerospikeDSLException in case of or invalid syntax
+     * @throws ParseException in case of or invalid syntax
      */
-    ParsedExpression parseExpression(String dslString, IndexContext indexFilterInput);
+    ParsedExpression parseExpression(String dslString, IndexContext indexContext);
 }

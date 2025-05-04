@@ -4,7 +4,7 @@ import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -231,7 +231,7 @@ class ListExpressionsTests {
     void negativeSyntaxList() {
         // TODO: throw meaningful exception (by ANTLR?)
         assertThatThrownBy(() -> parseExp("$.listBin1.[stringValue] == 100"))
-                .isInstanceOf(AerospikeDSLException.class);
+                .isInstanceOf(ParseException.class);
     }
 
     //@Test

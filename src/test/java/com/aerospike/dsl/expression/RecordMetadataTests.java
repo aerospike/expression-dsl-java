@@ -1,7 +1,7 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseExp;
@@ -128,7 +128,7 @@ class RecordMetadataTests {
     void negativeTtlAsDifferentType() {
         // TODO: should be supported when adding operator + metadata validations (requires a refactor)
         assertThatThrownBy(() -> parseExp("$.ttl() == true"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessageContaining("Expecting non-bin operand, got BOOL_OPERAND");
     }
 

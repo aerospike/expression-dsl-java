@@ -1,7 +1,7 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseExp;
@@ -27,7 +27,7 @@ public class CastingTests {
     @Test
     void negativeInvalidTypesComparison() {
         assertThatThrownBy(() -> parseExp("$.stringBin1.get(type: STRING) > $.intBin2.asFloat()"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessageContaining("Cannot compare STRING to FLOAT");
     }
 }

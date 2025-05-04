@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
@@ -39,7 +39,7 @@ public class MapRankRange extends MapPart {
 
             return new MapRankRange(isInverted, start, end);
         }
-        throw new AerospikeDSLException("Could not translate MapRankRange from ctx: %s".formatted(ctx));
+        throw new ParseException("Could not translate MapRankRange from ctx: %s".formatted(ctx));
     }
 
     @Override

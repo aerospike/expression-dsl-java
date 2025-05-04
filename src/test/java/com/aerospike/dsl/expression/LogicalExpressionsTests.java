@@ -1,7 +1,7 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exceptions.AerospikeDSLException;
+import com.aerospike.dsl.exceptions.ParseException;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
@@ -82,19 +82,19 @@ public class LogicalExpressionsTests {
     @Test
     void negativeSyntaxLogicalOperators() {
         assertThatThrownBy(() -> parseExp("($.intBin1 > 100 and ($.intBin2 > 100) or"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessageContaining("Could not parse given input");
 
         assertThatThrownBy(() -> parseExp("and ($.intBin1 > 100 and ($.intBin2 > 100)"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessageContaining("Could not parse given input");
 
         assertThatThrownBy(() -> parseExp("($.intBin1 > 100 and ($.intBin2 > 100) not"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessageContaining("Could not parse given input");
 
         assertThatThrownBy(() -> parseExp("($.intBin1 > 100 and ($.intBin2 > 100) exclusive"))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessageContaining("Could not parse given input");
     }
 
@@ -103,7 +103,7 @@ public class LogicalExpressionsTests {
         assertThatThrownBy(() -> parseExpAndCompare("exclusive($.hand == \"hook\")",
                 Exp.exclusive(
                         Exp.eq(Exp.stringBin("hand"), Exp.val("hook")))))
-                .isInstanceOf(AerospikeDSLException.class)
+                .isInstanceOf(ParseException.class)
                 .hasMessage("Exclusive logical operator requires 2 or more expressions");
     }
 }
