@@ -115,7 +115,7 @@ public class ExplicitTypesFiltersTests {
     void listComparison_constantOnLeftSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter("[yes, of course] == $.listBin1.get(type: LIST)"))
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Could not parse given input, wrong syntax");
+                .hasMessage("Could not parse given DSL expression input");
     }
 
     @Test
@@ -139,7 +139,7 @@ public class ExplicitTypesFiltersTests {
     void mapComparison_constantOnLeftSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter("{yes, of course} == $.mapBin1.get(type: MAP)"))
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Could not parse given input, wrong syntax");
+                .hasMessage("Could not parse given DSL expression input");
     }
 
     @Test

@@ -9,11 +9,12 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class DSLParserImpl implements DSLParser {
 
@@ -36,41 +37,30 @@ public class DSLParserImpl implements DSLParser {
     }
 
     private ParsedExpression getParsedExpression(ParseTree parseTree, IndexContext indexContext) {
-        String namespace;
-        Collection<Index> indexes;
-        if (indexContext != null) {
-            namespace = indexContext.getNamespace();
-            indexes = indexContext.getIndexes();
-        } else {
-            namespace = null;
-            indexes = null;
-        }
+        final String namespace = Optional.ofNullable(indexContext)
+                .map(IndexContext::getNamespace)
+                .orElse(null);
+        final Collection<Index> indexes = Optional.ofNullable(indexContext)
+                .map(IndexContext::getIndexes)
+                .orElse(Collections.emptyList());
 
-        boolean hasFilterParsingError = false;
+        Map<String, List<Index>> indexesMap = indexes.stream()
+                // Filtering the indexes with the given namespace
+                .filter(idx -> idx.getNamespace() != null && idx.getNamespace().equals(namespace))
+                // Group the indexes by bin name
+                .collect(Collectors.groupingBy(Index::getBin));
+
         AbstractPart resultingPart = null;
-        Map<String, List<Index>> indexesMap = new HashMap<>();
-
-        if (indexes != null && !indexes.isEmpty()) {
-            indexes.forEach(idx -> {
-                    // Filtering the indexes with the given namespace
-                    if (idx.getNamespace() != null && idx.getNamespace().equals(namespace)) {
-                        // Group the indexes by bin name
-                        indexesMap.computeIfAbsent(idx.getBin(), k -> new ArrayList<>()).add(idx);
-                    }
-                }
-            );
-        }
         try {
             resultingPart = new ExpressionConditionVisitor().visit(parseTree);
-        } catch (NoApplicableFilterException e) {
-            hasFilterParsingError = true;
+        } catch (NoApplicableFilterException ignored) {
         }
 
         // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error
-        if (!hasFilterParsingError && resultingPart == null) {
-            throw new DslParseException("Could not parse given input, wrong syntax");
+        if (resultingPart == null) {
+            throw new DslParseException("Could not parse given DSL expression input");
         }
-        // Transfer the parsed tree along with namespace and indexes Map
+        // Return the parsed tree along with indexes Map
         return new ParsedExpression(resultingPart, indexesMap);
     }
 }

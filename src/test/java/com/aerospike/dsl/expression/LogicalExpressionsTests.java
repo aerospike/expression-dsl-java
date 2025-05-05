@@ -83,19 +83,19 @@ public class LogicalExpressionsTests {
     void negativeSyntaxLogicalOperators() {
         assertThatThrownBy(() -> parseExp("($.intBin1 > 100 and ($.intBin2 > 100) or"))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Could not parse given input");
+                .hasMessageContaining("Could not parse given DSL expression input");
 
         assertThatThrownBy(() -> parseExp("and ($.intBin1 > 100 and ($.intBin2 > 100)"))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Could not parse given input");
+                .hasMessageContaining("Could not parse given DSL expression input");
 
         assertThatThrownBy(() -> parseExp("($.intBin1 > 100 and ($.intBin2 > 100) not"))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Could not parse given input");
+                .hasMessageContaining("Could not parse given DSL expression input");
 
         assertThatThrownBy(() -> parseExp("($.intBin1 > 100 and ($.intBin2 > 100) exclusive"))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Could not parse given input");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test

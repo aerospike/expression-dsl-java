@@ -50,7 +50,7 @@ public class ArithmeticFiltersTests {
         assertThat(parseFilter("(5.2 + $.bananas) > 10.2")).isNull(); // not supported by secondary index filter
         assertThatThrownBy(() -> parseFilter("($.apples + $.bananas + 5) > 10"))
                 .isInstanceOf(DslParseException.class) // not supported by the current grammar
-                .hasMessageContaining("Could not parse given input, wrong syntax");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
@@ -87,7 +87,7 @@ public class ArithmeticFiltersTests {
         assertThat(parseFilter("($.apples - $.bananas) > 10")).isNull(); // not supported by secondary index filter
         assertThatThrownBy(() -> parseFilter("($.apples - $.bananas - 5) > 10"))
                 .isInstanceOf(DslParseException.class) // not supported by the current grammar
-                .hasMessageContaining("Could not parse given input, wrong syntax");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
@@ -128,7 +128,7 @@ public class ArithmeticFiltersTests {
 
         assertThatThrownBy(() -> parseFilter("($.apples * $.bananas - 5) > 10"))
                 .isInstanceOf(DslParseException.class) // not supported by the current grammar
-                .hasMessageContaining("Could not parse given input, wrong syntax");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
