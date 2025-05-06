@@ -1,7 +1,6 @@
 package com.aerospike.dsl;
 
 import com.aerospike.client.query.Filter;
-import com.aerospike.dsl.exceptions.DslParseException;
 
 /**
  * Contains API to convert dot separated String path into an Aerospike filter -

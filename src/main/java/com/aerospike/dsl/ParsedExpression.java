@@ -3,7 +3,6 @@ package com.aerospike.dsl;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.annotation.Beta;
-import com.aerospike.dsl.exceptions.DslParseException;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.ExpressionContainer;
 import lombok.Getter;

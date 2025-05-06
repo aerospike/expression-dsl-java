@@ -1,9 +1,9 @@
-package com.aerospike.dsl.exceptions;
+package com.aerospike.dsl.visitor;
 
 import com.aerospike.client.query.Filter;
 
 /**
- * Indicates that no applicable {@link Filter} could be generated for a given DSL expression.
+ * Indicates that no applicable {@link Filter} could be generated for a given DSL expression. For internal use.
  *
  * <p>This exception is typically thrown when attempting to create a Filter for a DSL expression
  * but the structure or types of the expression do not match any supported filtering patterns
@@ -11,9 +11,9 @@ import com.aerospike.client.query.Filter;
  * It signifies that while the expression might be valid in a broader context, it cannot be represented with a
  * secondary index Filter.
  */
-public class NoApplicableFilterException extends RuntimeException {
+class NoApplicableFilterException extends RuntimeException {
 
-    public NoApplicableFilterException(String description) {
+    NoApplicableFilterException(String description) {
         super(description);
     }
 }

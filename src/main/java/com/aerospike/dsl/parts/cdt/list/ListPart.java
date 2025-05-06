@@ -1,7 +1,7 @@
 package com.aerospike.dsl.parts.cdt.list;
 
 import com.aerospike.client.cdt.ListReturnType;
-import com.aerospike.dsl.exceptions.DslParseException;
+import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.parts.path.PathFunction;
 import com.aerospike.dsl.parts.cdt.CdtPart;
 import lombok.Getter;

@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.DslParseException;
+import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import static com.aerospike.dsl.util.ParsingUtils.unquote;

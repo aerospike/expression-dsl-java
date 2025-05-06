@@ -1,4 +1,4 @@
-package com.aerospike.dsl.exceptions;
+package com.aerospike.dsl;
 
 /**
  * Represents a general processing exception that can occur during DSL expression parsing.

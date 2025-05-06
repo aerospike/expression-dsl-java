@@ -1,7 +1,7 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exceptions.DslParseException;
+import com.aerospike.dsl.DslParseException;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 

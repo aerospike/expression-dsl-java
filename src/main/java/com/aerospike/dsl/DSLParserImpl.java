@@ -1,8 +1,6 @@
 package com.aerospike.dsl;
 
 import com.aerospike.dsl.annotation.Beta;
-import com.aerospike.dsl.exceptions.DslParseException;
-import com.aerospike.dsl.exceptions.NoApplicableFilterException;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
 import org.antlr.v4.runtime.CharStreams;
@@ -50,11 +48,7 @@ public class DSLParserImpl implements DSLParser {
                 // Group the indexes by bin name
                 .collect(Collectors.groupingBy(Index::getBin));
 
-        AbstractPart resultingPart = null;
-        try {
-            resultingPart = new ExpressionConditionVisitor().visit(parseTree);
-        } catch (NoApplicableFilterException ignored) {
-        }
+        AbstractPart resultingPart = new ExpressionConditionVisitor().visit(parseTree);
 
         // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error
         if (resultingPart == null) {

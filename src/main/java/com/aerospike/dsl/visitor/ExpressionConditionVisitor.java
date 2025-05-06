@@ -3,7 +3,7 @@ package com.aerospike.dsl.visitor;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.ConditionBaseVisitor;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.DslParseException;
+import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.parts.*;
 import com.aerospike.dsl.parts.cdt.list.ListIndex;
 import com.aerospike.dsl.parts.cdt.list.ListIndexRange;

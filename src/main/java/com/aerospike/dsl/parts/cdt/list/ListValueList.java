@@ -5,7 +5,7 @@ import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.exceptions.DslParseException;
+import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import java.util.List;

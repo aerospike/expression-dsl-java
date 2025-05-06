@@ -4,7 +4,7 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
-import com.aerospike.dsl.exceptions.DslParseException;
+import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 

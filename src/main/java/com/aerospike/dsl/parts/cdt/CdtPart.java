@@ -2,7 +2,7 @@ package com.aerospike.dsl.parts.cdt;
 
 import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exceptions.DslParseException;
+import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.path.BasePath;
 import com.aerospike.dsl.parts.path.PathFunction;

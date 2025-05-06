@@ -5,8 +5,7 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.Index;
-import com.aerospike.dsl.exceptions.DslParseException;
-import com.aerospike.dsl.exceptions.NoApplicableFilterException;
+import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.ExpressionContainer;
 import com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation;
@@ -299,8 +298,7 @@ public class VisitorUtils {
                 validateComparableTypes(binPart.getExpType(), Exp.Type.MAP);
                 yield otherPart.getExp();
             }
-            default ->
-                    throw new DslParseException("Operand type not supported: %s".formatted(otherPart.getPartType()));
+            default -> throw new DslParseException("Operand type not supported: %s".formatted(otherPart.getPartType()));
         };
 
         return binIsLeft ? operator.apply(binExp, otherExp) : operator.apply(otherExp, binExp);
@@ -405,7 +403,7 @@ public class VisitorUtils {
      * @return A {@link Pair} representing the lower and upper bounds of the range for the bin.
      * A {@code null} value in the pair indicates no bound on that side
      * @throws NoApplicableFilterException if division by zero occurs or the term type is unsupported
-     * @throws DslParseException       if undefined division (0/0) occurs
+     * @throws DslParseException           if undefined division (0/0) occurs
      */
     private static Pair<Long, Long> getLimitsForDivisionForFilter(long left, long right, FilterOperationType type,
                                                                   ArithmeticTermType termType) {
@@ -627,7 +625,7 @@ public class VisitorUtils {
      * @param type    The type of the filter operation (must be {@link FilterOperationType#EQ})
      * @return An Aerospike {@link Filter} for the string or blob comparison
      * @throws NoApplicableFilterException if the filter operation type is not equality
-     * @throws DslParseException       if type validation fails or base64 decoding fails
+     * @throws DslParseException           if type validation fails or base64 decoding fails
      */
     private static Filter handleStringOperand(BinPart bin, String binName, StringOperand operand,
                                               FilterOperationType type) {
@@ -689,7 +687,7 @@ public class VisitorUtils {
      * @param otherOperand The other operand in the filter condition
      * @param type         The type of the filter operation
      * @return A {@link Filter} if one can be generated from the nested expression, otherwise {@code null}
-     * @throws DslParseException       if operands within the nested expression are null
+     * @throws DslParseException           if operands within the nested expression are null
      * @throws NoApplicableFilterException if the nested expression structure is not supported for filtering
      */
     private static Filter handleExpressionOperand(ExpressionContainer expr, AbstractPart otherOperand,
@@ -755,7 +753,7 @@ public class VisitorUtils {
      * @param binOnLeft       {@code true} if the bin is on the left side of the arithmetic operation, {@code false} otherwise
      * @return A {@link Filter} for the arithmetic condition
      * @throws NoApplicableFilterException if operands are not integers or if the operation is not supported
-     * @throws DslParseException       if type validation fails
+     * @throws DslParseException           if type validation fails
      */
     private static Filter handleBinArithmeticExpression(BinPart bin, AbstractPart operand,
                                                         AbstractPart externalOperand,
@@ -807,7 +805,7 @@ public class VisitorUtils {
      * @return A secondary index {@link Filter}
      * @throws NoApplicableFilterException if the operation is not supported by secondary index filters,
      *                                     division by zero occurs, or the calculated range is invalid
-     * @throws DslParseException       if undefined division (0/0) occurs or other issues arise
+     * @throws DslParseException           if undefined division (0/0) occurs or other issues arise
      */
     private static Filter applyFilterOperator(String binName, IntOperand leftOperand, IntOperand rightOperand,
                                               ExprPartsOperation operationType, FilterOperationType type,

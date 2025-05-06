@@ -1,6 +1,6 @@
 package com.aerospike.dsl.util;
 
-import com.aerospike.dsl.exceptions.DslParseException;
+import com.aerospike.dsl.DslParseException;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
