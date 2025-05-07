@@ -158,7 +158,7 @@ public interface DSLParser {
      * @param indexContext Class containing namespace and collection of {@link Index} objects that represent
      *                     existing secondary indexes. Required for creating {@link Filter}. Can be null
      * @return {@link ParsedExpression} object
-     * @throws DslParseException in case of or invalid syntax
+     * @throws DslParseException in case of invalid syntax
      */
     ParsedExpression parseExpression(String dslString, IndexContext indexContext);
 }

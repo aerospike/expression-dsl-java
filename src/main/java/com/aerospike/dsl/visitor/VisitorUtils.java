@@ -931,12 +931,12 @@ public class VisitorUtils {
      */
     public static AbstractPart buildExpr(ExpressionContainer expr, Map<String, List<Index>> indexes) {
         Exp exp;
-        Filter sIndexFilter = null;
+        Filter secondaryIndexFilter = null;
         try {
-            sIndexFilter = getSIFilter(expr, indexes);
+            secondaryIndexFilter = getSIFilter(expr, indexes);
         } catch (NoApplicableFilterException ignored) {
         }
-        expr.setFilter(sIndexFilter);
+        expr.setFilter(secondaryIndexFilter);
 
         exp = getFilterExp(expr);
         expr.setExp(exp);
@@ -952,7 +952,7 @@ public class VisitorUtils {
      */
     private static Exp getFilterExp(ExpressionContainer expr) {
         // Skip the expression already used in creating secondary index Filter
-        if (expr.hasSIndexFilter()) return null;
+        if (expr.hasSecondaryIndexFilter()) return null;
 
         return switch (expr.getOperationType()) {
             case WITH_STRUCTURE -> withStructureToExp(expr);
@@ -1165,12 +1165,12 @@ public class VisitorUtils {
             chosenExpr = largestCardinalityExprs.stream()
                     .min(Comparator.comparing(expr -> getBinPart(expr, 1).getBinName()))
                     .orElse(null);
-            chosenExpr.hasSIndexFilter(true);
+            chosenExpr.hasSecondaryIndexFilter(true);
             return chosenExpr;
         }
         // There is only one expression with the largest cardinality
         chosenExpr = largestCardinalityExprs.get(0);
-        chosenExpr.hasSIndexFilter(true);
+        chosenExpr.hasSecondaryIndexFilter(true);
         return chosenExpr;
     }
 

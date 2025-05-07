@@ -13,7 +13,7 @@ public class ExpressionContainer extends AbstractPart {
     private final ExprPartsOperation operationType;
     @Setter()
     @Accessors(fluent = true)
-    private boolean hasSIndexFilter;
+    private boolean hasSecondaryIndexFilter;
 
     public ExpressionContainer() {
         super(PartType.EXPRESSION_CONTAINER);
