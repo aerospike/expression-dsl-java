@@ -440,8 +440,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             if (pathFunction != null) {
                 Exp.Type type = pathFunction.getBinType();
                 if (type != null) {
-                    if (part instanceof BinPart binPart) {
-                        binPart.updateExp(type);
+                    if (part.getPartType() == AbstractPart.PartType.BIN_PART) {
+                        ((BinPart) part).updateExp(type);
                     } else {
                         part.setExpType(type);
                     }
@@ -449,11 +449,11 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             }
         } else { // Override using Implicit type detection
             Exp.Type implicitType = detectImplicitTypeFromUpperTree(ctx);
-            if (part instanceof BinPart binPart) {
+            if (part.getPartType() == AbstractPart.PartType.BIN_PART) {
                 if (implicitType == null) {
                     implicitType = Exp.Type.INT;
                 }
-                binPart.updateExp(implicitType);
+                ((BinPart) part).updateExp(implicitType);
             } else { // ListPart or MapPart
                 if (implicitType == null) {
                     implicitType = TypeUtils.getDefaultType(part);
