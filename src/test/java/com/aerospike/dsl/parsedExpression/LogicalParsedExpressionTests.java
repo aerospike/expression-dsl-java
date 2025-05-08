@@ -403,7 +403,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         String namespace = "test1";
         Filter filter = null;
@@ -429,7 +429,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
         String namespace = "test1";
         Filter filter = null;
@@ -455,7 +455,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         String namespace = "test1";
         Filter filter = null;
@@ -481,7 +481,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
         String namespace = "test1";
         Filter filter = null;
@@ -507,7 +507,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         String namespace = "test1";
         Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
@@ -530,7 +530,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
         String namespace = "test1";
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
@@ -553,7 +553,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         String namespace = "test1";
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
@@ -576,7 +576,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         String namespace = "test1";
         // This expression part does not have the index with the largest cardinality, but it is the only applicable
@@ -601,7 +601,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
         String namespace = "test1";
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
@@ -624,7 +624,7 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
-                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         String namespace = "test1";
         // This expression part has the index with the largest cardinality and is applicable for Filter building,
@@ -641,5 +641,79 @@ public class LogicalParsedExpressionTests {
                 filter, exp, IndexContext.of(namespace, indexes));
         parseDslExpressionAndCompare("((($.intBin3 > 100 or $.intBin4 > 100) and $.intBin2 > 100) and $.intBin1 > 100)",
                 filter, exp, IndexContext.of(namespace, indexes));
+    }
+
+    @Test
+    void binLogical_OR2_OR1_AND2_AND_AND1_indexed_no_cardinality() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin5").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin6").indexType(IndexType.NUMERIC).build()
+        );
+        String namespace = "test1";
+        Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                Exp.or(
+                        Exp.or(
+                                Exp.gt(Exp.intBin("intBin3"), Exp.val(100)),
+                                Exp.gt(Exp.intBin("intBin4"), Exp.val(100))
+                        ),
+                        Exp.and(
+                                Exp.gt(Exp.intBin("intBin5"), Exp.val(100)),
+                                Exp.gt(Exp.intBin("intBin6"), Exp.val(100))
+                        )
+                ),
+                Exp.gt(Exp.intBin("intBin2"), Exp.val(100))
+        );
+        String dslString = "(($.intBin3 > 100 or $.intBin4 > 100) or ($.intBin5 > 100 and $.intBin6 > 100)) " +
+                "and ($.intBin2 > 100 and $.intBin1 > 100)";
+        parseDslExpressionAndCompare(dslString, filter, exp, IndexContext.of(namespace, indexes));
+        parseDslExpressionAndCompare("(" + dslString + ")", filter, exp, IndexContext.of(namespace, indexes));
+    }
+
+    @Test
+    void binLogical_OR2_OR1_AND2_AND_AND2_OR1_AND2_indexed_no_cardinality() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin2").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin3").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin4").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin5").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin6").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin7").indexType(IndexType.NUMERIC).build(),
+                Index.builder().namespace("test1").bin("intBin8").indexType(IndexType.NUMERIC).build()
+        );
+        String namespace = "test1";
+        // No Filter can be built as all expression parts participate in OR-combined queries
+        Filter filter = null;
+        Exp exp = Exp.and(
+                Exp.or(
+                        Exp.or(
+                                Exp.gt(Exp.intBin("intBin3"), Exp.val(100)),
+                                Exp.gt(Exp.intBin("intBin4"), Exp.val(100))
+                        ),
+                        Exp.and(
+                                Exp.gt(Exp.intBin("intBin5"), Exp.val(100)),
+                                Exp.gt(Exp.intBin("intBin6"), Exp.val(100))
+                        )
+                ),
+                Exp.or(
+                        Exp.and(
+                                Exp.gt(Exp.intBin("intBin2"), Exp.val(100)),
+                                Exp.gt(Exp.intBin("intBin1"), Exp.val(100))
+                        ),
+                        Exp.and(
+                                Exp.gt(Exp.intBin("intBin7"), Exp.val(100)),
+                                Exp.gt(Exp.intBin("intBin8"), Exp.val(100))
+                        )
+                )
+        );
+        String dslString = "(($.intBin3 > 100 or $.intBin4 > 100) or ($.intBin5 > 100 and $.intBin6 > 100)) " +
+                "and (($.intBin2 > 100 and $.intBin1 > 100) or ($.intBin7 > 100 and $.intBin8 > 100))";
+        parseDslExpressionAndCompare(dslString, filter, exp, IndexContext.of(namespace, indexes));
+        parseDslExpressionAndCompare("(" + dslString + ")", filter, exp, IndexContext.of(namespace, indexes));
     }
 }
