@@ -1,7 +1,7 @@
 package com.aerospike.dsl.util;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.dsl.DslParseException;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -14,7 +14,7 @@ public class ValidationUtils {
                             (leftType.equals(Exp.Type.FLOAT) && rightType.equals(Exp.Type.INT));
 
             if (!leftType.equals(rightType) && !isIntAndFloat) {
-                throw new AerospikeDSLException("Cannot compare %s to %s".formatted(leftType, rightType));
+                throw new DslParseException("Cannot compare %s to %s".formatted(leftType, rightType));
             }
         }
     }

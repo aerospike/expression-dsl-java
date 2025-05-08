@@ -1,50 +1,60 @@
 package com.aerospike.dsl;
 
-import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.Expression;
-import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.annotation.Beta;
-import com.aerospike.dsl.exception.AerospikeDSLException;
-import com.aerospike.dsl.model.AbstractPart;
+import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
-import com.aerospike.dsl.visitor.FilterConditionVisitor;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class DSLParserImpl implements DSLParser {
 
     @Beta
-    public Expression parseExpression(String input) {
-        ConditionLexer lexer = new ConditionLexer(CharStreams.fromString(input));
-        ConditionParser parser = new ConditionParser(new CommonTokenStream(lexer));
-        ParseTree tree = parser.parse();
-
-        ExpressionConditionVisitor visitor = new ExpressionConditionVisitor();
-        AbstractPart abstractPart = visitor.visit(tree);
-
-        // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error instead of NPE
-        if (abstractPart == null) {
-            throw new AerospikeDSLException("Could not parse given input, wrong syntax");
-        }
-        Exp expResult = abstractPart.getExp();
-        return Exp.build(expResult);
+    public ParsedExpression parseExpression(String dslString) {
+        ParseTree parseTree = getParseTree(dslString);
+        return getParsedExpression(parseTree, null);
     }
 
     @Beta
-    public List<Filter> parseFilters(String input) {
+    public ParsedExpression parseExpression(String input, IndexContext indexContext) {
+        ParseTree parseTree = getParseTree(input);
+        return getParsedExpression(parseTree, indexContext);
+    }
+
+    private ParseTree getParseTree(String input) {
         ConditionLexer lexer = new ConditionLexer(CharStreams.fromString(input));
         ConditionParser parser = new ConditionParser(new CommonTokenStream(lexer));
-        ParseTree tree = parser.parse();
+        return parser.parse();
+    }
 
-        FilterConditionVisitor visitor = new FilterConditionVisitor();
-        AbstractPart abstractPart = visitor.visit(tree);
+    private ParsedExpression getParsedExpression(ParseTree parseTree, IndexContext indexContext) {
+        final String namespace = Optional.ofNullable(indexContext)
+                .map(IndexContext::getNamespace)
+                .orElse(null);
+        final Collection<Index> indexes = Optional.ofNullable(indexContext)
+                .map(IndexContext::getIndexes)
+                .orElse(Collections.emptyList());
 
-        if (abstractPart == null) {
-            throw new AerospikeDSLException("Could not parse given input, wrong syntax");
+        Map<String, List<Index>> indexesMap = indexes.stream()
+                // Filtering the indexes with the given namespace
+                .filter(idx -> idx.getNamespace() != null && idx.getNamespace().equals(namespace))
+                // Group the indexes by bin name
+                .collect(Collectors.groupingBy(Index::getBin));
+
+        AbstractPart resultingPart = new ExpressionConditionVisitor().visit(parseTree);
+
+        // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error
+        if (resultingPart == null) {
+            throw new DslParseException("Could not parse given DSL expression input");
         }
-        return abstractPart.getSIndexFilter().getFilters();
+        // Return the parsed tree along with indexes Map
+        return new ParsedExpression(resultingPart, indexesMap);
     }
 }

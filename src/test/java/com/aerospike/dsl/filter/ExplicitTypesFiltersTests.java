@@ -1,47 +1,62 @@
 package com.aerospike.dsl.filter;
 
 import com.aerospike.client.query.Filter;
-import com.aerospike.dsl.exception.AerospikeDSLException;
+import com.aerospike.client.query.IndexType;
+import com.aerospike.dsl.Index;
+import com.aerospike.dsl.IndexContext;
+import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 import java.util.List;
 
-import static com.aerospike.dsl.util.TestUtils.parseFilters;
-import static com.aerospike.dsl.util.TestUtils.parseFiltersAndCompare;
+import static com.aerospike.dsl.util.TestUtils.parseFilter;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ExplicitTypesFiltersTests {
 
+    String NAMESPACE = "test1";
+    List<Index> INDEXES = List.of(
+            Index.builder().namespace("test1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+            Index.builder().namespace("test1").bin("stringBin1").indexType(IndexType.STRING).binValuesRatio(1).build(),
+            Index.builder().namespace("test1").bin("blobBin1").indexType(IndexType.BLOB).binValuesRatio(1).build()
+    );
+    IndexContext INDEX_FILTER_INPUT = IndexContext.of(NAMESPACE, INDEXES);
+
     @Test
     void integerComparison() {
-        parseFiltersAndCompare("$.intBin1.get(type: INT) > 5",
-                List.of(Filter.range("intBin1", 6, Long.MAX_VALUE)));
+        // Namespace and indexes must be given to create a Filter
+        TestUtils.parseFilterAndCompare("$.intBin1.get(type: INT) > 5", null);
 
-        parseFiltersAndCompare("5 < $.intBin1.get(type: INT)",
-                List.of(Filter.range("intBin1", 6, Long.MAX_VALUE)));
+        TestUtils.parseFilterAndCompare("$.intBin1.get(type: INT) > 5", INDEX_FILTER_INPUT,
+                Filter.range("intBin1", 6, Long.MAX_VALUE));
+
+        TestUtils.parseFilterAndCompare("5 < $.intBin1.get(type: INT)", INDEX_FILTER_INPUT,
+                Filter.range("intBin1", 6, Long.MAX_VALUE));
     }
 
     @Test
     void stringComparison() {
-        parseFiltersAndCompare("$.stringBin1.get(type: STRING) == \"yes\"",
-                List.of(Filter.equal("stringBin1", "yes")));
+        TestUtils.parseFilterAndCompare("$.stringBin1.get(type: STRING) == \"yes\"", INDEX_FILTER_INPUT,
+                Filter.equal("stringBin1", "yes"));
 
-        parseFiltersAndCompare("$.stringBin1.get(type: STRING) == 'yes'",
-                List.of(Filter.equal("stringBin1", "yes")));
+        TestUtils.parseFilterAndCompare("$.stringBin1.get(type: STRING) == 'yes'", INDEX_FILTER_INPUT,
+                Filter.equal("stringBin1", "yes"));
 
-        parseFiltersAndCompare("\"yes\" == $.stringBin1.get(type: STRING)",
-                List.of(Filter.equal("stringBin1", "yes")));
+        TestUtils.parseFilterAndCompare("\"yes\" == $.stringBin1.get(type: STRING)", INDEX_FILTER_INPUT,
+                Filter.equal("stringBin1", "yes"));
 
-        parseFiltersAndCompare("'yes' == $.stringBin1.get(type: STRING)",
-                List.of(Filter.equal("stringBin1", "yes")));
+        TestUtils.parseFilterAndCompare("'yes' == $.stringBin1.get(type: STRING)", INDEX_FILTER_INPUT,
+                Filter.equal("stringBin1", "yes"));
     }
 
     @Test
     void stringComparisonNegativeTest() {
         // A String constant must be quoted
-        assertThatThrownBy(() -> parseFilters("$.stringBin1.get(type: STRING) == yes"))
-                .isInstanceOf(AerospikeDSLException.class)
+        assertThatThrownBy(() -> parseFilter("$.stringBin1.get(type: STRING) == yes"))
+                .isInstanceOf(DslParseException.class)
                 .hasMessage("Unable to parse right operand");
     }
 
@@ -49,133 +64,108 @@ public class ExplicitTypesFiltersTests {
     void blobComparison() {
         byte[] data = new byte[]{1, 2, 3};
         String encodedString = Base64.getEncoder().encodeToString(data);
-        parseFiltersAndCompare("$.blobBin1.get(type: BLOB) == \"" + encodedString + "\"",
-                List.of(Filter.equal("blobBin1", data)));
+        TestUtils.parseFilterAndCompare("$.blobBin1.get(type: BLOB) == \"" + encodedString + "\"", INDEX_FILTER_INPUT,
+                Filter.equal("blobBin1", data));
 
         // Reverse
-        parseFiltersAndCompare("\"" + encodedString + "\" == $.blobBin1.get(type: BLOB)",
-                List.of(Filter.equal("blobBin1", data)));
+        TestUtils.parseFilterAndCompare("\"" + encodedString + "\" == $.blobBin1.get(type: BLOB)", INDEX_FILTER_INPUT,
+                Filter.equal("blobBin1", data));
     }
 
     @Test
     void floatComparison() {
         // No float support in secondary index filter
-        assertThatThrownBy(() -> parseFilters("$.floatBin1.get(type: FLOAT) == 1.5"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: FLOAT_OPERAND");
-
-        assertThatThrownBy(() -> parseFilters("1.5 == $.floatBin1.get(type: FLOAT)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: FLOAT_OPERAND");
+        assertThat(parseFilter("$.floatBin1.get(type: FLOAT) == 1.5")).isNull();
+        assertThat(parseFilter("1.5 == $.floatBin1.get(type: FLOAT)")).isNull();
     }
 
     @Test
     void booleanComparison() {
         // No boolean support in secondary index filter
-        assertThatThrownBy(() -> parseFilters("$.boolBin1.get(type: BOOL) == true"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: BOOL_OPERAND");
-
-        assertThatThrownBy(() -> parseFilters("true == $.boolBin1.get(type: BOOL)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: BOOL_OPERAND");
+        assertThat(parseFilter("$.boolBin1.get(type: BOOL) == true")).isNull();
+        assertThat(parseFilter("true == $.boolBin1.get(type: BOOL)")).isNull();
     }
 
     @Test
     void negativeBooleanComparison() {
-        assertThatThrownBy(() -> parseFilters("$.boolBin1.get(type: BOOL) == 5"))
-                .isInstanceOf(AerospikeDSLException.class)
+        assertThatThrownBy(() -> parseFilter("$.boolBin1.get(type: BOOL) == 5"))
+                .isInstanceOf(DslParseException.class)
                 .hasMessage("Cannot compare BOOL to INT");
     }
 
     @Test
     void listComparison_constantOnRightSide() {
-        assertThatThrownBy(() -> parseFilters("$.listBin1.get(type: LIST) == [100]"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: LIST_OPERAND");
+        // Not supported by secondary index filter
+        assertThat(parseFilter("$.listBin1.get(type: LIST) == [100]")).isNull();
     }
 
     @Test
     void listComparison_constantOnRightSide_NegativeTest() {
-        assertThatThrownBy(() -> parseFilters("$.listBin1.get(type: LIST) == [yes, of course]"))
-                .isInstanceOf(AerospikeDSLException.class)
+        assertThatThrownBy(() -> parseFilter("$.listBin1.get(type: LIST) == [yes, of course]"))
+                .isInstanceOf(DslParseException.class)
                 .hasMessage("Unable to parse list operand");
     }
 
     @Test
     void listComparison_constantOnLeftSide() {
-        assertThatThrownBy(() -> parseFilters("[100] == $.listBin1.get(type: LIST)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: LIST_OPERAND");
+        assertThat(parseFilter("[100] == $.listBin1.get(type: LIST)")).isNull();
     }
 
     @Test
     void listComparison_constantOnLeftSide_NegativeTest() {
-        assertThatThrownBy(() -> parseFilters("[yes, of course] == $.listBin1.get(type: LIST)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Could not parse given input, wrong syntax");
+        assertThatThrownBy(() -> parseFilter("[yes, of course] == $.listBin1.get(type: LIST)"))
+                .isInstanceOf(DslParseException.class)
+                .hasMessage("Could not parse given DSL expression input");
     }
 
     @Test
     void mapComparison_constantOnRightSide() {
-        assertThatThrownBy(() -> parseFilters("$.mapBin1.get(type: MAP) == {100:100}"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: MAP_OPERAND");
+        assertThat(parseFilter("$.mapBin1.get(type: MAP) == {100:100}")).isNull();
     }
 
     @Test
     void mapComparison_constantOnRightSide_NegativeTest() {
-        assertThatThrownBy(() -> parseFilters("$.mapBin1.get(type: MAP) == {yes, of course}"))
-                .isInstanceOf(AerospikeDSLException.class)
+        assertThatThrownBy(() -> parseFilter("$.mapBin1.get(type: MAP) == {yes, of course}"))
+                .isInstanceOf(DslParseException.class)
                 .hasMessage("Unable to parse map operand");
     }
 
     @Test
     void mapComparison_constantOnLeftSide() {
-        assertThatThrownBy(() -> parseFilters("{100:100} == $.mapBin1.get(type: MAP)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: MAP_OPERAND");
+        assertThat(parseFilter("{100:100} == $.mapBin1.get(type: MAP)")).isNull();
     }
 
     @Test
     void mapComparison_constantOnLeftSide_NegativeTest() {
-        assertThatThrownBy(() -> parseFilters("{yes, of course} == $.mapBin1.get(type: MAP)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Could not parse given input, wrong syntax");
+        assertThatThrownBy(() -> parseFilter("{yes, of course} == $.mapBin1.get(type: MAP)"))
+                .isInstanceOf(DslParseException.class)
+                .hasMessage("Could not parse given DSL expression input");
     }
 
     @Test
     void twoStringBinsComparison() {
-        assertThatThrownBy(() -> parseFilters("$.stringBin1.get(type: STRING) == $.stringBin2.get(type: STRING)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: BIN_PART");
+        assertThat(parseFilter("$.stringBin1.get(type: STRING) == $.stringBin2.get(type: STRING)")).isNull();
     }
 
     @Test
     void twoIntegerBinsComparison() {
-        assertThatThrownBy(() -> parseFilters("$.intBin1.get(type: INT) == $.intBin2.get(type: INT)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: BIN_PART");
+        assertThat(parseFilter("$.intBin1.get(type: INT) == $.intBin2.get(type: INT)")).isNull();
     }
 
     @Test
     void twoFloatBinsComparison() {
-        assertThatThrownBy(() -> parseFilters("$.floatBin1.get(type: FLOAT) == $.floatBin2.get(type: FLOAT)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: BIN_PART");
+        assertThat(parseFilter("$.floatBin1.get(type: FLOAT) == $.floatBin2.get(type: FLOAT)")).isNull();
     }
 
     @Test
     void twoBlobBinsComparison() {
-        assertThatThrownBy(() -> parseFilters("$.blobBin1.get(type: BLOB) == $.blobBin2.get(type: BLOB)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: BIN_PART");
+        assertThat(parseFilter("$.blobBin1.get(type: BLOB) == $.blobBin2.get(type: BLOB)")).isNull();
     }
 
     @Test
     void negativeTwoDifferentBinTypesComparison() {
-        assertThatThrownBy(() -> parseFilters("$.stringBin1.get(type: STRING) == $.floatBin2.get(type: FLOAT)"))
-                .isInstanceOf(AerospikeDSLException.class)
-                .hasMessage("Operand type not supported: BIN_PART");
+        assertThatThrownBy(() -> parseFilter("$.stringBin1.get(type: STRING) == $.floatBin2.get(type: FLOAT)"))
+                .isInstanceOf(DslParseException.class)
+                .hasMessage("Cannot compare STRING to FLOAT");
     }
 }
