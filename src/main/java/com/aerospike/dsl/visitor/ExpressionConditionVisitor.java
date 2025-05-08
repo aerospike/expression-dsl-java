@@ -4,21 +4,14 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.ConditionBaseVisitor;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
-import com.aerospike.dsl.parts.*;
-import com.aerospike.dsl.parts.cdt.list.ListIndex;
-import com.aerospike.dsl.parts.cdt.list.ListIndexRange;
-import com.aerospike.dsl.parts.cdt.list.ListRank;
-import com.aerospike.dsl.parts.cdt.list.ListRankRange;
-import com.aerospike.dsl.parts.cdt.list.ListRankRangeRelative;
-import com.aerospike.dsl.parts.cdt.list.ListTypeDesignator;
-import com.aerospike.dsl.parts.cdt.list.ListValue;
-import com.aerospike.dsl.parts.cdt.list.ListValueList;
-import com.aerospike.dsl.parts.cdt.list.ListValueRange;
+import com.aerospike.dsl.parts.AbstractPart;
+import com.aerospike.dsl.parts.ExpressionContainer;
+import com.aerospike.dsl.parts.cdt.list.*;
 import com.aerospike.dsl.parts.cdt.map.*;
-import com.aerospike.dsl.parts.operand.*;
 import com.aerospike.dsl.parts.controlstructure.ExclusiveStructure;
 import com.aerospike.dsl.parts.controlstructure.WhenStructure;
 import com.aerospike.dsl.parts.controlstructure.WithStructure;
+import com.aerospike.dsl.parts.operand.*;
 import com.aerospike.dsl.parts.path.BasePath;
 import com.aerospike.dsl.parts.path.BinPart;
 import com.aerospike.dsl.parts.path.Path;
@@ -29,10 +22,20 @@ import org.antlr.v4.runtime.tree.RuleNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
-import static com.aerospike.dsl.util.ParsingUtils.*;
-import static com.aerospike.dsl.visitor.VisitorUtils.*;
+import static com.aerospike.dsl.util.ParsingUtils.extractFunctionName;
+import static com.aerospike.dsl.util.ParsingUtils.extractParameter;
+import static com.aerospike.dsl.util.ParsingUtils.extractTypeFromMethod;
+import static com.aerospike.dsl.util.ParsingUtils.unquote;
+import static com.aerospike.dsl.visitor.VisitorUtils.detectImplicitTypeFromUpperTree;
+import static com.aerospike.dsl.visitor.VisitorUtils.extractVariableNameOrFail;
+import static com.aerospike.dsl.visitor.VisitorUtils.getPathFunctionParam;
+import static com.aerospike.dsl.visitor.VisitorUtils.logicalSetBinAsBooleanExpr;
+import static com.aerospike.dsl.visitor.VisitorUtils.logicalSetBinsAsBooleanExpr;
+import static com.aerospike.dsl.visitor.VisitorUtils.shouldVisitListElement;
+import static com.aerospike.dsl.visitor.VisitorUtils.shouldVisitMapElement;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
@@ -331,27 +334,30 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return readChildrenIntoMapOperand(ctx);
     }
 
-    public TreeMap<Object, Object> getOrderedMapPair(ParseTree ctx) {
+    public SortedMap<Object, Object> getOrderedMapPair(ParseTree ctx) {
         if (ctx.getChild(0) == null || ctx.getChild(2) == null) {
             throw new DslParseException("Unable to parse map operand");
         }
+
         Object key = ((ParsedValueOperand) visit(ctx.getChild(0))).getValue();
         Object value = ((ParsedValueOperand) visit(ctx.getChild(2))).getValue();
-        TreeMap<Object, Object> map = new TreeMap<>();
+
+        SortedMap<Object, Object> map = new TreeMap<>();
         map.put(key, value);
+
         return map;
     }
 
     public MapOperand readChildrenIntoMapOperand(RuleNode mapNode) {
         int size = mapNode.getChildCount();
-        TreeMap<Object, Object> map = new TreeMap<>();
+        SortedMap<Object, Object> map = new TreeMap<>();
         for (int i = 0; i < size; i++) {
             ParseTree child = mapNode.getChild(i);
             if (!shouldVisitMapElement(i, size, child)) {
                 continue;
             }
 
-            TreeMap<Object, Object> mapOfPair = getOrderedMapPair(child); // delegate to a dedicated visitor
+            SortedMap<Object, Object> mapOfPair = getOrderedMapPair(child); // delegate to a dedicated visitor
 
             try {
                 mapOfPair.forEach(map::putIfAbsent); // put contents of the current map pair to the resulting map
@@ -434,8 +440,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             if (pathFunction != null) {
                 Exp.Type type = pathFunction.getBinType();
                 if (type != null) {
-                    if (part instanceof BinPart) {
-                        ((BinPart) part).updateExp(type);
+                    if (part instanceof BinPart binPart) {
+                        binPart.updateExp(type);
                     } else {
                         part.setExpType(type);
                     }
@@ -443,11 +449,11 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             }
         } else { // Override using Implicit type detection
             Exp.Type implicitType = detectImplicitTypeFromUpperTree(ctx);
-            if (part instanceof BinPart) {
+            if (part instanceof BinPart binPart) {
                 if (implicitType == null) {
                     implicitType = Exp.Type.INT;
                 }
-                ((BinPart) part).updateExp(implicitType);
+                binPart.updateExp(implicitType);
             } else { // ListPart or MapPart
                 if (implicitType == null) {
                     implicitType = TypeUtils.getDefaultType(part);

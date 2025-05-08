@@ -33,8 +33,9 @@ public class Path extends AbstractPart {
         Exp.Type valueType = processValueType(lastPathPart, pathFunction);
 
         int cdtReturnType = 0;
-        if (lastPathPart instanceof CdtPart lastPart) cdtReturnType =
-                lastPart.getReturnType(pathFunction.getReturnParam());
+        if (lastPathPart instanceof CdtPart lastPart) {
+            cdtReturnType = lastPart.getReturnType(pathFunction.getReturnParam());
+        }
 
         if (lastPathPart != null) { // only if there are other parts except a bin
             return switch (pathFunction.getPathFunctionType()) {
@@ -46,6 +47,7 @@ public class Path extends AbstractPart {
         return null;
     }
 
+    @Override
     public Exp getExp() {
         return processPath(basePath, pathFunction);
     }

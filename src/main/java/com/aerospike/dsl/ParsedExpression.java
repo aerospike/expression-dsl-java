@@ -46,8 +46,8 @@ public class ParsedExpression {
     private ParseResult getParseResult() {
         if (expressionTree != null) {
             if (expressionTree.getPartType() == EXPRESSION_CONTAINER) {
-                AbstractPart result = buildExpr((ExpressionContainer) expressionTree, indexesMap);
-                return new ParseResult(result.getFilter(), result.getExp());
+                AbstractPart resultPart = buildExpr((ExpressionContainer) expressionTree, indexesMap);
+                return new ParseResult(resultPart.getFilter(), resultPart.getExp());
             } else {
                 Filter filter = expressionTree.getFilter();
                 Exp exp = expressionTree.getExp();

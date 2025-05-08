@@ -14,6 +14,7 @@ public class BooleanOperand extends AbstractPart implements ParsedValueOperand {
         this.value = value;
     }
 
+    @Override
     public Exp getExp() {
         return Exp.val(value);
     }

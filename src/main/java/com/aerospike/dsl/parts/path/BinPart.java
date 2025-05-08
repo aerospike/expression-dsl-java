@@ -20,6 +20,7 @@ public class BinPart extends ExpressionContainer {
         this.expType = expType;
     }
 
+    @Override
     public Exp getExp() {
         return Exp.bin(this.binName, expType);
     }

@@ -81,6 +81,7 @@ public class ListRankRangeRelative extends ListPart {
                     Exp.bin(basePath.getBinPart().getBinName(),
                             basePath.getBinType()), context);
         }
+
         return ListExp.getByValueRelativeRankRange(cdtReturnType, startExp, relativeExp, Exp.val(count),
                 Exp.bin(basePath.getBinPart().getBinName(),
                         basePath.getBinType()), context);

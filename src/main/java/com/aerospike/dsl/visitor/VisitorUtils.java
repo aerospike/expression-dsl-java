@@ -4,8 +4,8 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.Index;
 import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.Index;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.ExpressionContainer;
 import com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation;
@@ -21,23 +21,29 @@ import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-import static com.aerospike.dsl.parts.AbstractPart.PartType.*;
-import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.*;
+import static com.aerospike.dsl.parts.AbstractPart.PartType.BIN_PART;
+import static com.aerospike.dsl.parts.AbstractPart.PartType.EXPRESSION_CONTAINER;
+import static com.aerospike.dsl.parts.AbstractPart.PartType.INT_OPERAND;
+import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.ADD;
+import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.AND;
+import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.DIV;
+import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.MUL;
+import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.OR;
+import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.SUB;
 import static com.aerospike.dsl.util.ValidationUtils.validateComparableTypes;
-import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.*;
+import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.ADDEND;
+import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.DIVIDEND;
+import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.DIVISOR;
+import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.MIN;
+import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.MULTIPLICAND;
+import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.MULTIPLIER;
+import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.SUBTR;
 
 @UtilityClass
 public class VisitorUtils {
@@ -47,28 +53,6 @@ public class VisitorUtils {
             Exp.Type.STRING, IndexType.STRING,
             Exp.Type.BLOB, IndexType.BLOB
     );
-
-    protected enum FilterOperationType {
-        GT,
-        GTEQ,
-        LT,
-        LTEQ,
-        EQ,
-        NOTEQ
-    }
-
-    protected enum ArithmeticTermType {
-        ADDEND,
-        SUBTR,
-        MIN,
-        DIFFERENCE,
-        DIVIDEND,
-        DIVISOR,
-        QUOTIENT,
-        MULTIPLICAND,
-        MULTIPLIER,
-        PRODUCT
-    }
 
     /**
      * Converts an {@link ExprPartsOperation} enum value to its corresponding {@link FilterOperationType}.
@@ -359,12 +343,10 @@ public class VisitorUtils {
      * @return The value of the specified parameter if found and matches the name, otherwise {@code null}.
      */
     static String getPathFunctionParam(ConditionParser.PathFunctionParamContext paramCtx, String paramName) {
-        String paramNameText;
-        String paramNameValue;
         String paramValue = null;
         if (paramCtx.pathFunctionParamName() != null) {
-            paramNameText = paramCtx.pathFunctionParamName().getText();
-            paramNameValue = paramCtx.pathFunctionParamValue().getText();
+            String paramNameText = paramCtx.pathFunctionParamName().getText();
+            String paramNameValue = paramCtx.pathFunctionParamValue().getText();
             if (paramNameText.equalsIgnoreCase(paramName)) {
                 paramValue = paramNameValue;
             }
@@ -380,8 +362,7 @@ public class VisitorUtils {
      * @return The corresponding {@link ArithmeticTermType}
      * @throws NoApplicableFilterException if the operation type is not supported for determining arithmetic term type
      */
-    private static ArithmeticTermType getFilterTermType(ExprPartsOperation operationType,
-                                                        boolean isLeftTerm) {
+    private static ArithmeticTermType getFilterTermType(ExprPartsOperation operationType, boolean isLeftTerm) {
         return switch (operationType) {
             case ADD -> ADDEND;
             case SUB -> isLeftTerm ? SUBTR : MIN;
@@ -430,8 +411,9 @@ public class VisitorUtils {
      * A {@code null} value in the pair indicates no bound on that side
      * @throws DslParseException if undefined division (0/0) occurs or if the operation type is not supported
      */
-    private static Pair<Long, Long> LimitsForBinDividend(long left, long right,
-                                                         FilterOperationType operationType) {
+    private static Pair<Long, Long> LimitsForBinDividend(
+            long left, long right, FilterOperationType operationType
+    ) {
         if (left > 0 && right > 0) {
             // both operands are positive
             return getLimitsForBinDividendWithLeftNumberPositive(operationType, left, right);
@@ -462,8 +444,9 @@ public class VisitorUtils {
      * @return A {@link Pair} representing the lower and upper bounds of the range for the bin
      * @throws DslParseException if the operation type is not supported for division
      */
-    private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberNegative(FilterOperationType operationType,
-                                                                                  long left, long right) {
+    private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberNegative(
+            FilterOperationType operationType, long left, long right
+    ) {
         return switch (operationType) {
             case GT:
                 yield new Pair<>(Long.MIN_VALUE, left * right - 1);
@@ -487,8 +470,9 @@ public class VisitorUtils {
      * @return A {@link Pair} representing the lower and upper bounds of the range for the bin
      * @throws DslParseException if the operation type is not supported for division
      */
-    private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberPositive(FilterOperationType operationType,
-                                                                                  long left, long right) {
+    private static Pair<Long, Long> getLimitsForBinDividendWithLeftNumberPositive(
+            FilterOperationType operationType, long left, long right
+    ) {
         return switch (operationType) {
             case GT:
                 yield new Pair<>(left * right + 1, Long.MAX_VALUE);
@@ -814,7 +798,7 @@ public class VisitorUtils {
         long rightValue = rightOperand.getValue();
         float value;
         if (Objects.requireNonNull(operationType) == ADD) {
-            value = rightValue - leftValue;
+            value = (float) rightValue - leftValue;
         } else if (operationType == SUB) {
             value = switch (termType) {
                 case SUBTR -> rightValue + leftValue;
@@ -930,7 +914,6 @@ public class VisitorUtils {
      * Either of them can be null if there is no suitable filter
      */
     public static AbstractPart buildExpr(ExpressionContainer expr, Map<String, List<Index>> indexes) {
-        Exp exp;
         Filter secondaryIndexFilter = null;
         try {
             secondaryIndexFilter = getSIFilter(expr, indexes);
@@ -938,7 +921,7 @@ public class VisitorUtils {
         }
         expr.setFilter(secondaryIndexFilter);
 
-        exp = getFilterExp(expr);
+        Exp exp = getFilterExp(expr);
         expr.setExp(exp);
         return expr;
     }
@@ -982,7 +965,6 @@ public class VisitorUtils {
         }
         return Exp.let(expressions.toArray(new Exp[0]));
     }
-
 
     /**
      * Generates filter {@link Exp} for a WHEN structure {@link ExpressionContainer}.
@@ -1121,6 +1103,7 @@ public class VisitorUtils {
 
         ExpressionContainer chosenExpr = chooseExprForFilter(expr, indexes);
         if (chosenExpr == null) return null;
+
         return getFilterOrFail(
                 chosenExpr.getLeft(),
                 chosenExpr.getRight(),
@@ -1168,6 +1151,7 @@ public class VisitorUtils {
             chosenExpr.hasSecondaryIndexFilter(true);
             return chosenExpr;
         }
+
         // There is only one expression with the largest cardinality
         chosenExpr = largestCardinalityExprs.get(0);
         chosenExpr.hasSecondaryIndexFilter(true);
@@ -1184,8 +1168,9 @@ public class VisitorUtils {
      * and values are lists of {@link ExpressionContainer}s associated with bins
      * having that cardinality
      */
-    private static Map<Integer, List<ExpressionContainer>> getExpressionsPerCardinality(ExpressionContainer exprContainer,
-                                                                                        Map<String, List<Index>> indexes) {
+    private static Map<Integer, List<ExpressionContainer>> getExpressionsPerCardinality(
+            ExpressionContainer exprContainer, Map<String, List<Index>> indexes
+    ) {
         Map<Integer, List<ExpressionContainer>> exprsPerCardinality = new HashMap<>();
         final BinPart[] binPartPrev = {null};
         Consumer<AbstractPart> exprsPerCardinalityCollector = part -> {
@@ -1215,7 +1200,8 @@ public class VisitorUtils {
      * to the {@code exprsPerCardinality} map.
      *
      * @param exprsPerCardinality A map where keys are integer ratios (representing index cardinality)
-     *                            and values are lists of {@link ExpressionContainer} objects. The map is updated by this method
+     *                            and values are lists of {@link ExpressionContainer} objects.
+     *                            The map is updated by this method
      * @param expr                The {@link ExpressionContainer} to be added to the appropriate list
      *                            within {@code exprsPerCardinality}
      * @param binPart             The {@link BinPart} associated with the expression, used to find
@@ -1316,5 +1302,27 @@ public class VisitorUtils {
             traverseTree(container.getLeft(), visitor, depth - 1, stopCondition);
             traverseTree(container.getRight(), visitor, depth - 1, stopCondition);
         }
+    }
+
+    protected enum FilterOperationType {
+        GT,
+        GTEQ,
+        LT,
+        LTEQ,
+        EQ,
+        NOTEQ
+    }
+
+    protected enum ArithmeticTermType {
+        ADDEND,
+        SUBTR,
+        MIN,
+        DIFFERENCE,
+        DIVIDEND,
+        DIVISOR,
+        QUOTIENT,
+        MULTIPLICAND,
+        MULTIPLIER,
+        PRODUCT
     }
 }
