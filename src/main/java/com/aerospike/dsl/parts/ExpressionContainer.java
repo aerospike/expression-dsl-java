@@ -14,6 +14,9 @@ public class ExpressionContainer extends AbstractPart {
     @Setter()
     @Accessors(fluent = true)
     private boolean hasSecondaryIndexFilter;
+    @Setter()
+    @Accessors(fluent = true)
+    private boolean isExclFromSecondaryIndexFilter;
 
     public ExpressionContainer() {
         super(PartType.EXPRESSION_CONTAINER);

@@ -105,16 +105,16 @@ public class PathOperandUtils {
     }
 
     private static boolean isPrevCdtPartAmbiguous(AbstractPart lastPart) {
-        if (lastPart instanceof MapPart mapPart) { // check that lastPart is CDT Map
+        if (lastPart.getPartType() == MAP_PART) { // check that lastPart is CDT Map
             // check relevant types
             return List.of(MapPart.MapPartType.INDEX, MapPart.MapPartType.RANK, MapPart.MapPartType.KEY,
                             MapPart.MapPartType.VALUE)
-                    .contains(mapPart.getMapPartType());
+                    .contains(((MapPart) lastPart).getMapPartType());
         }
-        if (lastPart instanceof ListPart listPart) { // check that lastPart is CDT List
+        if (lastPart.getPartType() == LIST_PART) { // check that lastPart is CDT List
             // check relevant types
             return List.of(INDEX, RANK, ListPart.ListPartType.VALUE)
-                    .contains(listPart.getListPartType());
+                    .contains(((ListPart) lastPart).getListPartType());
         }
         return false;
     }
@@ -142,11 +142,12 @@ public class PathOperandUtils {
     }
 
     private static boolean isListTypeDesignator(AbstractPart cdtPart) {
-        return cdtPart instanceof ListPart listPart && listPart.getListPartType().equals(LIST_TYPE_DESIGNATOR);
+        return cdtPart.getPartType() == LIST_PART
+                && ((ListPart) cdtPart).getListPartType().equals(LIST_TYPE_DESIGNATOR);
     }
 
     private static boolean isMapTypeDesignator(AbstractPart cdtPart) {
-        return cdtPart instanceof MapPart mapPart && mapPart.getMapPartType().equals(MAP_TYPE_DESIGNATOR);
+        return cdtPart.getPartType() == MAP_PART && ((MapPart) cdtPart).getMapPartType().equals(MAP_TYPE_DESIGNATOR);
     }
 
     private static CTX[] getContextArray(List<AbstractPart> parts, boolean includeLast) {

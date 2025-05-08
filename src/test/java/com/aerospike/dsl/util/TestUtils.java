@@ -14,12 +14,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class TestUtils {
 
     private final DSLParserImpl parser = new DSLParserImpl();
-    
-    public static Expression parseExp(String input) {
+
+    public static ParsedExpression parseExpression(String input, IndexContext indexContext) {
+        return parser.parseExpression(input, indexContext);
+    }
+
+    public static Exp parseFilterExp(String input) {
+        return parser.parseExpression(input).getResult().getExp();
+    }
+
+    public static Expression parseFilterExpression(String input) {
         return Exp.build(parser.parseExpression(input).getResult().getExp());
     }
 
-    public static void parseExpAndCompare(String input, Exp expected) {
+    public static void parseFilterExpressionAndCompare(String input, Exp expected) {
         Expression actualExpression = Exp.build(parser.parseExpression(input).getResult().getExp());
         Expression expectedExpression = Exp.build(expected);
         assertEquals(actualExpression, expectedExpression);
@@ -43,14 +51,14 @@ public class TestUtils {
         assertEquals(actualFilter, expected);
     }
 
-    public static void parseExpressionAndCompare(String input, Filter filter, Exp exp) {
+    public static void parseDslExpressionAndCompare(String input, Filter filter, Exp exp) {
         ParsedExpression actualExpression = parser.parseExpression(input);
         assertEquals(actualExpression.getResult().getFilter(), filter);
         Exp actualExp = actualExpression.getResult().getExp();
         assertEquals(actualExp == null ? null : Exp.build(actualExp), exp == null ? null : Exp.build(exp));
     }
 
-    public static void parseExpressionAndCompare(String input, Filter filter, Exp exp, IndexContext indexContext) {
+    public static void parseDslExpressionAndCompare(String input, Filter filter, Exp exp, IndexContext indexContext) {
         ParsedExpression actualExpression = parser.parseExpression(input, indexContext);
         assertEquals(actualExpression.getResult().getFilter(), filter);
         Exp actualExp = actualExpression.getResult().getExp();
