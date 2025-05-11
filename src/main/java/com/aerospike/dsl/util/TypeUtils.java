@@ -24,9 +24,4 @@ public class TypeUtils {
     public static Exp.Type getDefaultTypeForCount() {
         return Exp.Type.INT;
     }
-
-    public static boolean isCdtPart(AbstractPart part) {
-        return part.getPartType() == AbstractPart.PartType.LIST_PART
-                || part.getPartType() == AbstractPart.PartType.MAP_PART;
-    }
 }

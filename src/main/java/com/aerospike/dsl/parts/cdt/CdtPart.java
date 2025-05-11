@@ -21,4 +21,9 @@ public abstract class CdtPart extends AbstractPart {
     }
 
     public abstract int getReturnType(PathFunction.ReturnParam returnParam);
+
+    public static boolean isCdtPart(AbstractPart part) {
+        return part.getPartType() == AbstractPart.PartType.LIST_PART
+                || part.getPartType() == AbstractPart.PartType.MAP_PART;
+    }
 }

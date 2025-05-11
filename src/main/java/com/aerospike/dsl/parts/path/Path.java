@@ -7,12 +7,8 @@ import lombok.Getter;
 
 import java.util.List;
 
-import static com.aerospike.dsl.util.PathOperandUtils.processGet;
-import static com.aerospike.dsl.util.PathOperandUtils.processPathFunction;
-import static com.aerospike.dsl.util.PathOperandUtils.processSize;
-import static com.aerospike.dsl.util.PathOperandUtils.processValueType;
-import static com.aerospike.dsl.util.PathOperandUtils.updateWithCdtTypeDesignator;
-import static com.aerospike.dsl.util.TypeUtils.isCdtPart;
+import static com.aerospike.dsl.parts.cdt.CdtPart.isCdtPart;
+import static com.aerospike.dsl.util.PathOperandUtils.*;
 
 @Getter
 public class Path extends AbstractPart {
