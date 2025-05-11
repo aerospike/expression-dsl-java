@@ -2,10 +2,11 @@ package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
-import static com.aerospike.dsl.util.TestUtils.parseExp;
-import static com.aerospike.dsl.util.TestUtils.parseExpAndCompare;
+import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
+import static com.aerospike.dsl.util.TestUtils.parseDslExpressionAndCompare;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CastingTests {
@@ -14,19 +15,19 @@ public class CastingTests {
     void floatToIntComparison() {
         Exp expectedExp = Exp.gt(Exp.intBin("intBin1"), Exp.intBin("floatBin1"));
         // Int is default
-        parseExpAndCompare("$.intBin1 > $.floatBin1.asInt()", expectedExp);
-        parseExpAndCompare("$.intBin1.get(type: INT) > $.floatBin1.asInt()", expectedExp);
+        TestUtils.parseFilterExpressionAndCompare("$.intBin1 > $.floatBin1.asInt()", expectedExp);
+        TestUtils.parseFilterExpressionAndCompare("$.intBin1.get(type: INT) > $.floatBin1.asInt()", expectedExp);
     }
 
     @Test
     void intToFloatComparison() {
-        parseExpAndCompare("$.intBin1.get(type: INT) > $.intBin2.asFloat()",
+        TestUtils.parseFilterExpressionAndCompare("$.intBin1.get(type: INT) > $.intBin2.asFloat()",
                 Exp.gt(Exp.intBin("intBin1"), Exp.floatBin("intBin2")));
     }
 
     @Test
     void negativeInvalidTypesComparison() {
-        assertThatThrownBy(() -> parseExp("$.stringBin1.get(type: STRING) > $.intBin2.asFloat()"))
+        assertThatThrownBy(() -> parseFilterExp("$.stringBin1.get(type: STRING) > $.intBin2.asFloat()"))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Cannot compare STRING to FLOAT");
     }

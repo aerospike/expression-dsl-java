@@ -7,11 +7,8 @@ import lombok.Getter;
 
 import java.util.List;
 
-import static com.aerospike.dsl.util.PathOperandUtils.processGet;
-import static com.aerospike.dsl.util.PathOperandUtils.processPathFunction;
-import static com.aerospike.dsl.util.PathOperandUtils.processSize;
-import static com.aerospike.dsl.util.PathOperandUtils.processValueType;
-import static com.aerospike.dsl.util.PathOperandUtils.updateWithCdtTypeDesignator;
+import static com.aerospike.dsl.parts.cdt.CdtPart.isCdtPart;
+import static com.aerospike.dsl.util.PathOperandUtils.*;
 
 @Getter
 public class Path extends AbstractPart {
@@ -33,8 +30,8 @@ public class Path extends AbstractPart {
         Exp.Type valueType = processValueType(lastPathPart, pathFunction);
 
         int cdtReturnType = 0;
-        if (lastPathPart instanceof CdtPart lastPart) {
-            cdtReturnType = lastPart.getReturnType(pathFunction.getReturnParam());
+        if (lastPathPart != null && isCdtPart(lastPathPart)) {
+            cdtReturnType = ((CdtPart) lastPathPart).getReturnType(pathFunction.getReturnParam());
         }
 
         if (lastPathPart != null) { // only if there are other parts except a bin

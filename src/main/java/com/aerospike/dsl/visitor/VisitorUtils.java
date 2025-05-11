@@ -1132,11 +1132,16 @@ public class VisitorUtils {
         Map<Integer, List<ExpressionContainer>> exprsPerCardinality =
                 getExpressionsPerCardinality(exprContainer, indexes);
 
-        // Find the entry with the largest key (cardinality)
-        Map<Integer, List<ExpressionContainer>> largestCardinalityMap = exprsPerCardinality.entrySet().stream()
-                .max(Map.Entry.comparingByKey())
-                .map(entry -> Map.of(entry.getKey(), entry.getValue()))
-                .orElse(Collections.emptyMap());
+        Map<Integer, List<ExpressionContainer>> largestCardinalityMap;
+        if (exprsPerCardinality.size() > 1) {
+            // Find the entry with the largest key (cardinality)
+            largestCardinalityMap = exprsPerCardinality.entrySet().stream()
+                    .max(Map.Entry.comparingByKey())
+                    .map(entry -> Map.of(entry.getKey(), entry.getValue()))
+                    .orElse(Collections.emptyMap());
+        } else {
+            largestCardinalityMap = new HashMap<>(exprsPerCardinality);
+        }
 
         List<ExpressionContainer> largestCardinalityExprs;
         if (largestCardinalityMap.isEmpty()) return null;
@@ -1249,7 +1254,23 @@ public class VisitorUtils {
         Predicate<AbstractPart> stopOnLogicalExpr = part -> {
             if (part.getPartType() == EXPRESSION_CONTAINER) {
                 ExpressionContainer logicalExpr = (ExpressionContainer) part;
-                return logicalExpr.getOperationType() == AND || logicalExpr.getOperationType() == OR;
+                if (logicalExpr.isExclFromSecondaryIndexFilter()) {
+                    // All parts of the tree branch excluded from secondary index Filter building are flagged
+                    if (logicalExpr.getLeft().getPartType() == EXPRESSION_CONTAINER) {
+                        ((ExpressionContainer) logicalExpr.getLeft()).isExclFromSecondaryIndexFilter(true);
+                    }
+                    if (logicalExpr.getRight().getPartType() == EXPRESSION_CONTAINER) {
+                        ((ExpressionContainer) logicalExpr.getRight()).isExclFromSecondaryIndexFilter(true);
+                    }
+                    return true;
+                }
+                if (logicalExpr.getOperationType() == AND) return true;
+                if (logicalExpr.getOperationType() == OR) {
+                    // Both parts of OR-combined query are excluded from secondary index Filter building
+                    ((ExpressionContainer) logicalExpr.getLeft()).isExclFromSecondaryIndexFilter(true);
+                    ((ExpressionContainer) logicalExpr.getRight()).isExclFromSecondaryIndexFilter(true);
+                    return true;
+                }
             }
             return false;
         };
