@@ -9,6 +9,7 @@ import com.aerospike.dsl.Index;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.ExpressionContainer;
 import com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation;
+import com.aerospike.dsl.parts.controlstructure.AndStructure;
 import com.aerospike.dsl.parts.controlstructure.ExclusiveStructure;
 import com.aerospike.dsl.parts.controlstructure.WhenStructure;
 import com.aerospike.dsl.parts.controlstructure.WithStructure;
@@ -21,29 +22,23 @@ import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
-import static com.aerospike.dsl.parts.AbstractPart.PartType.BIN_PART;
-import static com.aerospike.dsl.parts.AbstractPart.PartType.EXPRESSION_CONTAINER;
-import static com.aerospike.dsl.parts.AbstractPart.PartType.INT_OPERAND;
-import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.ADD;
-import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.AND;
-import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.DIV;
-import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.MUL;
-import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.OR;
-import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.SUB;
+import static com.aerospike.dsl.parts.AbstractPart.PartType.*;
+import static com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation.*;
 import static com.aerospike.dsl.util.ValidationUtils.validateComparableTypes;
-import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.ADDEND;
-import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.DIVIDEND;
-import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.DIVISOR;
-import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.MIN;
-import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.MULTIPLICAND;
-import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.MULTIPLIER;
-import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.SUBTR;
+import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.*;
 
 @UtilityClass
 public class VisitorUtils {
@@ -941,6 +936,7 @@ public class VisitorUtils {
             case WITH_STRUCTURE -> withStructureToExp(expr);
             case WHEN_STRUCTURE -> whenStructureToExp(expr);
             case EXCLUSIVE_STRUCTURE -> exclStructureToExp(expr);
+            case AND_STRUCTURE -> andStructureToExp(expr);
             default -> processExpression(expr);
         };
     }
@@ -990,12 +986,28 @@ public class VisitorUtils {
      */
     private static Exp exclStructureToExp(ExpressionContainer expr) {
         List<Exp> expressions = new ArrayList<>();
-        ExclusiveStructure whenOperandsList = (ExclusiveStructure) expr.getLeft(); // extract unary Expr operand
-        List<ExpressionContainer> operands = whenOperandsList.getOperands();
+        ExclusiveStructure exclOperandsList = (ExclusiveStructure) expr.getLeft(); // extract unary Expr operand
+        List<ExpressionContainer> operands = exclOperandsList.getOperands();
         for (ExpressionContainer part : operands) {
             expressions.add(getExp(part));
         }
         return Exp.exclusive(expressions.toArray(new Exp[0]));
+    }
+
+    /**
+     * Generates filter {@link Exp} for an AND structure {@link ExpressionContainer}.
+     *
+     * @param expr The {@link ExpressionContainer} representing AND structure
+     * @return The resulting {@link Exp} expression
+     */
+    private static Exp andStructureToExp(ExpressionContainer expr) {
+        List<Exp> expressions = new ArrayList<>();
+        AndStructure andOperandsList = (AndStructure) expr.getLeft(); // extract unary Expr operand
+        List<ExpressionContainer> operands = andOperandsList.getOperands();
+        for (ExpressionContainer part : operands) {
+            expressions.add(getExp(part));
+        }
+        return Exp.and(expressions.toArray(new Exp[0]));
     }
 
     /**

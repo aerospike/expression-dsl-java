@@ -35,6 +35,8 @@ public abstract class AbstractPart {
         WITH_STRUCTURE,
         WHEN_STRUCTURE,
         EXCLUSIVE_STRUCTURE,
+        AND_STRUCTURE,
+        OR_STRUCTURE,
         BASE_PATH,
         BIN_PART,
         LIST_PART,

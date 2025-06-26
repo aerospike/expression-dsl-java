@@ -65,6 +65,8 @@ public class ExpressionContainer extends AbstractPart {
         LTEQ,
         WITH_STRUCTURE, // unary
         WHEN_STRUCTURE, // unary
-        EXCLUSIVE_STRUCTURE // unary
+        EXCLUSIVE_STRUCTURE, // unary
+        AND_STRUCTURE,
+        OR_STRUCTURE
     }
 }
