@@ -11,6 +11,7 @@ import com.aerospike.dsl.parts.ExpressionContainer;
 import com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation;
 import com.aerospike.dsl.parts.controlstructure.AndStructure;
 import com.aerospike.dsl.parts.controlstructure.ExclusiveStructure;
+import com.aerospike.dsl.parts.controlstructure.OrStructure;
 import com.aerospike.dsl.parts.controlstructure.WhenStructure;
 import com.aerospike.dsl.parts.controlstructure.WithStructure;
 import com.aerospike.dsl.parts.operand.IntOperand;
@@ -18,6 +19,8 @@ import com.aerospike.dsl.parts.operand.MetadataOperand;
 import com.aerospike.dsl.parts.operand.StringOperand;
 import com.aerospike.dsl.parts.operand.WithOperand;
 import com.aerospike.dsl.parts.path.BinPart;
+import com.aerospike.dsl.parts.path.Path;
+import com.aerospike.dsl.util.TypeUtils;
 import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -43,10 +46,36 @@ import static com.aerospike.dsl.visitor.VisitorUtils.ArithmeticTermType.*;
 @UtilityClass
 public class VisitorUtils {
 
+    protected enum FilterOperationType {
+        GT,
+        GTEQ,
+        LT,
+        LTEQ,
+        EQ,
+        NOTEQ
+    }
+
+    protected enum ArithmeticTermType {
+        ADDEND,
+        SUBTR,
+        MIN,
+        DIVIDEND,
+        DIVISOR,
+        MULTIPLICAND,
+        MULTIPLIER,
+    }
+
     private final Map<Exp.Type, IndexType> expTypeToIndexType = Map.of(
             Exp.Type.INT, IndexType.NUMERIC,
             Exp.Type.STRING, IndexType.STRING,
             Exp.Type.BLOB, IndexType.BLOB
+    );
+
+    final Map<AbstractPart.PartType, Exp.Type> partTypeToExpType = Map.of(
+            AbstractPart.PartType.INT_OPERAND, Exp.Type.INT,
+            AbstractPart.PartType.FLOAT_OPERAND, Exp.Type.FLOAT,
+            AbstractPart.PartType.STRING_OPERAND, Exp.Type.STRING,
+            AbstractPart.PartType.BOOL_OPERAND, Exp.Type.BOOL
     );
 
     /**
@@ -131,54 +160,83 @@ public class VisitorUtils {
     }
 
     /**
-     * The method traverses the parse tree from the given context {@code ctx}
-     * towards the root. At each level, it checks the children for operand contexts.
-     * If an operand context representing an integer, float, string, or boolean
-     * is found, its corresponding {@link Exp.Type} is returned. The search stops
-     * upon finding the first such operand in the upward path.
+     * Overrides Exp type information for both the left and right {@link AbstractPart} operands.
+     * This method ensures that if a part's Exp type is not explicitly set, it attempts to infer and update
+     * its type based on the opposite part of expression.
      *
-     * @param ctx The current parse tree context to start searching from.
-     * @return The detected implicit {@link Exp.Type} (INT, FLOAT, STRING, or BOOL),
-     * or {@code null} if no such operand is found in the upper tree levels.
+     * @param left The left {@link AbstractPart} operand, whose type information might be updated
+     * @param right The right {@link AbstractPart} operand, whose type information might be updated
+     * @throws DslParseException If either the left or right operand is {@code null}
      */
-    static Exp.Type detectImplicitTypeFromUpperTree(ParseTree ctx) {
-        // Search for a "leaf" operand child (Int, Float, String and Boolean)
-        // in the above levels of the current path in the expression tree
-        while (ctx.getParent() != null) {
-            ctx = ctx.getParent();
-
-            for (int i = 0; i < ctx.getChildCount(); i++) {
-                ParseTree child = ctx.getChild(i);
-
-                if (child instanceof ConditionParser.OperandContext operandContext) {
-                    if (operandContext.numberOperand() != null) {
-                        if (operandContext.numberOperand().intOperand() != null) {
-                            return Exp.Type.INT;
-                        } else if (operandContext.numberOperand().floatOperand() != null) {
-                            return Exp.Type.FLOAT;
-                        }
-                    } else if (operandContext.stringOperand() != null) {
-                        return Exp.Type.STRING;
-                    } else if (operandContext.booleanOperand() != null) {
-                        return Exp.Type.BOOL;
-                    }
-                }
-            }
+    static void overrideTypeInfo(AbstractPart left, AbstractPart right) {
+        if (left == null) {
+            throw new DslParseException("Unable to parse left operand");
         }
-        // Could not detect, return null and determine defaults later on
-        return null;
+        if (right == null) {
+            throw new DslParseException("Unable to parse right operand");
+        }
+
+        // Handle left part
+        overrideTypes(left, right);
+        // Handle right part
+        overrideTypes(right, left);
     }
 
     /**
-     * Sets the logical bin type for both the left and right expression containers
-     * to {@link Exp.Type#BOOL} if they represent a bin part.
+     * Overrides Exp type of the {@code left} {@link AbstractPart} based on the {@code right} {@link AbstractPart}.
+     * This method handles different types of {@link AbstractPart} (e.g., {@code BIN_PART}, {@code PATH_OPERAND},
+     * {@code EXPRESSION_CONTAINER}) and applies type overriding logic accordingly.
      *
-     * @param left  The left {@link ExpressionContainer}
-     * @param right The right {@link ExpressionContainer}
+     * @param left The {@link AbstractPart} whose type might be overridden
+     * @param right The {@link AbstractPart} used as a reference for type inference
      */
-    static void logicalSetBinsAsBooleanExpr(ExpressionContainer left, ExpressionContainer right) {
-        logicalSetBinAsBooleanExpr(left);
-        logicalSetBinAsBooleanExpr(right);
+    private void overrideTypes(AbstractPart left, AbstractPart right) {
+        if (left.getPartType() == BIN_PART) {
+            BinPart binPart = (BinPart) left;
+            if (!binPart.isTypeExplicitlySet()) {
+                overrideType(binPart, right);
+            }
+        } else if (left.getPartType() == PATH_OPERAND) {
+            Path path = (Path) left;
+            BinPart binPart = path.getBasePath().getBinPart();
+            // Update the BinPart
+            overrideType(binPart, right);
+            // Update each CDT part
+            for (AbstractPart cdtPart : path.getBasePath().getCdtParts()) {
+                overrideType(cdtPart, right);
+            }
+        } else if (left.getPartType() == EXPRESSION_CONTAINER) {
+            ExpressionContainer container = (ExpressionContainer) left;
+            overrideTypeInfo(container.getLeft(), right);
+            AbstractPart rightPart = container.getRight();
+            if (rightPart != null) {
+                overrideTypeInfo(rightPart, right);
+            }
+        }
+    }
+
+    /**
+     * Overrides Exp type of single {@link AbstractPart} based on the implicit type derived from {@code oppositePart}.
+     * This method applies type overriding using implicit type detection.
+     * It handles {@code BIN_PART} and other parts separately.
+     *
+     * @param part The {@link AbstractPart} whose type needs to be overridden
+     * @param oppositePart The {@link AbstractPart} used to determine the implicit type
+     */
+    private void overrideType(AbstractPart part, AbstractPart oppositePart) {
+        // Override using Implicit type detection
+        Exp.Type implicitType = partTypeToExpType.get(oppositePart.getPartType());
+
+        if (part.getPartType() == BIN_PART) {
+            if (implicitType != null) {
+                ((BinPart) part).updateExp(implicitType);
+            }
+        } else { // CDT: ListPart or MapPart
+            if (implicitType == null) {
+                implicitType = TypeUtils.getDefaultType(part);
+            }
+            part.setExpType(implicitType);
+        }
     }
 
     /**
@@ -739,7 +797,7 @@ public class VisitorUtils {
                                                         ExprPartsOperation operation,
                                                         FilterOperationType type, boolean binOnLeft) {
         // Only support integer arithmetic in filters
-        if (operand.getPartType() != INT_OPERAND || externalOperand.getPartType() != INT_OPERAND) {
+        if (operand.getPartType() != AbstractPart.PartType.INT_OPERAND || externalOperand.getPartType() != AbstractPart.PartType.INT_OPERAND) {
             throw new NoApplicableFilterException(
                     "Only integer operands are supported in arithmetic filter expressions");
         }
@@ -933,10 +991,11 @@ public class VisitorUtils {
         if (expr.hasSecondaryIndexFilter()) return null;
 
         return switch (expr.getOperationType()) {
+            case OR_STRUCTURE -> orStructureToExp(expr);
+            case AND_STRUCTURE -> andStructureToExp(expr);
             case WITH_STRUCTURE -> withStructureToExp(expr);
             case WHEN_STRUCTURE -> whenStructureToExp(expr);
             case EXCLUSIVE_STRUCTURE -> exclStructureToExp(expr);
-            case AND_STRUCTURE -> andStructureToExp(expr);
             default -> processExpression(expr);
         };
     }
@@ -994,6 +1053,15 @@ public class VisitorUtils {
         return Exp.exclusive(expressions.toArray(new Exp[0]));
     }
 
+    private static Exp orStructureToExp(ExpressionContainer expr) {
+        List<Exp> expressions = new ArrayList<>();
+        List<ExpressionContainer> operands = ((OrStructure) expr.getLeft()).getOperands();
+        for (ExpressionContainer part : operands) {
+            expressions.add(getExp(part));
+        }
+        return Exp.or(expressions.toArray(new Exp[0]));
+    }
+
     /**
      * Generates filter {@link Exp} for an AND structure {@link ExpressionContainer}.
      *
@@ -1002,12 +1070,17 @@ public class VisitorUtils {
      */
     private static Exp andStructureToExp(ExpressionContainer expr) {
         List<Exp> expressions = new ArrayList<>();
-        AndStructure andOperandsList = (AndStructure) expr.getLeft(); // extract unary Expr operand
-        List<ExpressionContainer> operands = andOperandsList.getOperands();
+        List<ExpressionContainer> operands = ((AndStructure) expr.getLeft()).getOperands();
         for (ExpressionContainer part : operands) {
-            expressions.add(getExp(part));
+            Exp exp = getExp(part);
+            if (exp != null) expressions.add(exp); // Exp can be null if it is already used in secondary index
         }
-        return Exp.and(expressions.toArray(new Exp[0]));
+        if (expressions.isEmpty()) {
+            return null;
+        } else if (expressions.size() > 1) {
+            return Exp.and(expressions.toArray(new Exp[0]));
+        }
+        return expressions.get(0); // When there is only one Exp return it
     }
 
     /**
@@ -1335,27 +1408,10 @@ public class VisitorUtils {
             traverseTree(container.getLeft(), visitor, depth - 1, stopCondition);
             traverseTree(container.getRight(), visitor, depth - 1, stopCondition);
         }
-    }
 
-    protected enum FilterOperationType {
-        GT,
-        GTEQ,
-        LT,
-        LTEQ,
-        EQ,
-        NOTEQ
-    }
-
-    protected enum ArithmeticTermType {
-        ADDEND,
-        SUBTR,
-        MIN,
-        DIFFERENCE,
-        DIVIDEND,
-        DIVISOR,
-        QUOTIENT,
-        MULTIPLICAND,
-        MULTIPLIER,
-        PRODUCT
+        if (part.getPartType() == AbstractPart.PartType.AND_STRUCTURE && depth > 0) {
+            List<ExpressionContainer> containerList = ((AndStructure) part).getOperands();
+            containerList.forEach(container -> traverseTree(container, visitor, depth - 1, stopCondition));
+        }
     }
 }

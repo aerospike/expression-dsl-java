@@ -20,7 +20,7 @@ public class MapTypeDesignator extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        var partsUpToDesignator = basePath.getParts().subList(0, basePath.getParts().size() - 1);
+        var partsUpToDesignator = basePath.getCdtParts().subList(0, basePath.getCdtParts().size() - 1);
         BasePath basePathUntilDesignator = new BasePath(basePath.getBinPart(), partsUpToDesignator);
         int partsUpToDesignatorSize = partsUpToDesignator.size();
 

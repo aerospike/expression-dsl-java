@@ -4,8 +4,6 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
-import static com.aerospike.dsl.util.TestUtils.parseDslExpressionAndCompare;
-
 public class ImplicitTypesTests {
 
     @Test
@@ -81,7 +79,10 @@ public class ImplicitTypesTests {
     void thirdDegreeComplicatedImplicitCastingFloat() {
         TestUtils.parseFilterExpressionAndCompare("(($.apples + $.bananas) + $.oranges) > 10.5",
                 Exp.gt(
-                        Exp.add(Exp.add(Exp.floatBin("apples"), Exp.floatBin("bananas")), Exp.floatBin("oranges")),
+                        Exp.add(
+                                Exp.add(Exp.floatBin("apples"), Exp.floatBin("bananas")),
+                                Exp.floatBin("oranges")
+                        ),
                         Exp.val(10.5))
         );
     }
@@ -129,7 +130,8 @@ public class ImplicitTypesTests {
                 )
         );
 
-        TestUtils.parseFilterExpressionAndCompare("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, $.b == 3 => $.a3, default => $.a4+1))",
+        TestUtils.parseFilterExpressionAndCompare("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, $.b == 3 => $.a3, " +
+                        "default => $.a4+1))",
                 expected);
     }
 
@@ -155,7 +157,8 @@ public class ImplicitTypesTests {
                 )
         );
 
-        TestUtils.parseFilterExpressionAndCompare("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, $.b == 3 => $.a3, default => \"hello\"))",
+        TestUtils.parseFilterExpressionAndCompare("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, $.b == 3 => $.a3, " +
+                        "default => \"hello\"))",
                 expected);
     }
 }

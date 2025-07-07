@@ -48,9 +48,7 @@ public class ArithmeticFiltersTests {
                 Filter.range("bananas", Long.MIN_VALUE, 10 - 9));
 
         assertThat(parseFilter("(5.2 + $.bananas) > 10.2")).isNull(); // not supported by secondary index filter
-        assertThatThrownBy(() -> parseFilter("($.apples + $.bananas + 5) > 10"))
-                .isInstanceOf(DslParseException.class) // not supported by the current grammar
-                .hasMessageContaining("Could not parse given DSL expression input");
+        assertThat(parseFilter("($.apples + $.bananas + 5) > 10")).isNull(); // not supported by the current grammar
     }
 
     @Test
@@ -85,9 +83,7 @@ public class ArithmeticFiltersTests {
                 Filter.range("bananas", 9 - 10, Long.MAX_VALUE));
 
         assertThat(parseFilter("($.apples - $.bananas) > 10")).isNull(); // not supported by secondary index filter
-        assertThatThrownBy(() -> parseFilter("($.apples - $.bananas - 5) > 10"))
-                .isInstanceOf(DslParseException.class) // not supported by the current grammar
-                .hasMessageContaining("Could not parse given DSL expression input");
+        assertThat(parseFilter("($.apples - $.bananas - 5) > 10")).isNull(); // not supported by the current grammar
     }
 
     @Test
@@ -126,9 +122,7 @@ public class ArithmeticFiltersTests {
         parseFilterAndCompare("(9 * $.bananas) > 0", INDEX_FILTER_INPUT,
                 Filter.range("bananas", 0 / 9 + 1, Long.MAX_VALUE));
 
-        assertThatThrownBy(() -> parseFilter("($.apples * $.bananas - 5) > 10"))
-                .isInstanceOf(DslParseException.class) // not supported by the current grammar
-                .hasMessageContaining("Could not parse given DSL expression input");
+        assertThat(parseFilter("($.apples * $.bananas - 5) > 10")).isNull(); // not supported by the current grammar
     }
 
     @Test

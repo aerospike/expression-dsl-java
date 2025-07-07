@@ -10,18 +10,18 @@ import java.util.List;
 public class BasePath extends AbstractPart {
 
     private final BinPart binPart;
-    private final List<AbstractPart> parts;
+    private final List<AbstractPart> cdtParts;
 
-    public BasePath(BinPart binOperand, List<AbstractPart> parts) {
+    public BasePath(BinPart binPart, List<AbstractPart> cdtParts) {
         super(PartType.BASE_PATH);
-        this.binPart = binOperand;
-        this.parts = parts;
+        this.binPart = binPart;
+        this.cdtParts = cdtParts;
     }
 
     // Bin type is determined by the base path's first element
     public Exp.Type getBinType() {
-        if (!parts.isEmpty()) {
-            return switch (parts.get(0).getPartType()) {
+        if (!cdtParts.isEmpty()) {
+            return switch (cdtParts.get(0).getPartType()) {
                 case MAP_PART -> Exp.Type.MAP;
                 case LIST_PART -> Exp.Type.LIST;
                 default -> null;

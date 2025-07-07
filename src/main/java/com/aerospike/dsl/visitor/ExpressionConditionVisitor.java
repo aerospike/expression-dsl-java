@@ -26,7 +26,6 @@ import com.aerospike.dsl.parts.path.BasePath;
 import com.aerospike.dsl.parts.path.BinPart;
 import com.aerospike.dsl.parts.path.Path;
 import com.aerospike.dsl.parts.path.PathFunction;
-import com.aerospike.dsl.util.TypeUtils;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
@@ -73,23 +72,17 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitAndExpression(ConditionParser.AndExpressionContext ctx) {
-//        ExpressionContainer left = (ExpressionContainer) visit(ctx.expression(0));
-//        ExpressionContainer right = (ExpressionContainer) visit(ctx.expression(1));
-//
-//        logicalSetBinsAsBooleanExpr(left, right);
-//        return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.AND);
-
         // If there's only one basicExpression and no 'and' operators, just pass through
         if (ctx.basicExpression().size() == 1) {
             return visit(ctx.basicExpression(0));
         }
-//        if (ctx.basicExpression().size() < 2) {
-//            throw new DslParseException("AND logical operator requires 2 or more expressions");
-//        }
+
         List<ExpressionContainer> expressions = new ArrayList<>();
         // iterate through each sub-expression
         for (ConditionParser.BasicExpressionContext ec : ctx.basicExpression()) {
             ExpressionContainer expr = (ExpressionContainer) visit(ec);
+            if (expr == null) return null;
+
             logicalSetBinAsBooleanExpr(expr);
             expressions.add(expr);
         }
@@ -98,23 +91,17 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitOrExpression(ConditionParser.OrExpressionContext ctx) {
-//        ExpressionContainer left = (ExpressionContainer) visit(ctx.logicalAndExpression(0));
-//        ExpressionContainer right = (ExpressionContainer) visit(ctx.logicalAndExpression(1));
-//
-//        logicalSetBinsAsBooleanExpr(left, right);
-//        return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.OR);
-
         // If there's only one andExpression and no 'or' operators, just pass through
         if (ctx.logicalAndExpression().size() == 1) {
             return visit(ctx.logicalAndExpression(0));
         }
-//        if (ctx.logicalAndExpression().size() < 2) {
-//            throw new DslParseException("AND logical operator requires 2 or more expressions");
-//        }
+
         List<ExpressionContainer> expressions = new ArrayList<>();
         // iterate through each sub-expression
         for (ConditionParser.LogicalAndExpressionContext ec : ctx.logicalAndExpression()) {
             ExpressionContainer expr = (ExpressionContainer) visit(ec);
+            if (expr == null) return null;
+
             logicalSetBinAsBooleanExpr(expr);
             expressions.add(expr);
         }
@@ -180,6 +167,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.additiveExpression(0));
         AbstractPart right = visit(ctx.additiveExpression(1));
 
+        overrideTypeInfo(left, right);
+
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.GT);
     }
 
@@ -187,6 +176,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public AbstractPart visitGreaterThanOrEqualExpression(ConditionParser.GreaterThanOrEqualExpressionContext ctx) {
         AbstractPart left = visit(ctx.additiveExpression(0));
         AbstractPart right = visit(ctx.additiveExpression(1));
+
+        overrideTypeInfo(left, right);
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.GTEQ);
     }
@@ -196,6 +187,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.additiveExpression(0));
         AbstractPart right = visit(ctx.additiveExpression(1));
 
+        overrideTypeInfo(left, right);
+
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.LT);
     }
 
@@ -203,6 +196,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public AbstractPart visitLessThanOrEqualExpression(ConditionParser.LessThanOrEqualExpressionContext ctx) {
         AbstractPart left = visit(ctx.additiveExpression(0));
         AbstractPart right = visit(ctx.additiveExpression(1));
+
+        overrideTypeInfo(left, right);
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.LTEQ);
     }
@@ -212,6 +207,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         AbstractPart left = visit(ctx.additiveExpression(0));
         AbstractPart right = visit(ctx.additiveExpression(1));
 
+        overrideTypeInfo(left, right);
+
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.EQ);
     }
 
@@ -219,6 +216,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public AbstractPart visitInequalityExpression(ConditionParser.InequalityExpressionContext ctx) {
         AbstractPart left = visit(ctx.additiveExpression(0));
         AbstractPart right = visit(ctx.additiveExpression(1));
+
+        overrideTypeInfo(left, right);
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.NOTEQ);
     }
@@ -465,7 +464,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitBasePath(ConditionParser.BasePathContext ctx) {
         BinPart binPart = null;
-        List<AbstractPart> parts = new ArrayList<>();
+        List<AbstractPart> cdtParts = new ArrayList<>();
         List<ParseTree> ctxChildrenExclDots = ctx.children.stream()
                 .filter(tree -> !tree.getText().equals("."))
                 .toList();
@@ -473,8 +472,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         for (ParseTree child : ctxChildrenExclDots) {
             AbstractPart part = visit(child);
             switch (part.getPartType()) {
-                case BIN_PART -> binPart = (BinPart) overrideType(part, ctx);
-                case LIST_PART, MAP_PART -> parts.add(overrideType(part, ctx));
+                case BIN_PART -> binPart = (BinPart) part;
+                case LIST_PART, MAP_PART -> cdtParts.add(part);
                 default -> throw new DslParseException("Unexpected path part: %s".formatted(part.getPartType()));
             }
         }
@@ -483,7 +482,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             throw new DslParseException("Expecting bin to be the first path part from the left");
         }
 
-        return new BasePath(binPart, parts);
+        return new BasePath(binPart, cdtParts);
     }
 
     @Override
@@ -492,53 +491,35 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new VariableOperand(extractVariableNameOrFail(text));
     }
 
-    private AbstractPart overrideType(AbstractPart part, ParseTree ctx) {
-        ConditionParser.PathFunctionContext pathFunctionContext =
-                ((ConditionParser.PathContext) ctx.getParent()).pathFunction();
-
-        // Override with Path Function (explicit get or cast)
-        if (pathFunctionContext != null) {
-            PathFunction pathFunction = (PathFunction) visit(pathFunctionContext);
-
-            if (pathFunction != null) {
-                Exp.Type type = pathFunction.getBinType();
-                if (type != null) {
-                    if (part.getPartType() == AbstractPart.PartType.BIN_PART) {
-                        ((BinPart) part).updateExp(type);
-                    } else {
-                        part.setExpType(type);
-                    }
-                }
-            }
-        } else { // Override using Implicit type detection
-            Exp.Type implicitType = detectImplicitTypeFromUpperTree(ctx);
-            if (part.getPartType() == AbstractPart.PartType.BIN_PART) {
-                if (implicitType == null) {
-                    implicitType = Exp.Type.INT;
-                }
-                ((BinPart) part).updateExp(implicitType);
-            } else { // ListPart or MapPart
-                if (implicitType == null) {
-                    implicitType = TypeUtils.getDefaultType(part);
-                }
-                part.setExpType(implicitType);
-            }
-        }
-        return part;
-    }
-
     @Override
     public AbstractPart visitPath(ConditionParser.PathContext ctx) {
         BasePath basePath = (BasePath) visit(ctx.basePath());
-        List<AbstractPart> parts = basePath.getParts();
+        List<AbstractPart> cdtParts = basePath.getCdtParts();
+        overrideWithPathFunction(basePath.getBinPart(), ctx);
 
         // if there are other parts except bin, get a corresponding Exp
-        if (!parts.isEmpty() || ctx.pathFunction() != null && ctx.pathFunction().pathFunctionCount() != null) {
+        if (!cdtParts.isEmpty() || ctx.pathFunction() != null && ctx.pathFunction().pathFunctionCount() != null) {
             return new Path(basePath, ctx.pathFunction() == null
                     ? null
                     : (PathFunction) visit(ctx.pathFunction()));
         }
         return basePath.getBinPart();
+    }
+
+    private void overrideWithPathFunction(BinPart binPart, ConditionParser.PathContext ctx) {
+        ConditionParser.PathFunctionContext pathFunctionContext = ctx.pathFunction();
+
+        // Override with path function (explicit get or cast)
+        if (pathFunctionContext != null) {
+            PathFunction pathFunction = (PathFunction) visit(pathFunctionContext);
+            if (pathFunction != null) {
+                Exp.Type type = pathFunction.getBinType();
+                if (type != null) {
+                    binPart.updateExp(type);
+                    binPart.setTypeExplicitlySet(true);
+                }
+            }
+        }
     }
 
     @Override
