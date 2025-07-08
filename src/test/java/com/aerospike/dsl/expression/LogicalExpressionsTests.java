@@ -24,8 +24,6 @@ public class LogicalExpressionsTests {
                 ),
                 Exp.lt(Exp.intBin("intBin3"), Exp.val(100))
         );
-        // By default, the priority in a logical expression with different operators and with no parentheses
-        // is applied from left to right
         TestUtils.parseFilterExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 < 100", expected2);
         TestUtils.parseFilterExpressionAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 < 100", expected2);
         TestUtils.parseFilterExpressionAndCompare("(($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 < 100)", expected2);
@@ -39,7 +37,7 @@ public class LogicalExpressionsTests {
         );
         TestUtils.parseFilterExpressionAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", expected3);
         TestUtils.parseFilterExpressionAndCompare("$.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100)", expected3);
-        // check that parentheses make difference
+        // Check that parentheses make difference
         assertThatThrownBy(
                 () -> TestUtils.parseFilterExpressionAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", expected2)
         ).isInstanceOf(AssertionFailedError.class);
