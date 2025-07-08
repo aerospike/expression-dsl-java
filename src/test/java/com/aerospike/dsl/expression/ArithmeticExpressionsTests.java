@@ -6,7 +6,6 @@ import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
-import static com.aerospike.dsl.util.TestUtils.parseDslExpressionAndCompare;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ArithmeticExpressionsTests {

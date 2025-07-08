@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
-import static com.aerospike.dsl.util.TestUtils.parseDslExpressionAndCompare;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ListExpressionsTests {
@@ -398,18 +397,17 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(5));
-        // Implicit detect as Int
         TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(return: COUNT) == 5", expected);
 
         expected = Exp.eq(
                 ListExp.getByIndex(
                         ListReturnType.EXISTS,
-                        Exp.Type.INT,
+                        Exp.Type.BOOL,
                         Exp.val(0),
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(true));
-        // Implicit detect as Int
+        // Implicit detect as BOOL
         TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(return: EXISTS) == true", expected);
 
         expected = Exp.eq(
@@ -420,7 +418,7 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(1));
-        // Implicit detect as Int
+        // Implicit detect as INT
         TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(return: INDEX) == 1", expected);
     }
 }

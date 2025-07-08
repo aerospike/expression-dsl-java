@@ -46,6 +46,10 @@ class BinExpressionsTests {
         parseFilterExpressionAndCompare("$.intBin1 == 100", Exp.eq(Exp.intBin("intBin1"), Exp.val(100)));
         parseFilterExpressionAndCompare("$.strBin == \"yes\"", Exp.eq(Exp.stringBin("strBin"), Exp.val("yes")));
         parseFilterExpressionAndCompare("$.strBin == 'yes'", Exp.eq(Exp.stringBin("strBin"), Exp.val("yes")));
+
+        parseFilterExpressionAndCompare("100 == $.intBin1", Exp.eq(Exp.val(100), Exp.intBin("intBin1")));
+        parseFilterExpressionAndCompare("\"yes\" == $.strBin", Exp.eq(Exp.val("yes"), Exp.stringBin("strBin")));
+        parseFilterExpressionAndCompare("'yes' == $.strBin", Exp.eq(Exp.val("yes"), Exp.stringBin("strBin")));
     }
 
     @Test

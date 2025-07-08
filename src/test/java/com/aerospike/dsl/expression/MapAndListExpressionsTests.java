@@ -10,8 +10,6 @@ import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
-import static com.aerospike.dsl.util.TestUtils.parseDslExpressionAndCompare;
-
 public class MapAndListExpressionsTests {
 
     @Test
@@ -130,7 +128,7 @@ public class MapAndListExpressionsTests {
         TestUtils.parseFilterExpressionAndCompare("$.mapBin1.a.[0].cc.get(type: INT) > 100", expected);
     }
 
-    //@Test
+//    @Test
     void mapAndListCombinations() {
         Exp expected = Exp.gt(
                 ListExp.size(
@@ -139,11 +137,11 @@ public class MapAndListExpressionsTests {
                                 Exp.Type.LIST,
                                 Exp.val("shape"),
                                 Exp.mapBin("mapBin1")
-                                //CTX.mapKey(Value.get("shape"))
+//                                CTX.mapKey(Value.get("shape"))
                         )
                 ),
                 Exp.val(2));
-        //translateAndCompare("$.mapBin1.shape.[].size() > 2", expected);
-        //translateAndCompare("$.mapBin1.a.dd.[1].{#0}.get(return: UNORDERED_MAP)", expected);
+//        TestUtils.parseFilterExpressionAndCompare("$.mapBin1.shape.[].count() > 2", expected);
+//        TestUtils.parseFilterExpressionAndCompare("$.mapBin1.a.dd.[1].{#0}.get(return: UNORDERED_MAP)", expected);
     }
 }

@@ -23,7 +23,7 @@ public class Path extends AbstractPart {
     }
 
     public Exp processPath(BasePath basePath, PathFunction pathFunction) {
-        List<AbstractPart> parts = basePath.getParts();
+        List<AbstractPart> parts = basePath.getCdtParts();
         updateWithCdtTypeDesignator(basePath, pathFunction);
         AbstractPart lastPathPart = !parts.isEmpty() ? parts.get(parts.size() - 1) : null;
         pathFunction = processPathFunction(basePath, lastPathPart, pathFunction);

@@ -24,8 +24,8 @@ public class ListTypeDesignator extends ListPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        List<AbstractPart> partsUpToDesignator = !basePath.getParts().isEmpty()
-                ? basePath.getParts().subList(0, basePath.getParts().size() - 1)
+        List<AbstractPart> partsUpToDesignator = !basePath.getCdtParts().isEmpty()
+                ? basePath.getCdtParts().subList(0, basePath.getCdtParts().size() - 1)
                 : Collections.emptyList();
 
         BasePath basePathUntilDesignator = new BasePath(basePath.getBinPart(), partsUpToDesignator);

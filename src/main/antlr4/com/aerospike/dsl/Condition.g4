@@ -7,35 +7,61 @@ grammar Condition;
 parse: expression;
 
 expression
-    // Declaration and Control Expressions
-    : 'with' '(' variableDefinition (',' variableDefinition)* ')' 'do' '(' expression ')'       # WithExpression
+    : logicalOrExpression
+    ;
+
+logicalOrExpression
+    : logicalAndExpression ('or' logicalAndExpression)*                         # OrExpression
+    ;
+
+logicalAndExpression
+    : basicExpression ('and' basicExpression)*                                  # AndExpression
+    ;
+
+basicExpression
+    : 'not' '(' expression ')'                                                  # NotExpression
+    | 'exclusive' '(' expression (',' expression)+ ')'                          # ExclusiveExpression
+    | 'with' '(' variableDefinition (',' variableDefinition)* ')' 'do' '(' expression ')'       # WithExpression
     | 'when' '(' expressionMapping (',' expressionMapping)* ',' 'default' '=>' expression ')'   # WhenExpression
-    // Logical Expressions
-    | expression 'and' expression                                                               # AndExpression
-    | expression 'or' expression                                                                # OrExpression
-    | 'not' '(' expression ')'                                                                  # NotExpression
-    | 'exclusive' '(' expression (',' expression)+ ')'                                          # ExclusiveExpression
-    // Comparison Expressions
-    | operand '>' operand                                                                       # GreaterThanExpression
-    | operand '>=' operand                                                                      # GreaterThanOrEqualExpression
-    | operand '<' operand                                                                       # LessThanExpression
-    | operand '<=' operand                                                                      # LessThanOrEqualExpression
-    | operand '==' operand                                                                      # EqualityExpression
-    | operand '!=' operand                                                                      # InequalityExpression
-    // Arithmetic Expressions
-    | operand '+' operand                                                                       # AddExpression
-    | operand '-' operand                                                                       # SubExpression
-    | operand '*' operand                                                                       # MulExpression
-    | operand '/' operand                                                                       # DivExpression
-    | operand '%' operand                                                                       # ModExpression
-    | operand '&' operand                                                                       # IntAndExpression
-    | operand '|' operand                                                                       # IntOrExpression
-    | operand '^' operand                                                                       # IntXorExpression
-    | '~' operand                                                                               # IntNotExpression
-    | operand '<<' operand                                                                      # IntLShiftExpression
-    | operand '>>' operand                                                                      # IntRShiftExpression
-    // Base Operand
-    | operand                                                                                   # OperandExpression
+    | comparisonExpression                                                      # ComparisonExpressionWrapper
+    ;
+
+comparisonExpression
+    : additiveExpression '>' additiveExpression                                 # GreaterThanExpression
+    | additiveExpression '>=' additiveExpression                                # GreaterThanOrEqualExpression
+    | additiveExpression '<' additiveExpression                                 # LessThanExpression
+    | additiveExpression '<=' additiveExpression                                # LessThanOrEqualExpression
+    | additiveExpression '==' additiveExpression                                # EqualityExpression
+    | additiveExpression '!=' additiveExpression                                # InequalityExpression
+    | additiveExpression                                                        # AdditiveExpressionWrapper
+    ;
+
+// Rest of the grammar rules remain the same
+additiveExpression
+    : multiplicativeExpression                                                  # MultiplicativeExpressionWrapper
+    | additiveExpression '+' multiplicativeExpression                           # AddExpression
+    | additiveExpression '-' multiplicativeExpression                           # SubExpression
+    ;
+
+multiplicativeExpression
+    : bitwiseExpression                                                         # BitwiseExpressionWrapper
+    | multiplicativeExpression '*' bitwiseExpression                            # MulExpression
+    | multiplicativeExpression '/' bitwiseExpression                            # DivExpression
+    | multiplicativeExpression '%' bitwiseExpression                            # ModExpression
+    ;
+
+bitwiseExpression
+    : shiftExpression                                                           # ShiftExpressionWrapper
+    | bitwiseExpression '&' shiftExpression                                     # IntAndExpression
+    | bitwiseExpression '|' shiftExpression                                     # IntOrExpression
+    | bitwiseExpression '^' shiftExpression                                     # IntXorExpression
+    | '~' shiftExpression                                                       # IntNotExpression
+    ;
+
+shiftExpression
+    : operand                                                                   # OperandExpression
+    | shiftExpression '<<' operand                                              # IntLShiftExpression
+    | shiftExpression '>>' operand                                              # IntRShiftExpression
     ;
 
 variableDefinition

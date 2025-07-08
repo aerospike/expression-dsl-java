@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
-import static com.aerospike.dsl.util.TestUtils.parseDslExpressionAndCompare;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class LogicalExpressionsTests {
@@ -25,7 +24,6 @@ public class LogicalExpressionsTests {
                 ),
                 Exp.lt(Exp.intBin("intBin3"), Exp.val(100))
         );
-        // TODO: what should be the default behaviour with no parentheses?
         TestUtils.parseFilterExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 or $.intBin3 < 100", expected2);
         TestUtils.parseFilterExpressionAndCompare("($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 < 100", expected2);
         TestUtils.parseFilterExpressionAndCompare("(($.intBin1 > 100 and $.intBin2 > 100) or $.intBin3 < 100)", expected2);
@@ -39,7 +37,7 @@ public class LogicalExpressionsTests {
         );
         TestUtils.parseFilterExpressionAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", expected3);
         TestUtils.parseFilterExpressionAndCompare("$.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100)", expected3);
-        // check that parentheses make difference
+        // Check that parentheses make difference
         assertThatThrownBy(
                 () -> TestUtils.parseFilterExpressionAndCompare("($.intBin1 > 100 and ($.intBin2 > 100 or $.intBin3 < 100))", expected2)
         ).isInstanceOf(AssertionFailedError.class);
@@ -66,20 +64,17 @@ public class LogicalExpressionsTests {
                         Exp.eq(Exp.intBin("d"), Exp.val(4))));
     }
 
-    //TODO: FMWK-488
-    //@Test
+    @Test
     void flatHierarchyAnd() {
-        TestUtils.parseFilterExpressionAndCompare("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 < 100",
+        TestUtils.parseFilterExpressionAndCompare(
+                "$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 < 100 and $.intBin4 < 100",
                 Exp.and(
-                        Exp.gt(
-                                Exp.intBin("intBin1"),
-                                Exp.val(100)),
-                        Exp.gt(
-                                Exp.intBin("intBin2"),
-                                Exp.val(100)
-                        ),
-                        Exp.lt(Exp.intBin("intBin3"),
-                                Exp.val(100))));
+                        Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                        Exp.gt(Exp.intBin("intBin2"), Exp.val(100)),
+                        Exp.lt(Exp.intBin("intBin3"), Exp.val(100)),
+                        Exp.lt(Exp.intBin("intBin4"), Exp.val(100))
+                )
+        );
     }
 
     @Test
