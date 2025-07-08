@@ -190,28 +190,39 @@ public class VisitorUtils {
      * @param left  The {@link AbstractPart} whose type might be overridden
      * @param right The {@link AbstractPart} used as a reference for type inference
      */
-    private void overrideTypes(AbstractPart left, AbstractPart right) {
+    private static void overrideTypes(AbstractPart left, AbstractPart right) {
         if (left.getPartType() == BIN_PART) { // For example, in an expression "$.intBin1 == 100"
-            BinPart binPart = (BinPart) left;
-            if (!binPart.isTypeExplicitlySet()) {
-                overrideType(binPart, right);
-            }
+            overrideBinType((BinPart) left, right);
         } else if (left.getPartType() == PATH_OPERAND) { // For example, in "$.listBin1.[0].get(return: EXISTS) == true"
             Path path = (Path) left;
-            BinPart binPart = path.getBasePath().getBinPart();
-            // Update the BinPart
-            overrideType(binPart, right);
-            // Update each CDT part
+            // Update the type of BinPart
+            overrideBinType(path.getBasePath().getBinPart(), right);
+            // Update the type of each CDT part
             for (AbstractPart cdtPart : path.getBasePath().getCdtParts()) {
                 overrideType(cdtPart, right);
             }
         } else if (left.getPartType() == EXPRESSION_CONTAINER) { // For example, in "(5.2 + $.bananas) > 10.2"
             ExpressionContainer container = (ExpressionContainer) left;
+            // Update the type of left part of container
             overrideTypeInfo(container.getLeft(), right);
             AbstractPart rightPart = container.getRight();
+            // Update the type of right part of container
             if (rightPart != null) {
                 overrideTypeInfo(rightPart, right);
             }
+        }
+    }
+
+    /**
+     * Overrides Exp type of the given {@link BinPart} based on the {@code right} {@link AbstractPart} if type is not
+     * explicitly set already.
+     *
+     * @param binPart  The {@link BinPart} whose type might be overridden
+     * @param right The {@link AbstractPart} used as a reference for type inference
+     */
+    private static void overrideBinType(BinPart binPart, AbstractPart right) {
+        if (!binPart.isTypeExplicitlySet()) {
+            overrideType(binPart, right);
         }
     }
 
