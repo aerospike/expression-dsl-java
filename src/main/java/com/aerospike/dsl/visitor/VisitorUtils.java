@@ -160,11 +160,11 @@ public class VisitorUtils {
     }
 
     /**
-     * Overrides Exp type information for both the left and right {@link AbstractPart} operands.
+     * Overrides Exp type information for both the left and right {@link AbstractPart}s.
      * This method ensures that if a part's Exp type is not explicitly set, it attempts to infer and update
      * its type based on the opposite part of expression.
      *
-     * @param left The left {@link AbstractPart} operand, whose type information might be updated
+     * @param left  The left {@link AbstractPart} operand, whose type information might be updated
      * @param right The right {@link AbstractPart} operand, whose type information might be updated
      * @throws DslParseException If either the left or right operand is {@code null}
      */
@@ -187,16 +187,16 @@ public class VisitorUtils {
      * This method handles different types of {@link AbstractPart} (e.g., {@code BIN_PART}, {@code PATH_OPERAND},
      * {@code EXPRESSION_CONTAINER}) and applies type overriding logic accordingly.
      *
-     * @param left The {@link AbstractPart} whose type might be overridden
+     * @param left  The {@link AbstractPart} whose type might be overridden
      * @param right The {@link AbstractPart} used as a reference for type inference
      */
     private void overrideTypes(AbstractPart left, AbstractPart right) {
-        if (left.getPartType() == BIN_PART) {
+        if (left.getPartType() == BIN_PART) { // For example, in an expression "$.intBin1 == 100"
             BinPart binPart = (BinPart) left;
             if (!binPart.isTypeExplicitlySet()) {
                 overrideType(binPart, right);
             }
-        } else if (left.getPartType() == PATH_OPERAND) {
+        } else if (left.getPartType() == PATH_OPERAND) { // For example, in "$.listBin1.[0].get(return: EXISTS) == true"
             Path path = (Path) left;
             BinPart binPart = path.getBasePath().getBinPart();
             // Update the BinPart
@@ -205,7 +205,7 @@ public class VisitorUtils {
             for (AbstractPart cdtPart : path.getBasePath().getCdtParts()) {
                 overrideType(cdtPart, right);
             }
-        } else if (left.getPartType() == EXPRESSION_CONTAINER) {
+        } else if (left.getPartType() == EXPRESSION_CONTAINER) { // For example, in "(5.2 + $.bananas) > 10.2"
             ExpressionContainer container = (ExpressionContainer) left;
             overrideTypeInfo(container.getLeft(), right);
             AbstractPart rightPart = container.getRight();
@@ -220,7 +220,7 @@ public class VisitorUtils {
      * This method applies type overriding using implicit type detection.
      * It handles {@code BIN_PART} and other parts separately.
      *
-     * @param part The {@link AbstractPart} whose type needs to be overridden
+     * @param part         The {@link AbstractPart} whose type needs to be overridden
      * @param oppositePart The {@link AbstractPart} used to determine the implicit type
      */
     private void overrideType(AbstractPart part, AbstractPart oppositePart) {
