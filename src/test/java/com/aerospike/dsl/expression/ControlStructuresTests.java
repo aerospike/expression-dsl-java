@@ -1,10 +1,9 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.InputContext;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
-
-import static com.aerospike.dsl.util.TestUtils.parseDslExpressionAndCompare;
 
 public class ControlStructuresTests {
 
@@ -18,10 +17,10 @@ public class ControlStructuresTests {
                 Exp.val("other")
         );
 
-        TestUtils.parseFilterExpressionAndCompare("when ($.who == 1 => \"bob\", default => \"other\")",
+        TestUtils.parseFilterExpressionAndCompare(InputContext.of("when ($.who == 1 => \"bob\", default => \"other\")"),
                 expected);
         // different spacing style
-        TestUtils.parseFilterExpressionAndCompare("when($.who == 1 => \"bob\", default => \"other\")",
+        TestUtils.parseFilterExpressionAndCompare(InputContext.of("when($.who == 1 => \"bob\", default => \"other\")"),
                 expected);
     }
 
@@ -41,7 +40,8 @@ public class ControlStructuresTests {
         // Implicit detect as String
         //translateAndCompare("$.stringBin1 == (when ($.who == 1 => \"bob\", default => \"other\"))",
         //        expected);
-        TestUtils.parseFilterExpressionAndCompare("$.stringBin1.get(type: STRING) == (when ($.who == 1 => \"bob\", default => \"other\"))",
+        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.stringBin1.get(type: STRING) == " +
+                        "(when ($.who == 1 => \"bob\", default => \"other\"))"),
                 expected);
     }
 
@@ -59,7 +59,8 @@ public class ControlStructuresTests {
                 Exp.val("other")
         );
 
-        TestUtils.parseFilterExpressionAndCompare("when ($.who == 1 => \"bob\", $.who == 2 => \"fred\", default => \"other\")",
+        TestUtils.parseFilterExpressionAndCompare(InputContext.of("when ($.who == 1 => \"bob\", " +
+                        "$.who == 2 => \"fred\", default => \"other\")"),
                 expected);
     }
 
@@ -75,10 +76,10 @@ public class ControlStructuresTests {
                 Exp.add(Exp.var("x"), Exp.var("y"))
         );
 
-        TestUtils.parseFilterExpressionAndCompare("with (x = 1, y = ${x} + 1) do (${x} + ${y})",
+        TestUtils.parseFilterExpressionAndCompare(InputContext.of("with (x = 1, y = ${x} + 1) do (${x} + ${y})"),
                 expected);
         // different spacing style
-        TestUtils.parseFilterExpressionAndCompare("with(x = 1, y = ${x}+1) do(${x}+${y})",
+        TestUtils.parseFilterExpressionAndCompare(InputContext.of("with(x = 1, y = ${x}+1) do(${x}+${y})"),
                 expected);
     }
 }

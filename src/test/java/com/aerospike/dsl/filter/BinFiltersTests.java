@@ -4,6 +4,7 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
+import com.aerospike.dsl.InputContext;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -23,22 +24,22 @@ class BinFiltersTests {
 
     @Test
     void binGT() {
-        parseFilterAndCompare("$.intBin1 > 100", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("$.intBin1 > 100"), INDEX_FILTER_INPUT,
                 Filter.range("intBin1", 101, Long.MAX_VALUE));
-        parseFilterAndCompare("$.intBin1 > -100", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("$.intBin1 > -100"), INDEX_FILTER_INPUT,
                 Filter.range("intBin1", -99, Long.MAX_VALUE));
 
         // Comparing Strings is not supported by secondary index Filters
-        assertThat(parseFilter("$.stringBin1 > 'text'", INDEX_FILTER_INPUT)).isNull();
-        assertThat(parseFilter("$.stringBin1 > \"text\"", INDEX_FILTER_INPUT)).isNull();
+        assertThat(parseFilter(InputContext.of("$.stringBin1 > 'text'"), INDEX_FILTER_INPUT)).isNull();
+        assertThat(parseFilter(InputContext.of("$.stringBin1 > \"text\""), INDEX_FILTER_INPUT)).isNull();
 
         // "$.intBin1 > 100" and "100 < $.intBin1" represent identical Filters
-        parseFilterAndCompare("100 < $.intBin1", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("100 < $.intBin1"), INDEX_FILTER_INPUT,
                 Filter.range("intBin1", 101, Long.MAX_VALUE));
 
         // Comparing Strings is not supported by secondary index Filters
-        assertThat(parseFilter("'text' > $.stringBin1", INDEX_FILTER_INPUT)).isNull();
-        assertThat(parseFilter("\"text\" > $.stringBin1", INDEX_FILTER_INPUT)).isNull();
+        assertThat(parseFilter(InputContext.of("'text' > $.stringBin1"), INDEX_FILTER_INPUT)).isNull();
+        assertThat(parseFilter(InputContext.of("\"text\" > $.stringBin1"), INDEX_FILTER_INPUT)).isNull();
     }
 
     @Test
@@ -47,62 +48,62 @@ class BinFiltersTests {
                 Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
                 Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
-        parseFilterAndCompare("$.intBin1 > 100 and $.intBin2 < 1000", IndexContext.of(NAMESPACE, indexes),
+        parseFilterAndCompare(InputContext.of("$.intBin1 > 100 and $.intBin2 < 1000"), IndexContext.of(NAMESPACE, indexes),
                 Filter.range("intBin2", Long.MIN_VALUE, 999));
 
-        parseFilterAndCompare("$.intBin1 > 100 and $.intBin2 < 1000", null); // No indexes given
+        parseFilterAndCompare(InputContext.of("$.intBin1 > 100 and $.intBin2 < 1000"), null); // No indexes given
     }
 
     @Test
     void binGE() {
-        parseFilterAndCompare("$.intBin1 >= 100", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("$.intBin1 >= 100"), INDEX_FILTER_INPUT,
                 Filter.range("intBin1", 100, Long.MAX_VALUE));
 
         // "$.intBin1 >= 100" and "100 <= $.intBin1" represent identical Filters
-        parseFilterAndCompare("100 <= $.intBin1", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("100 <= $.intBin1"), INDEX_FILTER_INPUT,
                 Filter.range("intBin1", 100, Long.MAX_VALUE));
     }
 
     @Test
     void binLT() {
-        parseFilterAndCompare("$.intBin1 < 100", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("$.intBin1 < 100"), INDEX_FILTER_INPUT,
                 Filter.range("intBin1", Long.MIN_VALUE, 99));
 
-        parseFilterAndCompare("100 > $.intBin1", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("100 > $.intBin1"), INDEX_FILTER_INPUT,
                 Filter.range("intBin1", Long.MIN_VALUE, 99));
     }
 
     @Test
     void binLE() {
-        parseFilterAndCompare("$.intBin1 <= 100", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("$.intBin1 <= 100"), INDEX_FILTER_INPUT,
                 Filter.range("intBin1", Long.MIN_VALUE, 100));
 
-        parseFilterAndCompare("100 >= $.intBin1", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("100 >= $.intBin1"), INDEX_FILTER_INPUT,
                 Filter.range("intBin1", Long.MIN_VALUE, 100));
     }
 
     @Test
     void binEQ() {
-        parseFilterAndCompare("$.intBin1 == 100", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("$.intBin1 == 100"), INDEX_FILTER_INPUT,
                 Filter.equal("intBin1", 100));
-        parseFilterAndCompare("100 == $.intBin1", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("100 == $.intBin1"), INDEX_FILTER_INPUT,
                 Filter.equal("intBin1", 100));
 
-        parseFilterAndCompare("$.stringBin1 == 'text'", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("$.stringBin1 == 'text'"), INDEX_FILTER_INPUT,
                 Filter.equal("stringBin1", "text"));
-        parseFilterAndCompare("$.stringBin1 == \"text\"", INDEX_FILTER_INPUT,
+        parseFilterAndCompare(InputContext.of("$.stringBin1 == \"text\""), INDEX_FILTER_INPUT,
                 Filter.equal("stringBin1", "text"));
     }
 
     @Test
     void binNOTEQ() {
         // NOT EQUAL is not supported by secondary index filter
-        assertThat(parseFilter("$.intBin1 != 100", INDEX_FILTER_INPUT)).isNull();
-        assertThat(parseFilter("$.stringBin1 != 'text'", INDEX_FILTER_INPUT)).isNull();
-        assertThat(parseFilter("$.stringBin1 != \"text\"", INDEX_FILTER_INPUT)).isNull();
+        assertThat(parseFilter(InputContext.of("$.intBin1 != 100"), INDEX_FILTER_INPUT)).isNull();
+        assertThat(parseFilter(InputContext.of("$.stringBin1 != 'text'"), INDEX_FILTER_INPUT)).isNull();
+        assertThat(parseFilter(InputContext.of("$.stringBin1 != \"text\""), INDEX_FILTER_INPUT)).isNull();
 
-        assertThat(parseFilter("100 != $.intBin1", INDEX_FILTER_INPUT)).isNull();
-        assertThat(parseFilter("100 != 'text'", INDEX_FILTER_INPUT)).isNull();
-        assertThat(parseFilter("100 != \"text\"", INDEX_FILTER_INPUT)).isNull();
+        assertThat(parseFilter(InputContext.of("100 != $.intBin1"), INDEX_FILTER_INPUT)).isNull();
+        assertThat(parseFilter(InputContext.of("100 != 'text'"), INDEX_FILTER_INPUT)).isNull();
+        assertThat(parseFilter(InputContext.of("100 != \"text\""), INDEX_FILTER_INPUT)).isNull();
     }
 }

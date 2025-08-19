@@ -4,6 +4,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.ConditionBaseVisitor;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.PlaceholderValues;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.ExpressionContainer;
 import com.aerospike.dsl.parts.cdt.list.ListIndex;
@@ -38,6 +39,13 @@ import static com.aerospike.dsl.util.ParsingUtils.*;
 import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
+
+    private final PlaceholderValues placeholderValues;
+
+    // Constructor that accepts placeholder values
+    public ExpressionConditionVisitor(PlaceholderValues placeholderValues) {
+        this.placeholderValues = placeholderValues != null ? placeholderValues : new PlaceholderValues();
+    }
 
     @Override
     public AbstractPart visitWithExpression(ConditionParser.WithExpressionContext ctx) {
@@ -459,6 +467,38 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public AbstractPart visitBooleanOperand(ConditionParser.BooleanOperandContext ctx) {
         String text = ctx.getText();
         return new BooleanOperand(Boolean.parseBoolean(text));
+    }
+
+    @Override
+    public AbstractPart visitPlaceholder(ConditionParser.PlaceholderContext ctx) {
+        // Extract index from the placeholder
+        String placeholderText = ctx.getText();
+        int index = Integer.parseInt(placeholderText.substring(1));
+
+        // Check if the index is valid
+        if (index >= placeholderValues.size()) {
+            throw new IllegalArgumentException("Placeholder index out of bounds: " + index);
+        }
+
+        // Convert the value to the appropriate type
+        Object value = placeholderValues.getValue(index);
+
+        if (value == null) {
+            throw new IllegalArgumentException("Placeholder value with index " + index + " is null");
+        }
+
+        // Create appropriate operand based on value type
+        if (value instanceof String) {
+            return new StringOperand((String) value);
+        } else if (value instanceof Long || value instanceof Integer) {
+            return new IntOperand(((Number) value).longValue());
+        } else if (value instanceof Float || value instanceof Double) {
+            return new FloatOperand(((Number) value).doubleValue());
+        } else if (value instanceof Boolean) {
+            return new BooleanOperand((Boolean) value);
+        } else {
+            throw new IllegalArgumentException("Unsupported placeholder value type: " + value.getClass().getName());
+        }
     }
 
     @Override
