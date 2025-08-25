@@ -6,6 +6,7 @@ import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.Index;
+import com.aerospike.dsl.PlaceholderValues;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.ExpressionContainer;
 import com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation;
@@ -16,6 +17,8 @@ import com.aerospike.dsl.parts.controlstructure.WhenStructure;
 import com.aerospike.dsl.parts.controlstructure.WithStructure;
 import com.aerospike.dsl.parts.operand.IntOperand;
 import com.aerospike.dsl.parts.operand.MetadataOperand;
+import com.aerospike.dsl.parts.operand.ParsedValueOperand;
+import com.aerospike.dsl.parts.operand.PlaceholderOperand;
 import com.aerospike.dsl.parts.operand.StringOperand;
 import com.aerospike.dsl.parts.operand.WithOperand;
 import com.aerospike.dsl.parts.path.BinPart;
@@ -302,56 +305,57 @@ public class VisitorUtils {
     /**
      * Creates an expression for comparing a bin with another operand.
      *
-     * @param binPart   The bin part
-     * @param otherPart The other operand to compare with
-     * @param operator  The binary operator to apply
-     * @param binIsLeft Whether the bin is on the left side of the comparison
+     * @param binPart     The bin part
+     * @param anotherPart The other operand to compare with
+     * @param operator    The binary operator to apply
+     * @param binIsLeft   Whether the bin is on the left side of the comparison
      * @return The resulting expression
      * @throws DslParseException if the operand type is not supported
      */
-    private static Exp getExpBinComparison(BinPart binPart, AbstractPart otherPart,
+    private static Exp getExpBinComparison(BinPart binPart, AbstractPart anotherPart,
                                            BinaryOperator<Exp> operator, boolean binIsLeft) {
         Exp binExp = Exp.bin(binPart.getBinName(), binPart.getExpType());
-        Exp otherExp = switch (otherPart.getPartType()) {
+        Exp anotherExp = switch (anotherPart.getPartType()) {
             case INT_OPERAND -> {
                 validateComparableTypes(binPart.getExpType(), Exp.Type.INT);
-                yield otherPart.getExp();
+                yield anotherPart.getExp();
             }
             case FLOAT_OPERAND -> {
                 validateComparableTypes(binPart.getExpType(), Exp.Type.FLOAT);
-                yield otherPart.getExp();
+                yield anotherPart.getExp();
             }
             case BOOL_OPERAND -> {
                 validateComparableTypes(binPart.getExpType(), Exp.Type.BOOL);
-                yield otherPart.getExp();
+                yield anotherPart.getExp();
             }
-            case STRING_OPERAND -> handleStringOperandComparison(binPart, (StringOperand) otherPart);
+            case STRING_OPERAND -> handleStringOperandComparison(binPart, (StringOperand) anotherPart);
             case METADATA_OPERAND -> {
                 // Handle metadata comparison - type determined by metadata function
-                Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) otherPart).getMetadataType().toString());
+                Exp.Type binType = Exp.Type.valueOf(((MetadataOperand) anotherPart).getMetadataType().toString());
                 binExp = Exp.bin(binPart.getBinName(), binType);
-                yield otherPart.getExp();
+                yield anotherPart.getExp();
             }
             case EXPRESSION_CONTAINER, PATH_OPERAND, VARIABLE_OPERAND ->
                 // Can't validate with expression container
-                    otherPart.getExp();
+                    anotherPart.getExp();
             case BIN_PART -> {
                 // Both are bin parts
-                validateComparableTypes(binPart.getExpType(), otherPart.getExpType());
-                yield otherPart.getExp();
+                validateComparableTypes(binPart.getExpType(), anotherPart.getExpType());
+                yield anotherPart.getExp();
             }
             case LIST_OPERAND -> {
                 validateComparableTypes(binPart.getExpType(), Exp.Type.LIST);
-                yield otherPart.getExp();
+                yield anotherPart.getExp();
             }
             case MAP_OPERAND -> {
                 validateComparableTypes(binPart.getExpType(), Exp.Type.MAP);
-                yield otherPart.getExp();
+                yield anotherPart.getExp();
             }
-            default -> throw new DslParseException("Operand type not supported: %s".formatted(otherPart.getPartType()));
+            default ->
+                    throw new DslParseException("Operand type not supported: %s".formatted(anotherPart.getPartType()));
         };
 
-        return binIsLeft ? operator.apply(binExp, otherExp) : operator.apply(otherExp, binExp);
+        return binIsLeft ? operator.apply(binExp, anotherExp) : operator.apply(anotherExp, binExp);
     }
 
     /**
@@ -656,9 +660,12 @@ public class VisitorUtils {
         return switch (operand.getPartType()) {
             case INT_OPERAND -> {
                 validateComparableTypes(bin.getExpType(), Exp.Type.INT);
-                yield getFilterForArithmeticOrFail(binName, ((IntOperand) operand).getValue(), type);
+                // It can be INT_OPERAND or PLACEHOLDER_OPERAND
+                yield getFilterForArithmeticOrFail(binName, ((ParsedValueOperand) operand).getIntOperandValue(), type);
             }
-            case STRING_OPERAND -> handleStringOperand(bin, binName, (StringOperand) operand, type);
+            case STRING_OPERAND ->
+                // It can be STRING_OPERAND or PLACEHOLDER_OPERAND
+                    handleStringOperand(bin, binName, ((ParsedValueOperand) operand).getStringOperandValue(), type);
             default -> throw new NoApplicableFilterException(
                     "Operand type not supported: %s".formatted(operand.getPartType()));
         };
@@ -669,15 +676,15 @@ public class VisitorUtils {
      * and the other is a {@link StringOperand}. It currently only supports equality (`EQ`) comparisons.
      * It handles both regular strings and base64 encoded BLOBs.
      *
-     * @param bin     The {@link BinPart} involved in the filter
-     * @param binName The name of the bin
-     * @param operand The {@link StringOperand} involved in the filter
-     * @param type    The type of the filter operation (must be {@link FilterOperationType#EQ})
+     * @param bin          The {@link BinPart} involved in the filter
+     * @param binName      The name of the bin
+     * @param operandValue The value of {@link StringOperand} involved in the filter
+     * @param type         The type of the filter operation (must be {@link FilterOperationType#EQ})
      * @return An Aerospike {@link Filter} for the string or blob comparison
      * @throws NoApplicableFilterException if the filter operation type is not equality
      * @throws DslParseException           if type validation fails or base64 decoding fails
      */
-    private static Filter handleStringOperand(BinPart bin, String binName, StringOperand operand,
+    private static Filter handleStringOperand(BinPart bin, String binName, String operandValue,
                                               FilterOperationType type) {
         if (type != FilterOperationType.EQ) {
             throw new NoApplicableFilterException("Only equality comparison is supported for string operands");
@@ -686,43 +693,52 @@ public class VisitorUtils {
         // Handle BLOB type
         if (bin.getExpType() != null && bin.getExpType().equals(Exp.Type.BLOB)) {
             validateComparableTypes(bin.getExpType(), Exp.Type.BLOB);
-            byte[] value = Base64.getDecoder().decode(operand.getValue());
+            byte[] value = Base64.getDecoder().decode(operandValue);
             return Filter.equal(binName, value);
         }
 
         // Handle STRING type
         validateComparableTypes(bin.getExpType(), Exp.Type.STRING);
-        return Filter.equal(binName, operand.getValue());
+        return Filter.equal(binName, operandValue);
     }
 
     /**
      * Creates a Filter based on two operands and a filter operation type.
      *
-     * @param left  The left operand
-     * @param right The right operand
-     * @param type  The filter operation type
+     * @param left              The left operand
+     * @param right             The right operand
+     * @param type              The filter operation type
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
      * @return The appropriate Filter, or null if no filter can be created
      * @throws DslParseException if operands are invalid
      */
-    private static Filter getFilterOrFail(AbstractPart left, AbstractPart right, FilterOperationType type) {
-        validateOperands(left, right);
+    private static Filter getFilterOrFail(AbstractPart left, AbstractPart right, FilterOperationType type,
+                                          PlaceholderValues placeholderValues) {
+        // Process placeholder
+        final AbstractPart resolvedLeft = left.getPartType() == PLACEHOLDER_OPERAND
+                ? getPlaceholderValueForFilter((PlaceholderOperand) left, placeholderValues)
+                : left;
+        final AbstractPart resolvedRight = right.getPartType() == PLACEHOLDER_OPERAND
+                ? getPlaceholderValueForFilter((PlaceholderOperand) right, placeholderValues)
+                : right;
+
+        validateOperands(resolvedLeft, resolvedRight);
 
         // Handle bin operands
-        if (left.getPartType() == BIN_PART) {
-            return getFilter((BinPart) left, right, type);
+        if (resolvedLeft.getPartType() == BIN_PART) {
+            return getFilter((BinPart) resolvedLeft, resolvedRight, type);
         }
-
         if (right.getPartType() == BIN_PART) {
-            return getFilter((BinPart) right, left, invertType(type));
+            return getFilter((BinPart) resolvedRight, left, invertType(type));
         }
 
         // Handle expressions
-        if (left.getPartType() == EXPRESSION_CONTAINER) {
-            return handleExpressionOperand((ExpressionContainer) left, right, type);
+        if (resolvedLeft.getPartType() == EXPRESSION_CONTAINER) {
+            return handleExpressionOperand((ExpressionContainer) resolvedLeft, resolvedRight, type, placeholderValues);
         }
 
         if (right.getPartType() == EXPRESSION_CONTAINER) {
-            return handleExpressionOperand((ExpressionContainer) right, left, type);
+            return handleExpressionOperand((ExpressionContainer) resolvedRight, resolvedLeft, type, placeholderValues);
         }
 
         return null;
@@ -733,22 +749,23 @@ public class VisitorUtils {
      * It recursively processes the nested expression to determine if a filter can be generated from it in combination
      * with the {@code otherOperand} and the overall {@code type} of the filter operation.
      *
-     * @param expr         The {@link ExpressionContainer} operand
-     * @param otherOperand The other operand in the filter condition
-     * @param type         The type of the filter operation
+     * @param expr              The {@link ExpressionContainer} operand
+     * @param otherOperand      The other operand in the filter condition
+     * @param type              The type of the filter operation
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
      * @return A {@link Filter} if one can be generated from the nested expression, otherwise {@code null}
      * @throws DslParseException           if operands within the nested expression are null
      * @throws NoApplicableFilterException if the nested expression structure is not supported for filtering
      */
     private static Filter handleExpressionOperand(ExpressionContainer expr, AbstractPart otherOperand,
-                                                  FilterOperationType type) {
+                                                  FilterOperationType type, PlaceholderValues placeholderValues) {
         AbstractPart exprLeft = expr.getLeft();
         AbstractPart exprRight = expr.getRight();
         ExprPartsOperation operation = expr.getOperationType();
 
         validateOperands(exprLeft, exprRight);
 
-        return getFilterFromExpressionOrFail(exprLeft, exprRight, operation, otherOperand, type);
+        return getFilterFromExpressionOrFail(exprLeft, exprRight, operation, otherOperand, type, placeholderValues);
     }
 
     /**
@@ -757,17 +774,19 @@ public class VisitorUtils {
      * by combining it with the {@code externalOperand} and the overall {@code type} of the filter operation.
      * It specifically looks for cases where a bin is involved in an arithmetic expression with an external operand.
      *
-     * @param exprLeft        The left part of an expression
-     * @param exprRight       The right part of an expression
-     * @param operationType   The operation type of the expression
-     * @param externalOperand The operand outside the expression
-     * @param type            The type of the overall filter operation
+     * @param exprLeft          The left part of an expression
+     * @param exprRight         The right part of an expression
+     * @param operationType     The operation type of the expression
+     * @param externalOperand   The operand outside the expression
+     * @param type              The type of the overall filter operation
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
      * @return A {@link Filter} if one can be generated, otherwise {@code null}
      * @throws NoApplicableFilterException if the expression structure is not supported for filtering
      */
     private static Filter getFilterFromExpressionOrFail(AbstractPart exprLeft, AbstractPart exprRight,
                                                         ExprPartsOperation operationType,
-                                                        AbstractPart externalOperand, FilterOperationType type) {
+                                                        AbstractPart externalOperand, FilterOperationType type,
+                                                        PlaceholderValues placeholderValues) {
         // Handle bin on left side
         if (exprLeft.getPartType() == BIN_PART) {
             return handleBinArithmeticExpression((BinPart) exprLeft, exprRight, externalOperand,
@@ -782,7 +801,7 @@ public class VisitorUtils {
 
         // Handle nested expressions
         if (exprLeft.getPartType() == EXPRESSION_CONTAINER) {
-            return getFilterOrFail(exprLeft, exprRight, type);
+            return getFilterOrFail(exprLeft, exprRight, type, placeholderValues);
         }
 
         return null;
@@ -974,20 +993,22 @@ public class VisitorUtils {
      * Builds a secondary index {@link Filter} and a filter {@link Exp} for a given {@link ExpressionContainer}.
      * This is the main entry point for enriching the parsed expression tree with query filters.
      *
-     * @param expr    The {@link ExpressionContainer} representing the expression tree
-     * @param indexes A map of available secondary indexes, keyed by bin name
+     * @param expr              The {@link ExpressionContainer} representing the expression tree
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
+     * @param indexes           A map of available secondary indexes, keyed by bin name
      * @return The updated {@link ExpressionContainer} with the generated {@link Filter} and {@link Exp}.
      * Either of them can be null if there is no suitable filter
      */
-    public static AbstractPart buildExpr(ExpressionContainer expr, Map<String, List<Index>> indexes) {
+    public static AbstractPart buildExpr(ExpressionContainer expr, PlaceholderValues placeholderValues,
+                                         Map<String, List<Index>> indexes) {
         Filter secondaryIndexFilter = null;
         try {
-            secondaryIndexFilter = getSIFilter(expr, indexes);
+            secondaryIndexFilter = getSIFilter(expr, placeholderValues, indexes);
         } catch (NoApplicableFilterException ignored) {
         }
         expr.setFilter(secondaryIndexFilter);
 
-        Exp exp = getFilterExp(expr);
+        Exp exp = getFilterExp(expr, placeholderValues);
         expr.setExp(exp);
         return expr;
     }
@@ -995,40 +1016,42 @@ public class VisitorUtils {
     /**
      * Returns the {@link Exp} generated for a given {@link ExpressionContainer}.
      *
-     * @param expr The input {@link ExpressionContainer}
+     * @param expr              The input {@link ExpressionContainer}
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
      * @return The corresponding {@link Exp}, or {@code null} if a secondary index filter was applied
      * or if there is no suitable filter
      */
-    private static Exp getFilterExp(ExpressionContainer expr) {
+    private static Exp getFilterExp(ExpressionContainer expr, PlaceholderValues placeholderValues) {
         // Skip the expression already used in creating secondary index Filter
         if (expr.hasSecondaryIndexFilter()) return null;
 
         return switch (expr.getOperationType()) {
-            case OR_STRUCTURE -> orStructureToExp(expr);
-            case AND_STRUCTURE -> andStructureToExp(expr);
-            case WITH_STRUCTURE -> withStructureToExp(expr);
-            case WHEN_STRUCTURE -> whenStructureToExp(expr);
-            case EXCLUSIVE_STRUCTURE -> exclStructureToExp(expr);
-            default -> processExpression(expr);
+            case OR_STRUCTURE -> orStructureToExp(expr, placeholderValues);
+            case AND_STRUCTURE -> andStructureToExp(expr, placeholderValues);
+            case WITH_STRUCTURE -> withStructureToExp(expr, placeholderValues);
+            case WHEN_STRUCTURE -> whenStructureToExp(expr, placeholderValues);
+            case EXCLUSIVE_STRUCTURE -> exclStructureToExp(expr, placeholderValues);
+            default -> processExpression(expr, placeholderValues);
         };
     }
 
     /**
      * Generates filter {@link Exp} for a WITH structure {@link ExpressionContainer}.
      *
-     * @param expr The {@link ExpressionContainer} representing WITH structure
+     * @param expr              The {@link ExpressionContainer} representing WITH structure
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
      * @return The resulting {@link Exp} expression
      */
-    private static Exp withStructureToExp(ExpressionContainer expr) {
+    private static Exp withStructureToExp(ExpressionContainer expr, PlaceholderValues placeholderValues) {
         List<Exp> expressions = new ArrayList<>();
         WithStructure withOperandsList = (WithStructure) expr.getLeft(); // extract unary Expr operand
         List<WithOperand> operands = withOperandsList.getOperands();
         for (WithOperand withOperand : operands) {
             if (!withOperand.isLastPart()) {
-                expressions.add(Exp.def(withOperand.getString(), getExp(withOperand.getPart())));
+                expressions.add(Exp.def(withOperand.getString(), getExp(withOperand.getPart(), placeholderValues)));
             } else {
                 // the last expression is the action (described after "do")
-                expressions.add(getExp(withOperand.getPart()));
+                expressions.add(getExp(withOperand.getPart(), placeholderValues));
             }
         }
         return Exp.let(expressions.toArray(new Exp[0]));
@@ -1037,15 +1060,16 @@ public class VisitorUtils {
     /**
      * Generates filter {@link Exp} for a WHEN structure {@link ExpressionContainer}.
      *
-     * @param expr The {@link ExpressionContainer} representing WHEN structure
+     * @param expr              The {@link ExpressionContainer} representing WHEN structure
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
      * @return The resulting {@link Exp} expression
      */
-    private static Exp whenStructureToExp(ExpressionContainer expr) {
+    private static Exp whenStructureToExp(ExpressionContainer expr, PlaceholderValues placeholderValues) {
         List<Exp> expressions = new ArrayList<>();
         WhenStructure whenOperandsList = (WhenStructure) expr.getLeft(); // extract unary Expr operand
         List<AbstractPart> operands = whenOperandsList.getOperands();
         for (AbstractPart part : operands) {
-            expressions.add(getExp(part));
+            expressions.add(getExp(part, placeholderValues));
         }
         return Exp.cond(expressions.toArray(new Exp[0]));
     }
@@ -1053,24 +1077,25 @@ public class VisitorUtils {
     /**
      * Generates filter {@link Exp} for an EXCLUSIVE structure {@link ExpressionContainer}.
      *
-     * @param expr The {@link ExpressionContainer} representing EXCLUSIVE structure
+     * @param expr              The {@link ExpressionContainer} representing EXCLUSIVE structure
+     * @param placeholderValues The {@link PlaceholderValues} to match placeholders by index
      * @return The resulting {@link Exp} expression
      */
-    private static Exp exclStructureToExp(ExpressionContainer expr) {
+    private static Exp exclStructureToExp(ExpressionContainer expr, PlaceholderValues placeholderValues) {
         List<Exp> expressions = new ArrayList<>();
         ExclusiveStructure exclOperandsList = (ExclusiveStructure) expr.getLeft(); // extract unary Expr operand
         List<ExpressionContainer> operands = exclOperandsList.getOperands();
         for (ExpressionContainer part : operands) {
-            expressions.add(getExp(part));
+            expressions.add(getExp(part, placeholderValues));
         }
         return Exp.exclusive(expressions.toArray(new Exp[0]));
     }
 
-    private static Exp orStructureToExp(ExpressionContainer expr) {
+    private static Exp orStructureToExp(ExpressionContainer expr, PlaceholderValues placeholderValues) {
         List<Exp> expressions = new ArrayList<>();
         List<ExpressionContainer> operands = ((OrStructure) expr.getLeft()).getOperands();
         for (ExpressionContainer part : operands) {
-            expressions.add(getExp(part));
+            expressions.add(getExp(part, placeholderValues));
         }
         return Exp.or(expressions.toArray(new Exp[0]));
     }
@@ -1078,14 +1103,15 @@ public class VisitorUtils {
     /**
      * Generates filter {@link Exp} for an AND structure {@link ExpressionContainer}.
      *
-     * @param expr The {@link ExpressionContainer} representing AND structure
+     * @param expr              The {@link ExpressionContainer} representing AND structure
+     * @param placeholderValues The {@link PlaceholderValues} to match placeholders by index
      * @return The resulting {@link Exp} expression
      */
-    private static Exp andStructureToExp(ExpressionContainer expr) {
+    private static Exp andStructureToExp(ExpressionContainer expr, PlaceholderValues placeholderValues) {
         List<Exp> expressions = new ArrayList<>();
         List<ExpressionContainer> operands = ((AndStructure) expr.getLeft()).getOperands();
         for (ExpressionContainer part : operands) {
-            Exp exp = getExp(part);
+            Exp exp = getExp(part, placeholderValues);
             if (exp != null) expressions.add(exp); // Exp can be null if it is already used in secondary index
         }
         if (expressions.isEmpty()) {
@@ -1099,14 +1125,15 @@ public class VisitorUtils {
     /**
      * Processes an {@link ExpressionContainer} to generate the corresponding Exp.
      *
-     * @param expr The expression to process
+     * @param expr              The expression to process
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
      * @return The processed Exp
      * @throws DslParseException if left or right operands are null in a binary expression
      */
-    private static Exp processExpression(ExpressionContainer expr) {
+    private static Exp processExpression(ExpressionContainer expr, PlaceholderValues placeholderValues) {
         // For unary expressions
         if (expr.isUnary()) {
-            Exp operandExp = processOperand(expr.getLeft());
+            Exp operandExp = processOperand(expr.getLeft(), placeholderValues);
             if (operandExp == null) return null;
 
             UnaryOperator<Exp> operator = getUnaryExpOperator(expr.getOperationType());
@@ -1124,8 +1151,8 @@ public class VisitorUtils {
         }
 
         // Process operands
-        Exp leftExp = processOperand(left);
-        Exp rightExp = processOperand(right);
+        Exp leftExp = processOperand(left, placeholderValues);
+        Exp rightExp = processOperand(right, placeholderValues);
 
         // Special handling for BIN_PART
         if (left.getPartType() == BIN_PART) {
@@ -1147,39 +1174,127 @@ public class VisitorUtils {
 
     /**
      * Processes an expression operand to generate its corresponding Aerospike {@link Exp}.
-     * If the operand is an {@link ExpressionContainer}, it recursively calls {@link #getFilterExp(ExpressionContainer)}
+     * If the operand is an {@link ExpressionContainer}, it recursively calls {@link #getFilterExp(ExpressionContainer, PlaceholderValues)}
      * to get the nested expression's {@link Exp}. Otherwise, it retrieves the {@link Exp} from the part itself.
      * The generated {@link Exp} is set back on the {@link AbstractPart}.
      *
-     * @param part The operand to process
+     * @param part              The operand to process
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
      * @return The processed Exp, or {@code null} if the part is null or represents
      * an expression container that resulted in a null Exp
      */
-    private static Exp processOperand(AbstractPart part) {
+    private static Exp processOperand(AbstractPart part, PlaceholderValues placeholderValues) {
         if (part == null) return null;
 
         Exp exp;
         if (part.getPartType() == EXPRESSION_CONTAINER) {
-            exp = getFilterExp((ExpressionContainer) part);
+            exp = getFilterExp((ExpressionContainer) part, placeholderValues);
         } else {
-            exp = part.getExp();
+            if (part.getPartType() == PLACEHOLDER_OPERAND) {
+                // Process placeholder
+                exp = getPlaceholderValueForExp((PlaceholderOperand) part, placeholderValues);
+            } else {
+                exp = part.getExp();
+            }
         }
         part.setExp(exp);
         return exp;
     }
 
     /**
+     * This method retrieves the actual value for a placeholder from the provided
+     * placeholder values, sets the value and appropriate part type in
+     * the placeholder operand, and returns a corresponding expression object.
+     *
+     * @param placeholder       The placeholder operand to be resolved
+     * @param placeholderValues {@link PlaceholderValues} to match with placeholders by index
+     * @return An Exp object representing the resolved placeholder value
+     * @throws UnsupportedOperationException If the placeholder value is not a String,
+     *                                       Float, Double, Integer, or Long, or if it's null
+     */
+    private static Exp getPlaceholderValueForExp(PlaceholderOperand placeholder, PlaceholderValues placeholderValues) {
+        // Get value by placeholder index
+        Object value = placeholderValues.getValue(placeholder.getIndex());
+        // Set value
+        placeholder.setValue(value);
+
+        if (value instanceof String) {
+            // Set type according to value
+            placeholder.setPartType(STRING_OPERAND);
+            return Exp.val((String) value);
+        }
+        if (value instanceof Number) {
+            if (value instanceof Float || value instanceof Double) {
+                // Set type according to value
+                placeholder.setPartType(FLOAT_OPERAND);
+                return Exp.val(((Number) value).doubleValue());
+            } else if (value instanceof Integer || value instanceof Long) {
+                // Set type according to value
+                placeholder.setPartType(INT_OPERAND);
+                return Exp.val(((Number) value).longValue());
+            } else {
+                throw new UnsupportedOperationException("Cannot get value for Exp from placeholder value ?"
+                        + placeholder.getIndex() + ", expecting String / float / double / int / long");
+            }
+        } else {
+            throw new UnsupportedOperationException("Cannot get value for Exp from placeholder value ?"
+                    + placeholder.getIndex() + ", expecting String / float / double / int / long");
+        }
+    }
+
+    /**
+     * This method retrieves the actual value for a placeholder from the provided
+     * placeholder values, sets the value and appropriate part type in
+     * the placeholder operand itself, and returns the same operand instance.
+     *
+     * @param placeholder       The placeholder operand to be resolved
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
+     * @return The same placeholder operand instance with resolved value and type
+     * @throws UnsupportedOperationException If the placeholder value is not a String,
+     *                                       Float, Double, Integer, or Long, or if it's null
+     */
+    private static AbstractPart getPlaceholderValueForFilter(PlaceholderOperand placeholder,
+                                                             PlaceholderValues placeholderValues) {
+        // Get value by placeholder index
+        Object value = placeholderValues.getValue(placeholder.getIndex());
+        // Set value
+        placeholder.setValue(value);
+
+        if (value instanceof String) {
+            // Set type according to value
+            placeholder.setPartType(STRING_OPERAND);
+        }
+        if (value instanceof Number) {
+            if (value instanceof Float || value instanceof Double) {
+                // Set type according to value
+                placeholder.setPartType(FLOAT_OPERAND);
+            } else if (value instanceof Integer || value instanceof Long) {
+                // Set type according to value
+                placeholder.setPartType(INT_OPERAND);
+            } else {
+                throw new UnsupportedOperationException("Cannot get value for Exp from placeholder value ?"
+                        + placeholder.getIndex() + ", expecting String / float / double / int / long");
+            }
+        } else {
+            throw new UnsupportedOperationException("Cannot get value for Exp from placeholder value ?"
+                    + placeholder.getIndex() + ", expecting String / float / double / int / long");
+        }
+        return placeholder;
+    }
+
+    /**
      * This method that retrieves the {@link Exp} associated with an {@link AbstractPart}.
-     * If the part is an {@link ExpressionContainer}, it calls {@link #getFilterExp(ExpressionContainer)}
+     * If the part is an {@link ExpressionContainer}, it calls {@link #getFilterExp(ExpressionContainer, PlaceholderValues)}
      * to get the nested expression's {@link Exp}. Otherwise, it returns the {@link Exp} stored
      * directly in the {@link AbstractPart}.
      *
-     * @param part The {@link AbstractPart} for which to get the {@link Exp}
+     * @param part              The {@link AbstractPart} for which to get the {@link Exp}
+     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
      * @return The corresponding {@link Exp} or {@code null}
      */
-    private static Exp getExp(AbstractPart part) {
+    private static Exp getExp(AbstractPart part, PlaceholderValues placeholderValues) {
         if (part.getPartType() == EXPRESSION_CONTAINER) {
-            return getFilterExp((ExpressionContainer) part);
+            return getFilterExp((ExpressionContainer) part, placeholderValues);
         }
         return part.getExp();
     }
@@ -1195,7 +1310,8 @@ public class VisitorUtils {
      * @return A secondary index {@link Filter}, or {@code null} if no applicable filter can be generated
      * @throws NoApplicableFilterException if the expression operation type is not supported
      */
-    private static Filter getSIFilter(ExpressionContainer expr, Map<String, List<Index>> indexes) {
+    private static Filter getSIFilter(ExpressionContainer expr, PlaceholderValues placeholderValues,
+                                      Map<String, List<Index>> indexes) {
         // If it is an OR query
         if (expr.getOperationType() == OR) return null;
 
@@ -1205,7 +1321,8 @@ public class VisitorUtils {
         return getFilterOrFail(
                 chosenExpr.getLeft(),
                 chosenExpr.getRight(),
-                getFilterOperation(chosenExpr.getOperationType())
+                getFilterOperation(chosenExpr.getOperationType()),
+                placeholderValues
         );
     }
 

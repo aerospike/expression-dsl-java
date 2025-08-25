@@ -7,11 +7,17 @@ import lombok.Getter;
 @Getter
 public class IntOperand extends AbstractPart implements ParsedValueOperand {
 
+    // Keeping the boxed type for interface compatibility
     private final Long value;
 
     public IntOperand(Long value) {
         super(AbstractPart.PartType.INT_OPERAND);
         this.value = value;
+    }
+
+    @Override
+    public PartType getType() {
+        return PartType.INT_OPERAND;
     }
 
     @Override

@@ -17,6 +17,11 @@ public class ListOperand extends AbstractPart implements ParsedValueOperand {
     }
 
     @Override
+    public PartType getType() {
+        return PartType.LIST_OPERAND;
+    }
+
+    @Override
     public Exp getExp() {
         return Exp.val(value);
     }

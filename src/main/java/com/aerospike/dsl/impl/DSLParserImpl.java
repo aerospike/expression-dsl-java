@@ -58,7 +58,7 @@ public class DSLParserImpl implements DSLParser {
                 // Group the indexes by bin name
                 .collect(Collectors.groupingBy(Index::getBin));
 
-        AbstractPart resultingPart = new ExpressionConditionVisitor(placeholderValues).visit(parseTree);
+        AbstractPart resultingPart = new ExpressionConditionVisitor().visit(parseTree);
 
         // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error
         if (resultingPart == null) {
@@ -66,6 +66,6 @@ public class DSLParserImpl implements DSLParser {
         }
 
         // Return the parsed tree along with indexes Map
-        return new ParsedExpression(resultingPart, indexesMap);
+        return new ParsedExpression(resultingPart, placeholderValues, indexesMap);
     }
 }

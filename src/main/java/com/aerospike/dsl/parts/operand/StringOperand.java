@@ -20,6 +20,11 @@ public class StringOperand extends AbstractPart implements ParsedValueOperand {
     }
 
     @Override
+    public PartType getType() {
+        return super.getPartType();
+    }
+
+    @Override
     public Exp getExp() {
         if (isBlob) {
             byte[] byteValue = Base64.getDecoder().decode(value);
