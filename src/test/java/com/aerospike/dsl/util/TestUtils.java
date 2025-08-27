@@ -3,18 +3,11 @@ package com.aerospike.dsl.util;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
 import com.aerospike.client.query.Filter;
-import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
 import com.aerospike.dsl.InputContext;
-import com.aerospike.dsl.ParseResult;
 import com.aerospike.dsl.ParsedExpression;
-import com.aerospike.dsl.PlaceholderValues;
 import com.aerospike.dsl.impl.DSLParserImpl;
-import com.aerospike.dsl.parts.AbstractPart;
 import lombok.experimental.UtilityClass;
-
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -43,19 +36,6 @@ public class TestUtils {
      */
     public static ParsedExpression getParsedExpression(InputContext inputContext, IndexContext indexContext) {
         return parser.parseExpression(inputContext, indexContext);
-    }
-
-    /**
-     * Parses the given DSL expression and returns the resulting {@link ParsedExpression} object.
-     *
-     * @param exprTree          The {@link AbstractPart} representing parsed expression tree, as returned by {@link ParsedExpression#getExprTree()}
-     * @param placeholderValues The {@link PlaceholderValues} to be matched with placeholders by indexes
-     * @param indexesMap        The map of indexes by namespaces, as returned by {@link ParsedExpression#getIndexesMap()}
-     * @return The {@link Exp} object derived from the parsed filter expression
-     */
-    public static ParseResult getParseResult(AbstractPart exprTree, PlaceholderValues placeholderValues,
-                                             Map<String, List<Index>> indexesMap) {
-        return ParsedExpression.getResult(exprTree, placeholderValues, indexesMap);
     }
 
     /**

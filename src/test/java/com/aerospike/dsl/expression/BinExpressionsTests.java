@@ -16,6 +16,7 @@ class BinExpressionsTests {
         parseFilterExpressionAndCompare(InputContext.of("$.intBin1 > 100"), Exp.gt(Exp.intBin("intBin1"), Exp.val(100)));
         parseFilterExpressionAndCompare(InputContext.of("$.stringBin1 > 'text'"), Exp.gt(Exp.stringBin("stringBin1"), Exp.val("text")));
         parseFilterExpressionAndCompare(InputContext.of("$.stringBin1 > \"text\""), Exp.gt(Exp.stringBin("stringBin1"), Exp.val("text")));
+        parseFilterExpressionAndCompare(InputContext.of("$.stringBin1 > '?0'"), Exp.gt(Exp.stringBin("stringBin1"), Exp.val("?0")));
 
         parseFilterExpressionAndCompare(InputContext.of("100 < $.intBin1"), Exp.lt(Exp.val(100), Exp.intBin("intBin1")));
         parseFilterExpressionAndCompare(InputContext.of("'text' < $.stringBin1"), Exp.lt(Exp.val("text"), Exp.stringBin("stringBin1")));

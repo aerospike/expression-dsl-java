@@ -13,6 +13,7 @@ public abstract class AbstractPart {
     protected PartType partType;
     protected Exp exp;
     protected Filter filter;
+    protected boolean isPlaceholder;
 
     protected AbstractPart(PartType partType) {
         this.partType = partType;

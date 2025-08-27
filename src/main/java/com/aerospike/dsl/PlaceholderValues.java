@@ -21,10 +21,11 @@ public class PlaceholderValues {
      *
      * @param index Index of the placeholder
      * @return Value of the placeholder with the given index
+     * @throws IllegalArgumentException if placeholder index is out of bounds (fewer values than placeholders)
      */
     public Object getValue(int index) {
         if (index < 0 || index >= values.length) {
-            throw new IllegalArgumentException("Placeholder index out of bounds: ?" + index);
+            throw new IllegalArgumentException("Missing value for placeholder ?" + index);
         }
         return values[index];
     }

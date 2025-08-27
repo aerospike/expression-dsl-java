@@ -15,11 +15,6 @@ public class VariableOperand extends AbstractPart implements ParsedValueOperand 
     }
 
     @Override
-    public PartType getType() {
-        return super.getPartType();
-    }
-
-    @Override
     public Exp getExp() {
         return Exp.var(value);
     }

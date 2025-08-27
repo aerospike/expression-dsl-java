@@ -16,11 +16,6 @@ public class FloatOperand extends AbstractPart implements ParsedValueOperand {
     }
 
     @Override
-    public PartType getType() {
-        return PartType.FLOAT_OPERAND;
-    }
-
-    @Override
     public Exp getExp() {
         return Exp.val(value);
     }

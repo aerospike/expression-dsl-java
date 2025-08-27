@@ -741,5 +741,4 @@ public class LogicalParsedExpressionTests {
         TestUtils.parseDslExpressionAndCompare(InputContext.of("exclusive($.hand == \"stand\", $.pun == \"done\")"),
                 filter, exp);
     }
-
 }

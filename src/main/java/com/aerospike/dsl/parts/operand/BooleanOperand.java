@@ -19,11 +19,6 @@ public class BooleanOperand extends AbstractPart implements ParsedValueOperand {
     }
 
     @Override
-    public PartType getType() {
-        return BOOL_OPERAND;
-    }
-
-    @Override
     public Exp getExp() {
         return Exp.val(value);
     }

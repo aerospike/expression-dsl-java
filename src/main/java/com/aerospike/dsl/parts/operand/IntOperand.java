@@ -16,11 +16,6 @@ public class IntOperand extends AbstractPart implements ParsedValueOperand {
     }
 
     @Override
-    public PartType getType() {
-        return PartType.INT_OPERAND;
-    }
-
-    @Override
     public Exp getExp() {
         return Exp.val(value);
     }

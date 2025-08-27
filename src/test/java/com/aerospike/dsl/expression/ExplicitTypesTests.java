@@ -421,7 +421,7 @@ public class ExplicitTypesTests {
                         "(when($.b == 1 => $.a1.get(type: STRING)," +
                         " $.b == 2 => $.a2.get(type: STRING)," +
                         " $.b == 3 => $.a3.get(type: STRING)," +
-                        " default => \"hello\")"),
+                        " default => \"hello\"))"),
                 expected);
     }
 }

@@ -17,11 +17,6 @@ public class MapOperand extends AbstractPart implements ParsedValueOperand {
     }
 
     @Override
-    public PartType getType() {
-        return PartType.MAP_PART;
-    }
-
-    @Override
     public Exp getExp() {
         return Exp.val(value);
     }

@@ -2,12 +2,14 @@ package com.aerospike.dsl.parts.operand;
 
 import com.aerospike.dsl.parts.AbstractPart;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public class WithOperand extends AbstractPart {
 
     private final String string;
-    private final AbstractPart part;
+    @Setter
+    private AbstractPart part;
     private final boolean isLastPart;
 
     public WithOperand(AbstractPart part, String string) {
