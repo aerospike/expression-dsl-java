@@ -1,6 +1,11 @@
-package com.aerospike.dsl;
+package com.aerospike.dsl.api;
 
 import com.aerospike.client.query.Filter;
+import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.ExpressionContext;
+import com.aerospike.dsl.Index;
+import com.aerospike.dsl.IndexContext;
+import com.aerospike.dsl.ParsedExpression;
 
 /**
  * Contains API to convert dot separated String path into an Aerospike filter -
@@ -17,7 +22,7 @@ import com.aerospike.client.query.Filter;
 public interface DSLParser {
 
     /**
-     * Parse String DSL path into Aerospike filter Expression.
+     * Parse DSL path into Aerospike filter Expression.
      * <br><br>
      * Examples:
      * <table border="1">
@@ -82,11 +87,12 @@ public interface DSLParser {
      *   </tr>
      * </table>
      *
-     * @param dslString String consisting of dot separated elements, typically bin name and optional context
+     * @param input {@link ExpressionContext} containing input string of dot separated elements. If the input string has
+     *                                  placeholders, matching values must be provided within {@code input} too
      * @return {@link ParsedExpression} object
      * @throws DslParseException in case of invalid syntax
      */
-    ParsedExpression parseExpression(String dslString);
+    ParsedExpression parseExpression(ExpressionContext input);
 
     /**
      * Parse String DSL path into Aerospike filter Expression.
@@ -154,11 +160,12 @@ public interface DSLParser {
      *   </tr>
      * </table>
      *
-     * @param dslString    String consisting of dot separated elements, typically bin name and optional context
+     * @param input {@link ExpressionContext} containing input string of dot separated elements. If the input string has
+     *                                  placeholders, matching values must be provided within {@code input} too
      * @param indexContext Class containing namespace and collection of {@link Index} objects that represent
      *                     existing secondary indexes. Required for creating {@link Filter}. Can be null
      * @return {@link ParsedExpression} object
      * @throws DslParseException in case of invalid syntax
      */
-    ParsedExpression parseExpression(String dslString, IndexContext indexContext);
+    ParsedExpression parseExpression(ExpressionContext input, IndexContext indexContext);
 }

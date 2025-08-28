@@ -1,5 +1,6 @@
 package com.aerospike.dsl.filter;
 
+import com.aerospike.dsl.ExpressionContext;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilter;
@@ -9,16 +10,16 @@ public class ImplicitTypesFiltersTests {
 
     @Test
     void implicitDefaultIntComparison() {
-        assertThat(parseFilter("$.intBin1 < $.intBin2")).isNull();
+        assertThat(parseFilter(ExpressionContext.of("$.intBin1 < $.intBin2"))).isNull();
     }
 
     @Test
     void floatComparison() {
-        assertThat(parseFilter("$.floatBin1 >= 100.25")).isNull();
+        assertThat(parseFilter(ExpressionContext.of("$.floatBin1 >= 100.25"))).isNull();
     }
 
     @Test
     void booleanComparison() {
-        assertThat(parseFilter("$.boolBin1 == true")).isNull();
+        assertThat(parseFilter(ExpressionContext.of("$.boolBin1 == true"))).isNull();
     }
 }

@@ -5,5 +5,6 @@ package com.aerospike.dsl.parts.operand;
  * the resulting filter (e.g., a String for StringOperand or a list of objects for ListOperand)
  */
 public interface ParsedValueOperand {
+
     Object getValue();
 }

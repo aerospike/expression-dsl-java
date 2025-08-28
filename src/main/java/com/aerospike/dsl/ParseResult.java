@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * This class stores result of parsing DSL expression using {@link DSLParserImpl#parseExpression}
+ * This class stores result of parsing DSL expression using {@link ParsedExpression#getResult()}
  * in form of Java client's secondary index {@link Filter} and filter {@link Exp}.
  */
 @AllArgsConstructor

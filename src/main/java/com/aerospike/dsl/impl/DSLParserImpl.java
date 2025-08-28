@@ -1,6 +1,15 @@
-package com.aerospike.dsl;
+package com.aerospike.dsl.impl;
 
+import com.aerospike.dsl.ConditionLexer;
+import com.aerospike.dsl.ConditionParser;
+import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.ExpressionContext;
+import com.aerospike.dsl.Index;
+import com.aerospike.dsl.IndexContext;
+import com.aerospike.dsl.ParsedExpression;
+import com.aerospike.dsl.PlaceholderValues;
 import com.aerospike.dsl.annotation.Beta;
+import com.aerospike.dsl.api.DSLParser;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
 import org.antlr.v4.runtime.CharStreams;
@@ -17,15 +26,15 @@ import java.util.stream.Collectors;
 public class DSLParserImpl implements DSLParser {
 
     @Beta
-    public ParsedExpression parseExpression(String dslString) {
-        ParseTree parseTree = getParseTree(dslString);
-        return getParsedExpression(parseTree, null);
+    public ParsedExpression parseExpression(ExpressionContext expressionContext) {
+        ParseTree parseTree = getParseTree(expressionContext.getExpression());
+        return getParsedExpression(parseTree, expressionContext.getValues(), null);
     }
 
     @Beta
-    public ParsedExpression parseExpression(String input, IndexContext indexContext) {
-        ParseTree parseTree = getParseTree(input);
-        return getParsedExpression(parseTree, indexContext);
+    public ParsedExpression parseExpression(ExpressionContext expressionContext, IndexContext indexContext) {
+        ParseTree parseTree = getParseTree(expressionContext.getExpression());
+        return getParsedExpression(parseTree, expressionContext.getValues(), indexContext);
     }
 
     private ParseTree getParseTree(String input) {
@@ -34,7 +43,8 @@ public class DSLParserImpl implements DSLParser {
         return parser.parse();
     }
 
-    private ParsedExpression getParsedExpression(ParseTree parseTree, IndexContext indexContext) {
+    private ParsedExpression getParsedExpression(ParseTree parseTree, PlaceholderValues placeholderValues,
+                                                 IndexContext indexContext) {
         final String namespace = Optional.ofNullable(indexContext)
                 .map(IndexContext::getNamespace)
                 .orElse(null);
@@ -54,7 +64,8 @@ public class DSLParserImpl implements DSLParser {
         if (resultingPart == null) {
             throw new DslParseException("Could not parse given DSL expression input");
         }
+
         // Return the parsed tree along with indexes Map
-        return new ParsedExpression(resultingPart, indexesMap);
+        return new ParsedExpression(resultingPart, placeholderValues, indexesMap);
     }
 }

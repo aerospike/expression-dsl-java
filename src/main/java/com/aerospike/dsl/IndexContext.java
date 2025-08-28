@@ -7,7 +7,7 @@ import lombok.Getter;
 import java.util.Collection;
 
 /**
- * This class stores namespace and indexes required to build secondary index {@link Filter}.
+ * This class stores namespace and indexes required to build secondary index {@link Filter}
  */
 @AllArgsConstructor(staticName = "of")
 @Getter

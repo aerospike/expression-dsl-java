@@ -7,8 +7,10 @@ import lombok.experimental.Accessors;
 @Getter
 public class ExpressionContainer extends AbstractPart {
 
-    protected final AbstractPart left;
-    protected final AbstractPart right;
+    @Setter
+    protected AbstractPart left;
+    @Setter
+    protected AbstractPart right;
     private final boolean isUnary;
     private final ExprPartsOperation operationType;
     @Setter()

@@ -13,15 +13,11 @@ public abstract class AbstractPart {
     protected PartType partType;
     protected Exp exp;
     protected Filter filter;
+    protected boolean isPlaceholder;
 
     protected AbstractPart(PartType partType) {
         this.partType = partType;
         this.exp = null;
-    }
-
-    protected AbstractPart(PartType partType, Filter filter) {
-        this.partType = partType;
-        this.filter = filter;
     }
 
     public enum PartType {
@@ -45,6 +41,7 @@ public abstract class AbstractPart {
         PATH_FUNCTION,
         METADATA_OPERAND,
         EXPRESSION_CONTAINER,
-        VARIABLE_OPERAND
+        VARIABLE_OPERAND,
+        PLACEHOLDER_OPERAND
     }
 }

@@ -5,6 +5,7 @@ import com.aerospike.client.cdt.ListReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -26,10 +27,11 @@ class ListExpressionsTests {
                 ),
                 Exp.val(100));
         // Implicit detect as Int
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0] == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(type: INT) == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(type: INT, return: VALUE) == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].asInt() == 100", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0] == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].get(type: INT) == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].get(type: INT, return: VALUE) == 100"),
+                expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].asInt() == 100"), expected);
     }
 
     @Test
@@ -43,9 +45,11 @@ class ListExpressionsTests {
                 ),
                 Exp.val("stringVal"));
         // Implicit detect as string
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0] == \"stringVal\"", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(type: STRING) == \"stringVal\"", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(type: STRING, return: VALUE) == \"stringVal\"", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0] == \"stringVal\""), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].get(type: STRING) == \"stringVal\""),
+                expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].get(type: STRING, return: VALUE)" +
+                " == \"stringVal\""), expected);
 
         expected = Exp.eq(
                 ListExp.getByIndex(
@@ -56,9 +60,10 @@ class ListExpressionsTests {
                 ),
                 Exp.val(true));
         // Implicit detect as boolean
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0] == true", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(type: BOOL) == true", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(type: BOOL, return: VALUE) == true", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0] == true"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].get(type: BOOL) == true"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].get(type: BOOL, return: VALUE) == true"),
+                expected);
     }
 
     @Test
@@ -70,10 +75,11 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=100] == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=100].get(type: INT) == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=100].get(type: INT, return: VALUE) == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=100].asInt() == 100", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=100] == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=100].get(type: INT) == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=100].get(type: INT, return: VALUE) == 100"),
+                expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=100].asInt() == 100"), expected);
     }
 
     @Test
@@ -84,8 +90,8 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")),
                 Exp.val(0)
         );
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=100].count() > 0", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=100].[].count() > 0", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=100].count() > 0"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=100].[].count() > 0"), expected);
     }
 
     @Test
@@ -98,10 +104,11 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[#-1] == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[#-1].get(type: INT) == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[#-1].get(type: INT, return: VALUE) == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[#-1].asInt() == 100", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-1] == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-1].get(type: INT) == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-1].get(type: INT, return: VALUE) == 100"),
+                expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-1].asInt() == 100"), expected);
     }
 
     @Test
@@ -116,9 +123,11 @@ class ListExpressionsTests {
                         CTX.listIndex(0)
                 ),
                 Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].[0].[0] == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].[0].[0].get(type: INT) == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].[0].[0].get(type: INT, return: VALUE) == 100", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].[0].[0] == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].[0].[0].get(type: INT) == 100"),
+                expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].[0].[0].get(type: INT, return: VALUE) == 100"),
+                expected);
     }
 
     @Test
@@ -126,10 +135,10 @@ class ListExpressionsTests {
         Exp expected = Exp.eq(
                 ListExp.size(Exp.listBin("listBin1")),
                 Exp.val(1));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[].count() == 1", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[].count() == 1"), expected);
 
         // the default behaviour for count() without List '[]' or Map '{}' designators is List
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.count() == 1", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.count() == 1"), expected);
     }
 
     @Test
@@ -143,10 +152,10 @@ class ListExpressionsTests {
                                 Exp.listBin("listBin1"))
                 ),
                 Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[1].[].count() == 100", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[1].[].count() == 100"), expected);
 
         // the default behaviour for count() without List '[]' or Map '{}' designators is List
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[1].count() == 100", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[1].count() == 100"), expected);
 
     }
 
@@ -162,10 +171,10 @@ class ListExpressionsTests {
                                 CTX.listIndex(1))
                 ),
                 Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[1].[2].[].count() == 100", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[1].[2].[].count() == 100"), expected);
 
         // the default behaviour for count() without List '[]' or Map '{}' designators is List
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[1].[2].count() == 100", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[1].[2].count() == 100"), expected);
     }
 
     @Test
@@ -179,7 +188,8 @@ class ListExpressionsTests {
                         CTX.listIndex(5)
                 ),
                 Exp.val("stringVal"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[5].[1].get(type: STRING) == \"stringVal\"", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[5].[1].get(type: STRING) == \"stringVal\""),
+                expected);
     }
 
     @Test
@@ -195,8 +205,9 @@ class ListExpressionsTests {
                 ),
                 Exp.val("stringVal"));
         // Implicit detect as String
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[5].[#-1] == \"stringVal\"", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[5].[#-1].get(type: STRING) == \"stringVal\"", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[5].[#-1] == \"stringVal\""), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[5].[#-1].get(type: STRING) == \"stringVal\""),
+                expected);
 
         // Nested List Rank Value
         expected = Exp.eq(
@@ -209,7 +220,7 @@ class ListExpressionsTests {
                 ),
                 Exp.val(200));
         // Implicit detect as Int
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[5].[#-1].[=100] == 200", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[5].[#-1].[=100] == 200"), expected);
     }
 
     @Test
@@ -223,21 +234,21 @@ class ListExpressionsTests {
                 ),
                 Exp.val(100)
         );
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].count() == 100", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].[].count() == 100", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].count() == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].[].count() == 100"), expected);
     }
 
     @Test
     void negativeSyntaxList() {
         // TODO: throw meaningful exception (by ANTLR?)
-        assertThatThrownBy(() -> parseFilterExp("$.listBin1.[stringValue] == 100"))
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[stringValue] == 100")))
                 .isInstanceOf(DslParseException.class);
     }
 
     //@Test
     void negativeTypeComparisonList() {
         // TODO: should fail? Exp is successfully created but comparing int to a string value (validations on List)
-        assertThatThrownBy(() -> parseFilterExp("$.listBin1.[#-1].get(type: INT) == \"stringValue\""))
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[#-1].get(type: INT) == \"stringValue\"")))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -248,7 +259,7 @@ class ListExpressionsTests {
                 Exp.val(1),
                 Exp.val(2),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[1:3]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[1:3]"), expected);
 
         // Negative
         expected = ListExp.getByIndexRange(
@@ -256,7 +267,7 @@ class ListExpressionsTests {
                 Exp.val(-3),
                 Exp.val(4),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[-3:1]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[-3:1]"), expected);
 
         // Inverted
         expected = ListExp.getByIndexRange(
@@ -264,14 +275,14 @@ class ListExpressionsTests {
                 Exp.val(2),
                 Exp.val(2),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[!2:4]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[!2:4]"), expected);
 
         // From start till the end
         expected = ListExp.getByIndexRange(
                 ListReturnType.VALUE,
                 Exp.val(1),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[1:]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[1:]"), expected);
     }
 
     @Test
@@ -280,23 +291,23 @@ class ListExpressionsTests {
                 ListReturnType.VALUE,
                 Exp.val(List.of("a", "b", "c")),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=a,b,c]", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=\"a\",\"b\",\"c\"]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=a,b,c]"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=\"a\",\"b\",\"c\"]"), expected);
 
         // Integer
         expected = ListExp.getByValueList(
                 ListReturnType.VALUE,
                 Exp.val(List.of(1, 2, 3)),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=1,2,3]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=1,2,3]"), expected);
 
         // Inverted
         expected = ListExp.getByValueList(
                 ListReturnType.VALUE | ListReturnType.INVERTED,
                 Exp.val(List.of("a", "b", "c")),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[!=a,b,c]", expected);
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[!=\"a\",\"b\",\"c\"]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[!=a,b,c]"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[!=\"a\",\"b\",\"c\"]"), expected);
     }
 
     @Test
@@ -307,7 +318,7 @@ class ListExpressionsTests {
                 Exp.val(111),
                 Exp.val(334),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=111:334]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=111:334]"), expected);
 
         // Inverted
         expected = ListExp.getByValueRange(
@@ -315,7 +326,7 @@ class ListExpressionsTests {
                 Exp.val(10),
                 Exp.val(20),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[!=10:20]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[!=10:20]"), expected);
 
         // From start till the end
         expected = ListExp.getByValueRange(
@@ -323,7 +334,7 @@ class ListExpressionsTests {
                 Exp.val(111),
                 null,
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[=111:]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=111:]"), expected);
     }
 
     @Test
@@ -333,7 +344,7 @@ class ListExpressionsTests {
                 Exp.val(0),
                 Exp.val(3),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[#0:3]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#0:3]"), expected);
 
         // Inverted
         expected = ListExp.getByRankRange(
@@ -341,14 +352,14 @@ class ListExpressionsTests {
                 Exp.val(0),
                 Exp.val(3),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[!#0:3]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[!#0:3]"), expected);
 
         // From start till the end
         expected = ListExp.getByRankRange(
                 ListReturnType.VALUE,
                 Exp.val(-3),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[#-3:]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-3:]"), expected);
 
         // From start till the end with context
         expected = ListExp.getByRankRange(
@@ -356,7 +367,7 @@ class ListExpressionsTests {
                 Exp.val(-3),
                 Exp.listBin("listBin1"),
                 CTX.listIndex(5));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[5].[#-3:]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[5].[#-3:]"), expected);
     }
 
     @Test
@@ -367,7 +378,7 @@ class ListExpressionsTests {
                 Exp.val("b"),
                 Exp.val(2),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[#-3:-1~b]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-3:-1~b]"), expected);
 
         // Inverted
         expected = ListExp.getByValueRelativeRankRange(
@@ -376,7 +387,7 @@ class ListExpressionsTests {
                 Exp.val("b"),
                 Exp.val(2),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[!#-3:-1~b]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[!#-3:-1~b]"), expected);
 
         // From start till the end
         expected = ListExp.getByValueRelativeRankRange(
@@ -384,7 +395,7 @@ class ListExpressionsTests {
                 Exp.val(-3),
                 Exp.val("b"),
                 Exp.listBin("listBin1"));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[#-3:~b]", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-3:~b]"), expected);
     }
 
     @Test
@@ -397,7 +408,7 @@ class ListExpressionsTests {
                         Exp.listBin("listBin1")
                 ),
                 Exp.val(5));
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(return: COUNT) == 5", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].get(return: COUNT) == 5"), expected);
 
         expected = Exp.eq(
                 ListExp.getByIndex(
@@ -408,7 +419,7 @@ class ListExpressionsTests {
                 ),
                 Exp.val(true));
         // Implicit detect as BOOL
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(return: EXISTS) == true", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].get(return: EXISTS) == true"), expected);
 
         expected = Exp.eq(
                 ListExp.getByIndex(
@@ -419,6 +430,6 @@ class ListExpressionsTests {
                 ),
                 Exp.val(1));
         // Implicit detect as INT
-        TestUtils.parseFilterExpressionAndCompare("$.listBin1.[0].get(return: INDEX) == 1", expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].get(return: INDEX) == 1"), expected);
     }
 }

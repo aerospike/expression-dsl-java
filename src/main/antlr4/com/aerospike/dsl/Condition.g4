@@ -79,6 +79,7 @@ operand
     | listConstant
     | orderedMapConstant
     | variable
+    | placeholder
     | '$.' pathOrMetadata
     | '(' expression ')'
     ;
@@ -117,6 +118,10 @@ VARIABLE_REFERENCE
 fragment STRING_VARIABLE_NAME
     : [a-zA-Z_][a-zA-Z0-9_]*
     ;
+
+placeholder: PLACEHOLDER;
+
+PLACEHOLDER: '?' [0-9]+;
 
 pathOrMetadata: path | metadata;
 

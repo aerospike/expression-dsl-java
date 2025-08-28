@@ -462,6 +462,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
+    public AbstractPart visitPlaceholder(ConditionParser.PlaceholderContext ctx) {
+        // Extract index from the placeholder
+        String placeholderText = ctx.getText();
+        int index = Integer.parseInt(placeholderText.substring(1));
+        return new PlaceholderOperand(index);
+    }
+
+    @Override
     public AbstractPart visitBasePath(ConditionParser.BasePathContext ctx) {
         BinPart binPart = null;
         List<AbstractPart> cdtParts = new ArrayList<>();
