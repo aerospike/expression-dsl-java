@@ -10,9 +10,10 @@ import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
+import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
-import com.aerospike.dsl.InputContext;
 import com.aerospike.dsl.ParseResult;
 import com.aerospike.dsl.ParsedExpression;
 import com.aerospike.dsl.PlaceholderValues;
@@ -33,31 +34,31 @@ public class PlaceholdersTests {
     void intBin_GT_no_indexes() {
         Filter filter = null;
         Exp exp = Exp.gt(Exp.intBin("intBin1"), Exp.val(100));
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("$.intBin1 > ?0", new PlaceholderValues(100)),
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > ?0", PlaceholderValues.of(100)),
                 filter, exp);
 
         Exp expString = Exp.gt(Exp.stringBin("strBin1"), Exp.val("str"));
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("$.strBin1 > ?0", new PlaceholderValues("str")),
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.strBin1 > ?0", PlaceholderValues.of("str")),
                 filter, expString);
         Exp expString2 = Exp.gt(Exp.stringBin("strBin1"), Exp.val("'str'"));
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("$.strBin1 > ?0", new PlaceholderValues("'str'")),
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.strBin1 > ?0", PlaceholderValues.of("'str'")),
                 filter, expString2);
         Exp expString3 = Exp.gt(Exp.stringBin("strBin1"), Exp.val("\"str\""));
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("$.strBin1 > ?0", new PlaceholderValues("\"str\"")),
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.strBin1 > ?0", PlaceholderValues.of("\"str\"")),
                 filter, expString3);
 
         byte[] data = new byte[]{1, 2, 3};
         String encodedString = Base64.getEncoder().encodeToString(data);
         Exp expStringBase64 = Exp.gt(Exp.blobBin("blobBin1"), Exp.val(data));
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("$.blobBin1.get(type: BLOB) > ?0",
-                new PlaceholderValues(encodedString)), filter, expStringBase64);
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.blobBin1.get(type: BLOB) > ?0",
+                PlaceholderValues.of(encodedString)), filter, expStringBase64);
     }
 
     @Test
     void intBin_GT_no_indexes_reuseExprTree() {
         ParsedExpression parsedExpr =
-                TestUtils.getParsedExpression(InputContext.of("$.intBin1 > ?0", new PlaceholderValues(100)), null);
-        ParseResult result = parsedExpr.getResult(new PlaceholderValues(200));
+                TestUtils.getParsedExpression(ExpressionContext.of("$.intBin1 > ?0", PlaceholderValues.of(100)), null);
+        ParseResult result = parsedExpr.getResult(PlaceholderValues.of(200));
 
         assertThat(result.getFilter()).isNull();
         Expression expToCompare = Exp.build(Exp.gt(Exp.intBin("intBin1"), Exp.val(200)));
@@ -67,21 +68,33 @@ public class PlaceholdersTests {
     @Test
     void intBin_GT_no_indexes_size_mismatch() {
         assertThatThrownBy(() ->
-                TestUtils.parseDslExpressionAndCompare(InputContext.of("$.intBin1 > ?0", new PlaceholderValues()),
+                TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > ?0", PlaceholderValues.of()),
                         null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Missing value for placeholder ?0");
 
         assertThatThrownBy(() ->
-                TestUtils.parseDslExpressionAndCompare(InputContext.of("$.intBin1 > ?0 and $.intBin2 > ?1",
-                        new PlaceholderValues(100)), null, null))
+                TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > ?0", null),
+                        null, null))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Operand type not supported: PLACEHOLDER_OPERAND");
+
+        assertThatThrownBy(() ->
+                TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > ?0"),
+                        null, null))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Operand type not supported: PLACEHOLDER_OPERAND");
+
+        assertThatThrownBy(() ->
+                TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > ?0 and $.intBin2 > ?1",
+                        PlaceholderValues.of(100)), null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Missing value for placeholder ?1");
 
         Filter filter = null;
         Exp exp = Exp.gt(Exp.intBin("intBin1"), Exp.val(100));
         // If there are more values than placeholders we only match the required indexes
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("$.intBin1 > ?0", new PlaceholderValues(100, 200)),
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > ?0", PlaceholderValues.of(100, 200)),
                 filter, exp);
     }
 
@@ -93,7 +106,7 @@ public class PlaceholdersTests {
         );
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
         Exp exp = null;
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("$.intBin1 > ?0", new PlaceholderValues(100)),
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > ?0", PlaceholderValues.of(100)),
                 filter, exp, IndexContext.of(NAMESPACE, indexes));
     }
 
@@ -104,9 +117,9 @@ public class PlaceholdersTests {
                 Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
         ParsedExpression parsedExpr =
-                TestUtils.getParsedExpression(InputContext.of("$.intBin1 > ?0", new PlaceholderValues(100)),
+                TestUtils.getParsedExpression(ExpressionContext.of("$.intBin1 > ?0", PlaceholderValues.of(100)),
                         IndexContext.of(NAMESPACE, indexes));
-        ParseResult result = parsedExpr.getResult(new PlaceholderValues(200));
+        ParseResult result = parsedExpr.getResult(PlaceholderValues.of(200));
 
         Filter filter = Filter.range("intBin1", 201, Long.MAX_VALUE);
         assertThat(result.getFilter()).isEqualTo(filter);
@@ -117,8 +130,8 @@ public class PlaceholdersTests {
     void intBin_GT_AND_no_indexes() {
         Filter filter = null;
         Exp exp = Exp.and(Exp.gt(Exp.intBin("intBin1"), Exp.val(100)), Exp.gt(Exp.intBin("intBin2"), Exp.val(100)));
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("$.intBin1 > ?0 and $.intBin2 > ?1",
-                new PlaceholderValues(100, 100)), filter, exp);
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > ?0 and $.intBin2 > ?1",
+                PlaceholderValues.of(100, 100)), filter, exp);
     }
 
     @Test
@@ -129,8 +142,8 @@ public class PlaceholdersTests {
         );
         Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
         Exp exp = Exp.gt(Exp.intBin("intBin1"), Exp.val(100));
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("$.intBin1 > ?0 and $.intBin2 > ?1",
-                new PlaceholderValues(100, 100)), filter, exp, IndexContext.of(NAMESPACE, indexes));
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > ?0 and $.intBin2 > ?1",
+                PlaceholderValues.of(100, 100)), filter, exp, IndexContext.of(NAMESPACE, indexes));
     }
 
     @Test
@@ -139,7 +152,7 @@ public class PlaceholdersTests {
         Filter filter = null;
 
         Exp exp = Exp.le(Exp.ttl(), Exp.val(24 * 60 * 60));
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("$.ttl() <= ?0", new PlaceholderValues(86400)),
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("$.ttl() <= ?0", PlaceholderValues.of(86400)),
                 filter, exp);
     }
 
@@ -147,7 +160,7 @@ public class PlaceholdersTests {
     void arithmeticExpression() {
         Filter filter = null;
         Exp exp = Exp.gt(Exp.add(Exp.intBin("apples"), Exp.val(5)), Exp.val(10));
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("($.apples + ?0) > ?1", new PlaceholderValues(5, 10)),
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("($.apples + ?0) > ?1", PlaceholderValues.of(5, 10)),
                 filter, exp);
 
         Collection<Index> INDEXES = List.of(
@@ -157,7 +170,7 @@ public class PlaceholdersTests {
         IndexContext INDEX_FILTER_INPUT = IndexContext.of(NAMESPACE, INDEXES);
         Filter filter2 = Filter.range("apples", 10 - 5 + 1, Long.MAX_VALUE);
         Exp exp2 = null;
-        TestUtils.parseDslExpressionAndCompare(InputContext.of("($.apples + ?0) > ?1", new PlaceholderValues(5, 10)),
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("($.apples + ?0) > ?1", PlaceholderValues.of(5, 10)),
                 filter2, exp2, INDEX_FILTER_INPUT);
     }
 
@@ -172,12 +185,12 @@ public class PlaceholdersTests {
                         CTX.mapKey(Value.get("a")), CTX.mapKey(Value.get("bb"))
                 ),
                 Exp.val(200));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.bb.bcc > ?0", new PlaceholderValues(200)),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.bb.bcc > ?0", PlaceholderValues.of(200)),
                 expected);
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.bb.bcc.get(type: INT) > ?0",
-                new PlaceholderValues(200)), expected);
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.bb.bcc.get(type: INT, return: VALUE) > ?0",
-                new PlaceholderValues(200)), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.bb.bcc.get(type: INT) > ?0",
+                PlaceholderValues.of(200)), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.bb.bcc.get(type: INT, return: VALUE) > ?0",
+                PlaceholderValues.of(200)), expected);
 
         // String
         expected = Exp.eq(
@@ -190,12 +203,12 @@ public class PlaceholdersTests {
                 ),
                 Exp.val("stringVal"));
         // Implicit detect as String
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.bb.bcc == ?0",
-                new PlaceholderValues("stringVal")), expected);
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.bb.bcc.get(type: STRING) == ?0",
-                new PlaceholderValues("stringVal")), expected);
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.bb.bcc.get(type: STRING, return: VALUE) == ?0",
-                new PlaceholderValues("stringVal")), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.bb.bcc == ?0",
+                PlaceholderValues.of("stringVal")), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.bb.bcc.get(type: STRING) == ?0",
+                PlaceholderValues.of("stringVal")), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.bb.bcc.get(type: STRING, return: VALUE) == ?0",
+                PlaceholderValues.of("stringVal")), expected);
     }
 
     @Test
@@ -211,10 +224,10 @@ public class PlaceholdersTests {
                 ),
                 Exp.val("stringVal"));
         // Implicit detect as String
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.listBin1.[5].[#-1] == ?0",
-                new PlaceholderValues("stringVal")), expected);
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.listBin1.[5].[#-1].get(type: STRING) == ?0",
-                new PlaceholderValues("stringVal")), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[5].[#-1] == ?0",
+                PlaceholderValues.of("stringVal")), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[5].[#-1].get(type: STRING) == ?0",
+                PlaceholderValues.of("stringVal")), expected);
 
         // Nested List Rank Value
         expected = Exp.eq(
@@ -227,15 +240,15 @@ public class PlaceholdersTests {
                 ),
                 Exp.val(200));
         // Implicit detect as Int
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.listBin1.[5].[#-1].[=100] == ?0",
-                new PlaceholderValues(200)), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[5].[#-1].[=100] == ?0",
+                PlaceholderValues.of(200)), expected);
     }
 
     @Test
     void forthDegreeComplicatedExplicitFloat() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of(
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of(
                         "(($.apples.get(type: FLOAT) + $.bananas.get(type: FLOAT))" +
-                                " + ($.oranges.get(type: FLOAT) + $.acai.get(type: FLOAT))) > ?0", new PlaceholderValues(10.5)),
+                                " + ($.oranges.get(type: FLOAT) + $.acai.get(type: FLOAT))) > ?0", PlaceholderValues.of(10.5)),
                 Exp.gt(
                         Exp.add(
                                 Exp.add(Exp.floatBin("apples"), Exp.floatBin("bananas")),
@@ -265,11 +278,11 @@ public class PlaceholdersTests {
                 )
         );
 
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.a.get(type: STRING) == " +
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.a.get(type: STRING) == " +
                 "(when($.b == ?0 => $.a1.get(type: STRING)," +
                 " $.b == ?1 => $.a2.get(type: STRING)," +
                 " $.b == ?2 => $.a3.get(type: STRING)," +
-                " default => ?3))", new PlaceholderValues(1, 2, 3, "hello")), expected);
+                " default => ?3))", PlaceholderValues.of(1, 2, 3, "hello")), expected);
     }
 
     @Test
@@ -286,8 +299,19 @@ public class PlaceholdersTests {
                 Exp.val("other")
         );
 
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("when ($.who == ?0 => ?1, " +
-                        "$.who == ?2 => ?3, default => ?4)", new PlaceholderValues(1, "bob", 2, "fred", "other")),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("when ($.who == ?0 => ?1, " +
+                        "$.who == ?2 => ?3, default => ?4)", PlaceholderValues.of(1, "bob", 2, "fred", "other")),
                 expected);
+    }
+
+    @Test
+    void binLogical_EXCL_no_indexes() {
+        Filter filter = null;
+        Exp exp = Exp.exclusive(
+                Exp.eq(Exp.stringBin("hand"), Exp.val("stand")),
+                Exp.eq(Exp.stringBin("pun"), Exp.val("done"))
+        );
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("exclusive($.hand == ?0, $.pun == ?1)",
+                        PlaceholderValues.of("stand", "done")), filter, exp);
     }
 }

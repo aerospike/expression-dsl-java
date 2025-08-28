@@ -1,7 +1,7 @@
 package com.aerospike.dsl.expression;
 
 import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.InputContext;
+import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -9,17 +9,17 @@ public class ImplicitTypesTests {
 
     @Test
     void floatComparison() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.floatBin1 >= 100.25"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.floatBin1 >= 100.25"),
                 Exp.ge(Exp.floatBin("floatBin1"), Exp.val(100.25)));
     }
 
     @Test
     void booleanComparison() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.boolBin1 == true"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.boolBin1 == true"),
                 Exp.eq(Exp.boolBin("boolBin1"), Exp.val(true)));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("false == $.boolBin1"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("false == $.boolBin1"),
                 Exp.eq(Exp.val(false), Exp.boolBin("boolBin1")));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.boolBin1 != false"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.boolBin1 != false"),
                 Exp.ne(Exp.boolBin("boolBin1"), Exp.val(false)));
     }
 
@@ -27,31 +27,31 @@ public class ImplicitTypesTests {
     // this can also be an expression that evaluates to a boolean result
     @Test
     void binBooleanImplicitLogicalComparison() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.boolBin1 and $.boolBin2"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.boolBin1 and $.boolBin2"),
                 Exp.and(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.boolBin1 or $.boolBin2"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.boolBin1 or $.boolBin2"),
                 Exp.or(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("not($.boolBin1)"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("not($.boolBin1)"),
                 Exp.not(Exp.boolBin("boolBin1")));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("exclusive($.boolBin1, $.boolBin2)"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("exclusive($.boolBin1, $.boolBin2)"),
                 Exp.exclusive(Exp.boolBin("boolBin1"), Exp.boolBin("boolBin2")));
     }
 
     @Test
     void implicitDefaultIntComparison() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.intBin1 < $.intBin2"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.intBin1 < $.intBin2"),
                 Exp.lt(Exp.intBin("intBin1"), Exp.intBin("intBin2")));
     }
 
     @Test
     void secondDegreeImplicitCastingFloat() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("($.apples + $.bananas) > 10.5"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("($.apples + $.bananas) > 10.5"),
                 Exp.gt(Exp.add(Exp.floatBin("apples"), Exp.floatBin("bananas")), Exp.val(10.5)));
     }
 
     @Test
     void secondDegreeComplicatedFloatFirstImplicitCastingFloat() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("($.apples + $.bananas) > 10.5 " +
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("($.apples + $.bananas) > 10.5 " +
                         "and ($.oranges + $.grapes) <= 5"),
                 Exp.and(
                         Exp.gt(Exp.add(Exp.floatBin("apples"), Exp.floatBin("bananas")), Exp.val(10.5)),
@@ -61,7 +61,7 @@ public class ImplicitTypesTests {
 
     @Test
     void secondDegreeComplicatedIntFirstImplicitCastingFloat() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("($.apples + $.bananas) > 5 " +
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("($.apples + $.bananas) > 5 " +
                         "and ($.oranges + $.grapes) <= 10.5"),
                 Exp.and(
                         Exp.gt(Exp.add(Exp.intBin("apples"), Exp.intBin("bananas")), Exp.val(5)),
@@ -71,7 +71,7 @@ public class ImplicitTypesTests {
 
     @Test
     void thirdDegreeComplicatedDefaultInt() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("(($.apples + $.bananas) + $.oranges) > 10"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(($.apples + $.bananas) + $.oranges) > 10"),
                 Exp.gt(
                         Exp.add(Exp.add(Exp.intBin("apples"), Exp.intBin("bananas")), Exp.intBin("oranges")),
                         Exp.val(10))
@@ -80,7 +80,7 @@ public class ImplicitTypesTests {
 
     @Test
     void thirdDegreeComplicatedImplicitCastingFloat() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("(($.apples + $.bananas) + $.oranges) > 10.5"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(($.apples + $.bananas) + $.oranges) > 10.5"),
                 Exp.gt(
                         Exp.add(
                                 Exp.add(Exp.floatBin("apples"), Exp.floatBin("bananas")),
@@ -92,7 +92,7 @@ public class ImplicitTypesTests {
 
     @Test
     void forthDegreeComplicatedDefaultInt() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("(($.apples + $.bananas) + ($.oranges + $.acai)) > 10"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(($.apples + $.bananas) + ($.oranges + $.acai)) > 10"),
                 Exp.gt(
                         Exp.add(
                                 Exp.add(Exp.intBin("apples"), Exp.intBin("bananas")),
@@ -103,7 +103,7 @@ public class ImplicitTypesTests {
 
     @Test
     void forthDegreeComplicatedImplicitCastingFloat() {
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("(($.apples + $.bananas) + ($.oranges + $.acai)) > 10.5"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(($.apples + $.bananas) + ($.oranges + $.acai)) > 10.5"),
                 Exp.gt(
                         Exp.add(
                                 Exp.add(Exp.floatBin("apples"), Exp.floatBin("bananas")),
@@ -133,7 +133,7 @@ public class ImplicitTypesTests {
                 )
         );
 
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, " +
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, " +
                         "$.b == 3 => $.a3, default => $.a4+1))"), expected);
     }
 
@@ -159,7 +159,7 @@ public class ImplicitTypesTests {
                 )
         );
 
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, " +
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, " +
                         "$.b == 3 => $.a3, default => \"hello\"))"), expected);
     }
 }

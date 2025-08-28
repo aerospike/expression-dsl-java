@@ -992,7 +992,7 @@ public class VisitorUtils {
      */
     public static AbstractPart buildExpr(ExpressionContainer expr, PlaceholderValues placeholderValues,
                                          Map<String, List<Index>> indexes) {
-        resolvePlaceholders(expr, placeholderValues);
+        if (placeholderValues != null) resolvePlaceholders(expr, placeholderValues);
 
         Filter secondaryIndexFilter = null;
         try {
@@ -1024,6 +1024,7 @@ public class VisitorUtils {
                 case EXPRESSION_CONTAINER -> replacePlaceholdersInExprContainer(part, placeholderValues);
                 case WHEN_STRUCTURE -> replacePlaceholdersInWhenStructure(part, placeholderValues);
                 case WITH_STRUCTURE -> replacePlaceholdersInWithStructure(part, placeholderValues);
+                case EXCLUSIVE_STRUCTURE -> replacePlaceholdersInExclusiveStructure(part, placeholderValues);
             }
         };
         traverseTree(expression, exprContainersCollector, null);
@@ -1077,7 +1078,26 @@ public class VisitorUtils {
                 replacePlaceholdersInExprContainer(subOperand, placeholderValues);
             }
         }
+
         if (isResolved) whenStructure.setOperands(subOperands);
+    }
+
+    /**
+     * Replaces placeholders within a {@link ExclusiveStructure} object.
+     * <p>
+     * This method iterates through the operands of a given {@link ExclusiveStructure}. If an operand
+     * has a {@link PlaceholderOperand}, it's resolved using the provided {@link PlaceholderValues}
+     * and replaced with the resolved {@link AbstractPart}.
+     * </p>
+     *
+     * @param part              The {@link AbstractPart} representing the {@link ExclusiveStructure}
+     * @param placeholderValues An object storing placeholder indexes and their resolved values
+     */
+    private static void replacePlaceholdersInExclusiveStructure(AbstractPart part, PlaceholderValues placeholderValues) {
+        ExclusiveStructure exclStructure = (ExclusiveStructure) part;
+        for (ExpressionContainer exprContainer : exclStructure.getOperands()) {
+            replacePlaceholdersInExprContainer(exprContainer, placeholderValues);
+        }
     }
 
     /**
@@ -1110,6 +1130,7 @@ public class VisitorUtils {
             expr.setRight(placeholder.resolve(placeholderValues));
             isResolved = true;
         }
+
         if (isResolved && List.of(LT, LTEQ, GT, GTEQ, NOTEQ, EQ).contains(expr.getOperationType())) {
             overrideTypeInfo(expr.getLeft(), expr.getRight());
         }
@@ -1271,7 +1292,7 @@ public class VisitorUtils {
      * is thrown with a custom error message. Otherwise, the method simply returns the non-null part.
      * </p>
      *
-     * @param part The part of the expression to be validated
+     * @param part   The part of the expression to be validated
      * @param errMsg The error message to be included in the exception if the part is null
      * @return The provided {@link AbstractPart}, if it is not null
      * @throws DslParseException if the provided {@code part} is {@code null}

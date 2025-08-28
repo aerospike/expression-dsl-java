@@ -3,8 +3,8 @@ package com.aerospike.dsl.util;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.Expression;
 import com.aerospike.client.query.Filter;
+import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.IndexContext;
-import com.aerospike.dsl.InputContext;
 import com.aerospike.dsl.ParsedExpression;
 import com.aerospike.dsl.impl.DSLParserImpl;
 import lombok.experimental.UtilityClass;
@@ -20,22 +20,22 @@ public class TestUtils {
     /**
      * Parses the given DSL expression and extracts the resulting {@link Exp} object.
      *
-     * @param inputContext The input representing DSL expression
+     * @param expressionContext The input representing DSL expression
      * @return The {@link Exp} object derived from the parsed filter expression
      */
-    public static Exp parseFilterExp(InputContext inputContext) {
-        return parser.parseExpression(inputContext).getResult().getExp();
+    public static Exp parseFilterExp(ExpressionContext expressionContext) {
+        return parser.parseExpression(expressionContext).getResult().getExp();
     }
 
     /**
      * Parses the given DSL expression and returns the resulting {@link ParsedExpression} object.
      *
-     * @param inputContext The {@link InputContext} representing DSL expression
+     * @param expressionContext The {@link ExpressionContext} representing DSL expression
      * @param indexContext The {@link IndexContext} to be used for building secondary index filter
      * @return The {@link Exp} object derived from the parsed filter expression
      */
-    public static ParsedExpression getParsedExpression(InputContext inputContext, IndexContext indexContext) {
-        return parser.parseExpression(inputContext, indexContext);
+    public static ParsedExpression getParsedExpression(ExpressionContext expressionContext, IndexContext indexContext) {
+        return parser.parseExpression(expressionContext, indexContext);
     }
 
     /**
@@ -43,35 +43,35 @@ public class TestUtils {
      * object, and then asserts that it is equal to the {@code expected} {@link Exp} also built into an
      * {@link Expression}.
      *
-     * @param inputContext The input representing DSL expression
+     * @param expressionContext The input representing DSL expression
      * @param expected     The expected {@link Exp} object to compare against the parsed result
      */
-    public static void parseFilterExpressionAndCompare(InputContext inputContext, Exp expected) {
-        Expression actualExpression = Exp.build(parser.parseExpression(inputContext).getResult().getExp());
+    public static void parseFilterExpressionAndCompare(ExpressionContext expressionContext, Exp expected) {
+        Expression actualExpression = Exp.build(parser.parseExpression(expressionContext).getResult().getExp());
         Expression expectedExpression = Exp.build(expected);
         assertEquals(expectedExpression, actualExpression);
     }
 
     /**
-     * Parses the given DL expression using the provided {@link InputContext} to match placeholders
+     * Parses the given DL expression using the provided {@link ExpressionContext} to match placeholders
      * and returns the resulting {@link Filter} object.
      *
-     * @param inputContext The {@link InputContext} to be used to match placeholders
+     * @param expressionContext The {@link ExpressionContext} to be used to match placeholders
      * @return A {@link Filter} object derived from the parsed result
      */
-    public static Filter parseFilter(InputContext inputContext) {
-        return parser.parseExpression(inputContext).getResult().getFilter();
+    public static Filter parseFilter(ExpressionContext expressionContext) {
+        return parser.parseExpression(expressionContext).getResult().getFilter();
     }
 
     /**
      * Parses the given DL expression using the provided {@link IndexContext} and returns the resulting {@link Filter} object.
      *
-     * @param inputContext The input representing DSL expression
+     * @param expressionContext The input representing DSL expression
      * @param indexContext The {@link IndexContext} to be used for building secondary index filter
      * @return A {@link Filter} object derived from the parsed result
      */
-    public static Filter parseFilter(InputContext inputContext, IndexContext indexContext) {
-        return parser.parseExpression(inputContext, indexContext).getResult().getFilter();
+    public static Filter parseFilter(ExpressionContext expressionContext, IndexContext indexContext) {
+        return parser.parseExpression(expressionContext, indexContext).getResult().getFilter();
     }
 
     /**
@@ -81,7 +81,7 @@ public class TestUtils {
      * @param input    The input representing DSL expression
      * @param expected The expected {@link Filter} object to compare against the parsed result
      */
-    public static void parseFilterAndCompare(InputContext input, Filter expected) {
+    public static void parseFilterAndCompare(ExpressionContext input, Filter expected) {
         Filter actualFilter = parseFilter(input);
         assertEquals(expected, actualFilter);
     }
@@ -94,7 +94,7 @@ public class TestUtils {
      * @param indexContext The {@link IndexContext} to be used for building secondary index filter
      * @param expected     The expected {@link Filter} object to compare against the parsed result
      */
-    public static void parseFilterAndCompare(InputContext input, IndexContext indexContext, Filter expected) {
+    public static void parseFilterAndCompare(ExpressionContext input, IndexContext indexContext, Filter expected) {
         Filter actualFilter = parseFilter(input, indexContext);
         assertEquals(expected, actualFilter);
     }
@@ -103,12 +103,12 @@ public class TestUtils {
      * Parses the given DSL expression and compares the resulting
      * {@link Filter} and {@link Exp} components with the expected {@code filter} and {@code exp}.
      *
-     * @param inputContext The input representing DSL expression
+     * @param expressionContext The input representing DSL expression
      * @param filter       The expected {@link Filter} component of the parsed result
      * @param exp          The expected {@link Exp} component of the parsed result. Can be {@code null}
      */
-    public static void parseDslExpressionAndCompare(InputContext inputContext, Filter filter, Exp exp) {
-        ParsedExpression actualExpression = parser.parseExpression(inputContext);
+    public static void parseDslExpressionAndCompare(ExpressionContext expressionContext, Filter filter, Exp exp) {
+        ParsedExpression actualExpression = parser.parseExpression(expressionContext);
         assertEquals(filter, actualExpression.getResult().getFilter());
         Exp actualExp = actualExpression.getResult().getExp();
         assertEquals(exp == null ? null : Exp.build(exp), actualExp == null ? null : Exp.build(actualExp));
@@ -118,13 +118,13 @@ public class TestUtils {
      * Parses the given DSL expression using the provided {@link IndexContext}
      * and compares the resulting {@link Filter} and {@link Exp} components with the expected {@code filter} and {@code exp}.
      *
-     * @param inputContext The input representing DSL expression
+     * @param expressionContext The input representing DSL expression
      * @param filter       The expected {@link Filter} component of the parsed result
      * @param exp          The expected {@link Exp} component of the parsed result. Can be {@code null}
      * @param indexContext The {@link IndexContext} to be used for building secondary index filter
      */
-    public static void parseDslExpressionAndCompare(InputContext inputContext, Filter filter, Exp exp, IndexContext indexContext) {
-        ParsedExpression actualExpression = parser.parseExpression(inputContext, indexContext);
+    public static void parseDslExpressionAndCompare(ExpressionContext expressionContext, Filter filter, Exp exp, IndexContext indexContext) {
+        ParsedExpression actualExpression = parser.parseExpression(expressionContext, indexContext);
         assertEquals(filter, actualExpression.getResult().getFilter());
         Exp actualExp = actualExpression.getResult().getExp();
         assertEquals(exp == null ? null : Exp.build(exp), actualExp == null ? null : Exp.build(actualExp));

@@ -3,9 +3,9 @@ package com.aerospike.dsl.impl;
 import com.aerospike.dsl.ConditionLexer;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
-import com.aerospike.dsl.InputContext;
 import com.aerospike.dsl.ParsedExpression;
 import com.aerospike.dsl.PlaceholderValues;
 import com.aerospike.dsl.annotation.Beta;
@@ -26,15 +26,15 @@ import java.util.stream.Collectors;
 public class DSLParserImpl implements DSLParser {
 
     @Beta
-    public ParsedExpression parseExpression(InputContext inputContext) {
-        ParseTree parseTree = getParseTree(inputContext.getInput());
-        return getParsedExpression(parseTree, inputContext.getValues(), null);
+    public ParsedExpression parseExpression(ExpressionContext expressionContext) {
+        ParseTree parseTree = getParseTree(expressionContext.getExpression());
+        return getParsedExpression(parseTree, expressionContext.getValues(), null);
     }
 
     @Beta
-    public ParsedExpression parseExpression(InputContext inputContext, IndexContext indexContext) {
-        ParseTree parseTree = getParseTree(inputContext.getInput());
-        return getParsedExpression(parseTree, inputContext.getValues(), indexContext);
+    public ParsedExpression parseExpression(ExpressionContext expressionContext, IndexContext indexContext) {
+        ParseTree parseTree = getParseTree(expressionContext.getExpression());
+        return getParsedExpression(parseTree, expressionContext.getValues(), indexContext);
     }
 
     private ParseTree getParseTree(String input) {

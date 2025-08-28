@@ -2,9 +2,9 @@ package com.aerospike.dsl.api;
 
 import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
-import com.aerospike.dsl.InputContext;
 import com.aerospike.dsl.ParsedExpression;
 
 /**
@@ -87,12 +87,12 @@ public interface DSLParser {
      *   </tr>
      * </table>
      *
-     * @param input {@link InputContext} containing input string of dot separated elements. If the input string has
+     * @param input {@link ExpressionContext} containing input string of dot separated elements. If the input string has
      *                                  placeholders, matching values must be provided within {@code input} too
      * @return {@link ParsedExpression} object
      * @throws DslParseException in case of invalid syntax
      */
-    ParsedExpression parseExpression(InputContext input);
+    ParsedExpression parseExpression(ExpressionContext input);
 
     /**
      * Parse String DSL path into Aerospike filter Expression.
@@ -160,12 +160,12 @@ public interface DSLParser {
      *   </tr>
      * </table>
      *
-     * @param input {@link InputContext} containing input string of dot separated elements. If the input string has
+     * @param input {@link ExpressionContext} containing input string of dot separated elements. If the input string has
      *                                  placeholders, matching values must be provided within {@code input} too
      * @param indexContext Class containing namespace and collection of {@link Index} objects that represent
      *                     existing secondary indexes. Required for creating {@link Filter}. Can be null
      * @return {@link ParsedExpression} object
      * @throws DslParseException in case of invalid syntax
      */
-    ParsedExpression parseExpression(InputContext input, IndexContext indexContext);
+    ParsedExpression parseExpression(ExpressionContext input, IndexContext indexContext);
 }

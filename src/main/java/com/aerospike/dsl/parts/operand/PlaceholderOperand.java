@@ -18,6 +18,7 @@ public class PlaceholderOperand extends AbstractPart {
     /**
      * Resolve placeholder's value based on index in {@link PlaceholderValues} and create a corresponding operand using
      * {@link OperandFactory#createOperand(Object)}
+     *
      * @param values Values to be matched with placeholders by index
      * @return Created {@link AbstractPart} operand
      */

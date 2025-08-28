@@ -7,7 +7,7 @@ import com.aerospike.client.cdt.MapReturnType;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
-import com.aerospike.dsl.InputContext;
+import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +24,7 @@ public class MapAndListExpressionsTests {
                         CTX.mapKey(Value.get("a"))
                 ),
                 Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.[0] == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.[0] == 100"), expected);
 
         expected = Exp.gt(
                 ListExp.getByIndex(
@@ -35,7 +35,7 @@ public class MapAndListExpressionsTests {
                         CTX.mapKey(Value.get("a")),
                         CTX.mapKey(Value.get("cc"))
                 ), Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.cc.[2].get(type: INT) > 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.cc.[2].get(type: INT) > 100"), expected);
     }
 
     @Test
@@ -50,7 +50,7 @@ public class MapAndListExpressionsTests {
                         CTX.listIndex(0)
                 ),
                 Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.[0].[0] == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.[0].[0] == 100"), expected);
     }
 
     @Test
@@ -63,7 +63,7 @@ public class MapAndListExpressionsTests {
                         Exp.listBin("listBin1"),
                         CTX.listIndex(2)
                 ), Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.listBin1.[2].cc.get(type: INT) > 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[2].cc.get(type: INT) > 100"), expected);
     }
 
     @Test
@@ -77,8 +77,8 @@ public class MapAndListExpressionsTests {
                         CTX.listIndex(2),
                         CTX.mapKey(Value.get("aa"))
                 ), Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.listBin1.[2].aa.cc > 100"), expected);
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.listBin1.[2].aa.cc.get(type: INT) > 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[2].aa.cc > 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[2].aa.cc.get(type: INT) > 100"), expected);
     }
 
     @Test
@@ -93,7 +93,7 @@ public class MapAndListExpressionsTests {
                         CTX.mapKey(Value.get("a"))
                 ),
                 Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.listBin1.[1].a.[0] == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[1].a.[0] == 100"), expected);
     }
 
     @Test
@@ -110,8 +110,8 @@ public class MapAndListExpressionsTests {
                         )
                 ),
                 Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.listBin1.[1].a.[0].count() == 100"), expected);
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.listBin1.[1].a.[0].[].count() == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[1].a.[0].count() == 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[1].a.[0].[].count() == 100"), expected);
     }
 
     @Test
@@ -125,8 +125,8 @@ public class MapAndListExpressionsTests {
                         CTX.mapKey(Value.get("a")),
                         CTX.listIndex(0)
                 ), Exp.val(100));
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.[0].cc > 100"), expected);
-        TestUtils.parseFilterExpressionAndCompare(InputContext.of("$.mapBin1.a.[0].cc.get(type: INT) > 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.[0].cc > 100"), expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.[0].cc.get(type: INT) > 100"), expected);
     }
 
 //    @Test

@@ -10,12 +10,12 @@ import lombok.RequiredArgsConstructor;
 @AllArgsConstructor(staticName = "of")
 @RequiredArgsConstructor(staticName = "of")
 @Getter
-public class InputContext {
+public class ExpressionContext {
 
     /**
      * Input string. If placeholders are used, they should be matched with {@code values}
      */
-    private final String input;
+    private final String expression;
     /**
      * {@link PlaceholderValues} to be matched with placeholders in the {@code input} string.
      * Optional (needed only if there are placeholders)

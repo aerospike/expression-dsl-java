@@ -46,7 +46,9 @@ public interface OperandFactory {
         } else if (value instanceof Integer || value instanceof Long) {
             return new IntOperand(((Number) value).longValue());
         } else {
-            throw new UnsupportedOperationException("Cannot create operand from value: " + value);
+            throw new UnsupportedOperationException(String.format("Cannot create operand from value of type %s, " +
+                    "only String, boolean, float, double, long and integer values are currently supported",
+                    value.getClass().getSimpleName()));
         }
     }
 }

@@ -7,13 +7,15 @@ public class PlaceholderValues {
 
     private final Object[] values;
 
-    /**
-     * Create new {@link PlaceholderValues} object
-     *
-     * @param values Values matching placeholders in DSL input string
-     */
-    public PlaceholderValues(Object... values) {
+    private PlaceholderValues(Object... values) {
         this.values = values != null ? values : new Object[0];
+    }
+
+    /**
+     * Create a new {@link PlaceholderValues} object with
+     */
+    public static PlaceholderValues of(Object... values) {
+        return new PlaceholderValues(values);
     }
 
     /**
