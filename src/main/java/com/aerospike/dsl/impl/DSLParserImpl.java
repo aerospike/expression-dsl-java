@@ -48,7 +48,7 @@ public class DSLParserImpl implements DSLParser {
         try {
             return buildCtx(new ExpressionConditionVisitor().visit(parseTree));
         } catch (Exception e) {
-            throw new DslParseException("Could not parse given DSL path input");
+            throw new DslParseException("Could not parse given DSL path input, details: " + e.getMessage());
         }
     }
 

@@ -44,28 +44,28 @@ class CtxTests {
     @Test
     void listExpression_oneLevel_withPathFunction() {
         assertThatThrownBy(() -> parseCtx("$.listBin1.[0].get(type: INT)"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Path function is unsupported, please provide only path to convert to CTX[]");
         assertThatThrownBy(() -> parseCtx("$.listBin1.[=100].get(type: INT, return: VALUE)"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Path function is unsupported, please provide only path to convert to CTX[]");
         assertThatThrownBy(() -> parseCtx("$.listBin1.[#-1].asInt()"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Path function is unsupported, please provide only path to convert to CTX[]");
     }
 
     @Test
     void listExpression_oneLevel_withFullDslExpression() {
         assertThatThrownBy(() -> parseCtx("$.listBin1.[0] == 100"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Unsupported input expression type 'EXPRESSION_CONTAINER', " +
                         "please provide only path to convert to CTX[]");
         assertThatThrownBy(() -> parseCtx("$.listBin1.[=100].get(type: INT, return: VALUE) == 100"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Unsupported input expression type 'EXPRESSION_CONTAINER', " +
                         "please provide only path to convert to CTX[]");
         assertThatThrownBy(() -> parseCtx("$.listBin1.[#-1].asInt() == 100"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Unsupported input expression type 'EXPRESSION_CONTAINER', " +
                         "please provide only path to convert to CTX[]");
     }
@@ -110,35 +110,35 @@ class CtxTests {
     @Test
     void mapExpression_oneLevel_withPathFunction() {
         assertThatThrownBy(() -> parseCtx("$.mapBin1.a.get(type: INT)"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Path function is unsupported, please provide only path to convert to CTX[]");
         assertThatThrownBy(() -> parseCtx("$.mapBin1.{0}.get(type: INT)"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Path function is unsupported, please provide only path to convert to CTX[]");
         assertThatThrownBy(() -> parseCtx("$.mapBin1.{=100}.get(type: INT, return: VALUE)"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Path function is unsupported, please provide only path to convert to CTX[]");
         assertThatThrownBy(() -> parseCtx("$.mapBin1.{#-1}.asInt()"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Path function is unsupported, please provide only path to convert to CTX[]");
     }
 
     @Test
     void mapExpression_oneLevel_withFullDslExpression() {
         assertThatThrownBy(() -> parseCtx("$.mapBin1.a == 100"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Unsupported input expression type 'EXPRESSION_CONTAINER', " +
                         "please provide only path to convert to CTX[]");
         assertThatThrownBy(() -> parseCtx("$.mapBin1.{0}.get(type: INT, return: VALUE) == 100"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Unsupported input expression type 'EXPRESSION_CONTAINER', " +
                         "please provide only path to convert to CTX[]");
         assertThatThrownBy(() -> parseCtx("$.mapBin1.{=100}.asInt() == 100"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Unsupported input expression type 'EXPRESSION_CONTAINER', " +
                         "please provide only path to convert to CTX[]");
         assertThatThrownBy(() -> parseCtx("$.mapBin1.{#-1}.asInt() == 100"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Unsupported input expression type 'EXPRESSION_CONTAINER', " +
                         "please provide only path to convert to CTX[]");
     }
