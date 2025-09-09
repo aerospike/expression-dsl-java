@@ -61,9 +61,7 @@ public class ParsedExpression {
                 AbstractPart resultPart = buildExpr((ExpressionContainer) expressionTree, placeholderValues, indexesMap);
                 return new ParseResult(resultPart.getFilter(), resultPart.getExp());
             } else {
-                Filter filter = expressionTree.getFilter();
-                Exp exp = expressionTree.getExp();
-                return new ParseResult(filter, exp);
+                return new ParseResult(expressionTree.getFilter(), expressionTree.getExp());
             }
         }
         return new ParseResult(null, null);

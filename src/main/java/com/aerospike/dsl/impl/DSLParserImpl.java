@@ -1,5 +1,6 @@
 package com.aerospike.dsl.impl;
 
+import com.aerospike.client.cdt.CTX;
 import com.aerospike.dsl.ConditionLexer;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
@@ -23,6 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.aerospike.dsl.visitor.VisitorUtils.buildCtx;
+
 public class DSLParserImpl implements DSLParser {
 
     @Beta
@@ -35,6 +38,18 @@ public class DSLParserImpl implements DSLParser {
     public ParsedExpression parseExpression(ExpressionContext expressionContext, IndexContext indexContext) {
         ParseTree parseTree = getParseTree(expressionContext.getExpression());
         return getParsedExpression(parseTree, expressionContext.getValues(), indexContext);
+    }
+
+    @Beta
+    public CTX[] parseCTX(String pathToCtx) {
+        if (pathToCtx == null) return null;
+
+        ParseTree parseTree = getParseTree(pathToCtx);
+        try {
+            return buildCtx(new ExpressionConditionVisitor().visit(parseTree));
+        } catch (Exception e) {
+            throw new DslParseException("Could not parse given DSL path input");
+        }
     }
 
     private ParseTree getParseTree(String input) {

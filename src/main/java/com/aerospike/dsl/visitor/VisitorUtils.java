@@ -1,5 +1,6 @@
 package com.aerospike.dsl.visitor;
 
+import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexType;
@@ -652,22 +653,51 @@ public class VisitorUtils {
      * @param bin     The bin part
      * @param operand The operand part
      * @param type    The filter operation type
-     * @return The appropriate Filter
+     * @return The appropriate {@link Filter}
      * @throws NoApplicableFilterException if no appropriate filter can be created
      */
-    private static Filter getFilter(BinPart bin, AbstractPart operand, FilterOperationType type) {
+    private static Filter getFilterFromBin(BinPart bin, AbstractPart operand, FilterOperationType type) {
         validateOperands(bin, operand);
-        String binName = bin.getBinName();
+        return doGetFilterFromBin(bin, operand, type, null);
+    }
 
+    /**
+     * Creates a Filter based on a bin and an operand, applies an array of {@link CTX} if provided.
+     *
+     * @param bin     The bin part
+     * @param operand The operand part
+     * @param type    The filter operation type
+     * @param ctx     Array of {@link CTX} objects representing context, can be null
+     * @return The appropriate {@link Filter}
+     * @throws NoApplicableFilterException if no appropriate filter can be created
+     */
+    private static Filter doGetFilterFromBin(BinPart bin, AbstractPart operand, FilterOperationType type,
+                                             CTX[] ctx) {
+        String binName = bin.getBinName();
         return switch (operand.getPartType()) {
             case INT_OPERAND -> {
                 validateComparableTypes(bin.getExpType(), Exp.Type.INT);
-                yield getFilterForArithmeticOrFail(binName, ((IntOperand) operand).getValue(), type);
+                yield getFilterForArithmeticOrFail(binName, ((IntOperand) operand).getValue(), type, ctx);
             }
-            case STRING_OPERAND -> handleStringOperand(bin, binName, ((StringOperand) operand).getValue(), type);
+            case STRING_OPERAND -> handleStringOperand(bin, binName, ((StringOperand) operand).getValue(), type, ctx);
             default -> throw new NoApplicableFilterException(
                     "Operand type not supported: %s".formatted(operand.getPartType()));
         };
+    }
+
+    /**
+     * Creates a Filter based on a path and an operand.
+     *
+     * @param path    The path part
+     * @param operand The operand part
+     * @param type    The filter operation type
+     * @return The appropriate {@link Filter}
+     * @throws NoApplicableFilterException if no appropriate filter can be created
+     */
+    private static Filter getFilterFromPath(Path path, AbstractPart operand, FilterOperationType type) {
+        validateOperands(path, operand);
+        BinPart binPart = path.getBasePath().getBinPart();
+        return doGetFilterFromBin(binPart, operand, type, path.getCtx());
     }
 
     /**
@@ -679,12 +709,13 @@ public class VisitorUtils {
      * @param binName      The name of the bin
      * @param operandValue The value of {@link StringOperand} involved in the filter
      * @param type         The type of the filter operation (must be {@link FilterOperationType#EQ})
+     * @param ctx
      * @return An Aerospike {@link Filter} for the string or blob comparison
      * @throws NoApplicableFilterException if the filter operation type is not equality
      * @throws DslParseException           if type validation fails or base64 decoding fails
      */
     private static Filter handleStringOperand(BinPart bin, String binName, String operandValue,
-                                              FilterOperationType type) {
+                                              FilterOperationType type, CTX[] ctx) {
         if (type != FilterOperationType.EQ) {
             throw new NoApplicableFilterException("Only equality comparison is supported for string operands");
         }
@@ -693,43 +724,45 @@ public class VisitorUtils {
         if (bin.getExpType() != null && bin.getExpType().equals(Exp.Type.BLOB)) {
             validateComparableTypes(bin.getExpType(), Exp.Type.BLOB);
             byte[] value = Base64.getDecoder().decode(operandValue);
-            return Filter.equal(binName, value);
+            return Filter.equal(binName, value, ctx);
         }
 
         // Handle STRING type
         validateComparableTypes(bin.getExpType(), Exp.Type.STRING);
-        return Filter.equal(binName, operandValue);
+        return Filter.equal(binName, operandValue, ctx);
     }
 
     /**
      * Creates a Filter based on two operands and a filter operation type.
      *
-     * @param left              The left operand
-     * @param right             The right operand
-     * @param type              The filter operation type
-     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
+     * @param left  The left operand
+     * @param right The right operand
+     * @param type  The filter operation type
      * @return The appropriate Filter, or null if no filter can be created
      * @throws DslParseException if operands are invalid
      */
-    private static Filter getFilterOrNull(AbstractPart left, AbstractPart right, FilterOperationType type,
-                                          PlaceholderValues placeholderValues) {
+    private static Filter getFilterOrNull(AbstractPart left, AbstractPart right, FilterOperationType type) {
         validateOperands(left, right);
 
         // Handle bin operands
         if (left.getPartType() == BIN_PART) {
-            return getFilter((BinPart) left, right, type);
+            return getFilterFromBin((BinPart) left, right, type);
+        } else if (left.getPartType() == PATH_OPERAND) {
+            return getFilterFromPath((Path) left, right, type);
         }
         if (right.getPartType() == BIN_PART) {
-            return getFilter((BinPart) right, left, invertType(type));
+            return getFilterFromBin((BinPart) right, left, invertType(type));
+        } else if (right.getPartType() == PATH_OPERAND) {
+            return getFilterFromPath((Path) right, left, invertType(type));
         }
 
         // Handle expressions
         if (left.getPartType() == EXPRESSION_CONTAINER) {
-            return handleExpressionOperand((ExpressionContainer) left, right, type, placeholderValues);
+            return handleExpressionOperand((ExpressionContainer) left, right, type);
         }
 
         if (right.getPartType() == EXPRESSION_CONTAINER) {
-            return handleExpressionOperand((ExpressionContainer) right, left, type, placeholderValues);
+            return handleExpressionOperand((ExpressionContainer) right, left, type);
         }
 
         return null;
@@ -740,23 +773,22 @@ public class VisitorUtils {
      * It recursively processes the nested expression to determine if a filter can be generated from it in combination
      * with the {@code otherOperand} and the overall {@code type} of the filter operation.
      *
-     * @param expr              The {@link ExpressionContainer} operand
-     * @param otherOperand      The other operand in the filter condition
-     * @param type              The type of the filter operation
-     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
+     * @param expr         The {@link ExpressionContainer} operand
+     * @param otherOperand The other operand in the filter condition
+     * @param type         The type of the filter operation
      * @return A {@link Filter} if one can be generated from the nested expression, otherwise {@code null}
      * @throws DslParseException           if operands within the nested expression are null
      * @throws NoApplicableFilterException if the nested expression structure is not supported for filtering
      */
     private static Filter handleExpressionOperand(ExpressionContainer expr, AbstractPart otherOperand,
-                                                  FilterOperationType type, PlaceholderValues placeholderValues) {
+                                                  FilterOperationType type) {
         AbstractPart exprLeft = expr.getLeft();
         AbstractPart exprRight = expr.getRight();
         ExprPartsOperation operation = expr.getOperationType();
 
         validateOperands(exprLeft, exprRight);
 
-        return getFilterFromExpressionOrNull(exprLeft, exprRight, operation, otherOperand, type, placeholderValues);
+        return getFilterFromExpressionOrNull(exprLeft, exprRight, operation, otherOperand, type);
     }
 
     /**
@@ -765,19 +797,17 @@ public class VisitorUtils {
      * by combining it with the {@code externalOperand} and the overall {@code type} of the filter operation.
      * It specifically looks for cases where a bin is involved in an arithmetic expression with an external operand.
      *
-     * @param exprLeft          The left part of an expression
-     * @param exprRight         The right part of an expression
-     * @param operationType     The operation type of the expression
-     * @param externalOperand   The operand outside the expression
-     * @param type              The type of the overall filter operation
-     * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
+     * @param exprLeft        The left part of an expression
+     * @param exprRight       The right part of an expression
+     * @param operationType   The operation type of the expression
+     * @param externalOperand The operand outside the expression
+     * @param type            The type of the overall filter operation
      * @return A {@link Filter} if one can be generated, otherwise {@code null}
      * @throws NoApplicableFilterException if the expression structure is not supported for filtering
      */
     private static Filter getFilterFromExpressionOrNull(AbstractPart exprLeft, AbstractPart exprRight,
                                                         ExprPartsOperation operationType,
-                                                        AbstractPart externalOperand, FilterOperationType type,
-                                                        PlaceholderValues placeholderValues) {
+                                                        AbstractPart externalOperand, FilterOperationType type) {
         // Handle bin on left side
         if (exprLeft.getPartType() == BIN_PART) {
             return handleBinArithmeticExpression((BinPart) exprLeft, exprRight, externalOperand,
@@ -792,7 +822,7 @@ public class VisitorUtils {
 
         // Handle nested expressions
         if (exprLeft.getPartType() == EXPRESSION_CONTAINER) {
-            return getFilterOrNull(exprLeft, exprRight, type, placeholderValues);
+            return getFilterOrNull(exprLeft, exprRight, type);
         }
 
         return null;
@@ -899,11 +929,11 @@ public class VisitorUtils {
                 type = invertType(type);
             }
             float val = (float) rightValue / leftValue;
-            return getFilterForArithmeticOrFail(binName, val, type);
+            return getFilterForArithmeticOrFail(binName, val, type, null);
         } else {
             throw new UnsupportedOperationException("Not supported");
         }
-        return getFilterForArithmeticOrFail(binName, value, type);
+        return getFilterForArithmeticOrFail(binName, value, type, null);
     }
 
     /**
@@ -912,17 +942,18 @@ public class VisitorUtils {
      * @param binName The name of the bin to filter on
      * @param value   The calculated value from the arithmetic operation
      * @param type    The type of the filter operation
+     * @param ctx     Array of {@link CTX} representing context, can be null
      * @return A {@link Filter} representing the condition
      * @throws NoApplicableFilterException if the operation type is not supported for secondary index filter
      */
-    private static Filter getFilterForArithmeticOrFail(String binName, float value, FilterOperationType type) {
+    private static Filter getFilterForArithmeticOrFail(String binName, float value, FilterOperationType type, CTX[] ctx) {
         return switch (type) {
             // "$.intBin1 > 100" and "100 < $.intBin1" represent the same Filter
-            case GT -> Filter.range(binName, getClosestLongToTheRight(value), Long.MAX_VALUE);
-            case GTEQ -> Filter.range(binName, (long) value, Long.MAX_VALUE);
-            case LT -> Filter.range(binName, Long.MIN_VALUE, getClosestLongToTheLeft(value));
-            case LTEQ -> Filter.range(binName, Long.MIN_VALUE, (long) value);
-            case EQ -> Filter.equal(binName, (long) value);
+            case GT -> Filter.range(binName, getClosestLongToTheRight(value), Long.MAX_VALUE, ctx);
+            case GTEQ -> Filter.range(binName, (long) value, Long.MAX_VALUE, ctx);
+            case LT -> Filter.range(binName, Long.MIN_VALUE, getClosestLongToTheLeft(value), ctx);
+            case LTEQ -> Filter.range(binName, Long.MIN_VALUE, (long) value, ctx);
+            case EQ -> Filter.equal(binName, (long) value, ctx);
             default ->
                     throw new NoApplicableFilterException("The operation is not supported by secondary index filter");
         };
@@ -996,7 +1027,7 @@ public class VisitorUtils {
 
         Filter secondaryIndexFilter = null;
         try {
-            secondaryIndexFilter = getSIFilter(expr, placeholderValues, indexes);
+            secondaryIndexFilter = getSIFilter(expr, indexes);
         } catch (NoApplicableFilterException ignored) {
         }
         expr.setFilter(secondaryIndexFilter);
@@ -1134,6 +1165,31 @@ public class VisitorUtils {
         if (isResolved && List.of(LT, LTEQ, GT, GTEQ, NOTEQ, EQ).contains(expr.getOperationType())) {
             overrideTypeInfo(expr.getLeft(), expr.getRight());
         }
+    }
+
+    /**
+     * Builds an array of {@link CTX} for a given path.
+     * This is the main entry point for building context based on the parsed expression tree.
+     *
+     * @param path The {@link AbstractPart} representing the path
+     * @return Array of {@link CTX} objects representing the context, or null
+     * @throws UnsupportedOperationException If the given input expression is not a path, or if it has path function
+     */
+    public static CTX[] buildCtx(AbstractPart path) {
+        if (path.getPartType() == BIN_PART) {
+            // No nested context
+            return null;
+        }
+        if (path.getPartType() != PATH_OPERAND) {
+            throw new UnsupportedOperationException(
+                    String.format("Unsupported input expression type '%s', please provide only path to convert to CTX[]",
+                            path.getPartType())
+            );
+        }
+        if (((Path) path).getPathFunction() != null) {
+            throw new UnsupportedOperationException("Path function is unsupported, please provide only path to convert to CTX[]");
+        }
+        return path.getCtx();
     }
 
     /**
@@ -1355,8 +1411,7 @@ public class VisitorUtils {
      * @return A secondary index {@link Filter}, or {@code null} if no applicable filter can be generated
      * @throws NoApplicableFilterException if the expression operation type is not supported
      */
-    private static Filter getSIFilter(ExpressionContainer expr, PlaceholderValues placeholderValues,
-                                      Map<String, List<Index>> indexes) {
+    private static Filter getSIFilter(ExpressionContainer expr, Map<String, List<Index>> indexes) {
         // If it is an OR query
         if (expr.getOperationType() == OR) return null;
 
@@ -1366,8 +1421,7 @@ public class VisitorUtils {
         return getFilterOrNull(
                 chosenExpr.getLeft(),
                 chosenExpr.getRight(),
-                getFilterOperation(chosenExpr.getOperationType()),
-                placeholderValues
+                getFilterOperation(chosenExpr.getOperationType())
         );
     }
 
@@ -1509,6 +1563,8 @@ public class VisitorUtils {
         Consumer<AbstractPart> binPartRetriever = part -> {
             if (part.getPartType() == BIN_PART) {
                 singleBinPartArray[0] = (BinPart) part;
+            } else if (part.getPartType() == PATH_OPERAND) {
+                singleBinPartArray[0] = ((Path) part).getBasePath().getBinPart();
             }
         };
         Predicate<AbstractPart> stopOnLogicalExpr = part -> {

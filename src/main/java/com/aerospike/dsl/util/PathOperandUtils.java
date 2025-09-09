@@ -5,14 +5,14 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.ListExp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.dsl.parts.AbstractPart;
-import com.aerospike.dsl.parts.path.BasePath;
-import com.aerospike.dsl.parts.path.BinPart;
-import com.aerospike.dsl.parts.path.PathFunction;
 import com.aerospike.dsl.parts.cdt.CdtPart;
 import com.aerospike.dsl.parts.cdt.list.ListPart;
 import com.aerospike.dsl.parts.cdt.list.ListTypeDesignator;
 import com.aerospike.dsl.parts.cdt.map.MapPart;
 import com.aerospike.dsl.parts.cdt.map.MapTypeDesignator;
+import com.aerospike.dsl.parts.path.BasePath;
+import com.aerospike.dsl.parts.path.BinPart;
+import com.aerospike.dsl.parts.path.PathFunction;
 import lombok.experimental.UtilityClass;
 
 import java.util.ArrayList;
@@ -21,9 +21,9 @@ import java.util.function.UnaryOperator;
 
 import static com.aerospike.dsl.parts.AbstractPart.PartType.LIST_PART;
 import static com.aerospike.dsl.parts.AbstractPart.PartType.MAP_PART;
-import static com.aerospike.dsl.parts.path.PathFunction.PathFunctionType.*;
 import static com.aerospike.dsl.parts.cdt.list.ListPart.ListPartType.*;
 import static com.aerospike.dsl.parts.cdt.map.MapPart.MapPartType.MAP_TYPE_DESIGNATOR;
+import static com.aerospike.dsl.parts.path.PathFunction.PathFunctionType.*;
 
 @UtilityClass
 public class PathOperandUtils {
@@ -175,13 +175,11 @@ public class PathOperandUtils {
      * @throws UnsupportedOperationException If the path part type is not supported
      */
     public static Exp processGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType, int cdtReturnType) {
-        if (lastPathPart.getPartType() == LIST_PART) {
-            return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, (ListPart) lastPathPart);
-        } else if (lastPathPart.getPartType() == MAP_PART) {
-            return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType, (MapPart) lastPathPart);
+        if (lastPathPart.getPartType() != LIST_PART && lastPathPart.getPartType() != MAP_PART) {
+            throw new UnsupportedOperationException(
+                    String.format("Path part type %s is not supported", lastPathPart.getPartType()));
         }
-        throw new UnsupportedOperationException(
-                String.format("Path part type %s is not supported", lastPathPart.getPartType()));
+        return doProcessCdtGet(basePath, lastPathPart, valueType, cdtReturnType);
     }
 
     /**
@@ -193,13 +191,12 @@ public class PathOperandUtils {
      * @param lastPathPart  The last {@link AbstractPart} in the path
      * @param valueType     The expected {@link Exp.Type} of the value being retrieved
      * @param cdtReturnType The CDT return type
-     * @param cdtPart       The {@link CdtPart} being processed
      * @return An {@link Exp} representing the CDT "get" operation
      */
     private static Exp doProcessCdtGet(BasePath basePath, AbstractPart lastPathPart, Exp.Type valueType,
-                                       int cdtReturnType, CdtPart cdtPart) {
+                                       int cdtReturnType) {
         // list type designator "[]" can be either after bin name or after path
-        if (isListTypeDesignator(cdtPart) || isMapTypeDesignator(cdtPart)) {
+        if (isListTypeDesignator(lastPathPart) || isMapTypeDesignator(lastPathPart)) {
             return constructCdtExp(basePath, lastPathPart, valueType, cdtReturnType);
         }
 
@@ -237,7 +234,7 @@ public class PathOperandUtils {
      * @param includeLast A boolean indicating whether the last part should be included in the context array
      * @return An array of {@link CTX} objects
      */
-    private static CTX[] getContextArray(List<AbstractPart> parts, boolean includeLast) {
+    public static CTX[] getContextArray(List<AbstractPart> parts, boolean includeLast) {
         // Nested (Context) map key access
         List<CTX> context = new ArrayList<>();
 
