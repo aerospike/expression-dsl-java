@@ -28,27 +28,32 @@ import static com.aerospike.dsl.visitor.VisitorUtils.buildCtx;
 
 public class DSLParserImpl implements DSLParser {
 
+    @Override
     @Beta
     public ParsedExpression parseExpression(ExpressionContext expressionContext) {
         ParseTree parseTree = getParseTree(expressionContext.getExpression());
         return getParsedExpression(parseTree, expressionContext.getValues(), null);
     }
 
+    @Override
     @Beta
     public ParsedExpression parseExpression(ExpressionContext expressionContext, IndexContext indexContext) {
         ParseTree parseTree = getParseTree(expressionContext.getExpression());
         return getParsedExpression(parseTree, expressionContext.getValues(), indexContext);
     }
 
+    @Override
     @Beta
     public CTX[] parseCTX(String pathToCtx) {
-        if (pathToCtx == null) return null;
+        if (pathToCtx == null || pathToCtx.isBlank()) {
+            throw new DslParseException("Path must not be null or empty");
+        }
 
         ParseTree parseTree = getParseTree(pathToCtx);
         try {
             return buildCtx(new ExpressionConditionVisitor().visit(parseTree));
         } catch (Exception e) {
-            throw new DslParseException("Could not parse given DSL path input, details: " + e.getMessage());
+            throw new DslParseException("Could not parse the given DSL path input", e);
         }
     }
 

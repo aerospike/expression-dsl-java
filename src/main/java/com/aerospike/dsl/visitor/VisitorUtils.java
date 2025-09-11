@@ -709,7 +709,7 @@ public class VisitorUtils {
      * @param binName      The name of the bin
      * @param operandValue The value of {@link StringOperand} involved in the filter
      * @param type         The type of the filter operation (must be {@link FilterOperationType#EQ})
-     * @param ctx
+     * @param ctx          Array of {@link CTX} objects representing CDT context, can be null
      * @return An Aerospike {@link Filter} for the string or blob comparison
      * @throws NoApplicableFilterException if the filter operation type is not equality
      * @throws DslParseException           if type validation fails or base64 decoding fails
@@ -1178,7 +1178,7 @@ public class VisitorUtils {
     public static CTX[] buildCtx(AbstractPart path) {
         if (path.getPartType() == BIN_PART) {
             // No nested context
-            return null;
+            throw new UnsupportedOperationException("CDT context is not provided");
         }
         if (path.getPartType() != PATH_OPERAND) {
             throw new UnsupportedOperationException(

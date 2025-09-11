@@ -171,9 +171,10 @@ public interface DSLParser {
     ParsedExpression parseExpression(ExpressionContext input, IndexContext indexContext);
 
     /**
-     * Parse DSL path into an array of {@link CTX} objects.
+     * Parse DSL path with CDT context into an array of {@link CTX} objects. The argument must represent a path with context,
+     * e.g. $.listBinName.[1], $.mapBinName.ab etc.
      *
-     * @param dslPath Input string representing path
+     * @param dslPath Input string representing path with CDT context, must not be null
      * @return Array of {@link CTX}
      * @throws DslParseException in case of invalid syntax
      */

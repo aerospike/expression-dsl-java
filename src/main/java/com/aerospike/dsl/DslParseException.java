@@ -10,4 +10,8 @@ public class DslParseException extends RuntimeException {
     public DslParseException(String description) {
         super(description);
     }
+
+    public DslParseException(String description, Throwable cause) {
+        super(description, cause);
+    }
 }
