@@ -1,5 +1,6 @@
 package com.aerospike.dsl.parts.path;
 
+import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.cdt.CdtPart;
@@ -47,5 +48,10 @@ public class Path extends AbstractPart {
     @Override
     public Exp getExp() {
         return processPath(basePath, pathFunction);
+    }
+
+    @Override
+    public CTX[] getCtx() {
+        return getContextArray(basePath.getCdtParts(), true);
     }
 }

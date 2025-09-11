@@ -1,5 +1,6 @@
 package com.aerospike.dsl.parts;
 
+import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.exp.Exp;
 import com.aerospike.client.query.Filter;
 import lombok.Getter;
@@ -13,6 +14,7 @@ public abstract class AbstractPart {
     protected PartType partType;
     protected Exp exp;
     protected Filter filter;
+    protected CTX[] ctx;
     protected boolean isPlaceholder;
 
     protected AbstractPart(PartType partType) {

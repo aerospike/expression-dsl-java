@@ -1,5 +1,6 @@
 package com.aerospike.dsl.api;
 
+import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.ExpressionContext;
@@ -22,7 +23,7 @@ import com.aerospike.dsl.ParsedExpression;
 public interface DSLParser {
 
     /**
-     * Parse DSL path into Aerospike filter Expression.
+     * Parse DSL string into {@link ParsedExpression}.
      * <br><br>
      * Examples:
      * <table border="1">
@@ -88,14 +89,14 @@ public interface DSLParser {
      * </table>
      *
      * @param input {@link ExpressionContext} containing input string of dot separated elements. If the input string has
-     *                                  placeholders, matching values must be provided within {@code input} too
+     *              placeholders, matching values must be provided within {@code input} too
      * @return {@link ParsedExpression} object
      * @throws DslParseException in case of invalid syntax
      */
     ParsedExpression parseExpression(ExpressionContext input);
 
     /**
-     * Parse String DSL path into Aerospike filter Expression.
+     * Parse DSL string into {@link ParsedExpression}.
      * <br><br>
      * Examples:
      * <table border="1">
@@ -160,12 +161,22 @@ public interface DSLParser {
      *   </tr>
      * </table>
      *
-     * @param input {@link ExpressionContext} containing input string of dot separated elements. If the input string has
-     *                                  placeholders, matching values must be provided within {@code input} too
+     * @param input        {@link ExpressionContext} containing input string of dot separated elements. If the input string has
+     *                     placeholders, matching values must be provided within {@code input} too
      * @param indexContext Class containing namespace and collection of {@link Index} objects that represent
      *                     existing secondary indexes. Required for creating {@link Filter}. Can be null
      * @return {@link ParsedExpression} object
      * @throws DslParseException in case of invalid syntax
      */
     ParsedExpression parseExpression(ExpressionContext input, IndexContext indexContext);
+
+    /**
+     * Parse DSL path with CDT context into an array of {@link CTX} objects. The argument must represent a path with context,
+     * e.g. $.listBinName.[1], $.mapBinName.ab etc.
+     *
+     * @param dslPath Input string representing path with CDT context, must not be null
+     * @return Array of {@link CTX}
+     * @throws DslParseException in case of invalid syntax
+     */
+    CTX[] parseCTX(String dslPath);
 }
