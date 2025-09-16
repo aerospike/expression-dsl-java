@@ -36,18 +36,46 @@ When modifying the grammar file you will need to re-generate the ANTLR sources b
 
 ## Usage examples
 
-### Filter expression
+### Parsing DSL expression
+
 ```java
+import com.aerospike.dsl.api.DSLParser;
+import com.aerospike.dsl.impl.DSLParserImpl;
+
+// String DSL expression
 String input = "$.intBin1 > 100";
-Expression expression = ConditionTranslator.translate(input);
+// Instantiating DSL parser
+DSLParser parser = new DSLParserImpl();
+// Parsing expression
+ParsedExpression expression = parser.parseExpression(ExpressionContext.of(input));
 ```
-Will return the following expression:
+
+### Getting filter expression
+
 ```java
-Exp.build(
+Expression actualExp = Exp.build(
+        // Getting filter expression
+        expression.getResult().getExp()
+);
+
+Expression expectedExp = Exp.build(
     Exp.gt(
         Exp.intBin("intBin1"),
         Exp.val(100))
 );
+
+assertEquals(actualExp, expectedExp);
+```
+
+### Secondary index filter
+
+```java
+// Getting secondary index filter
+Filter actualFilter = expression.getResult().getFilter();
+
+Filter expectedFilter = Filter.range("intBin1", 101, Long.MAX_VALUE);
+
+assertEquals(actualFilter, expectedFilter);
 ```
 
 ## License
