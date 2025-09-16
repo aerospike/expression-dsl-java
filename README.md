@@ -67,7 +67,7 @@ Expression expectedExp = Exp.build(
 assertEquals(actualExp, expectedExp);
 ```
 
-### Secondary index filter
+### Getting secondary index filter
 
 ```java
 // Getting secondary index filter
