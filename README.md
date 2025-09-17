@@ -43,11 +43,23 @@ import com.aerospike.dsl.api.DSLParser;
 import com.aerospike.dsl.impl.DSLParserImpl;
 
 // String DSL expression
-String input = "$.intBin1 > 100";
+String input = "$.intBin1 > 100 and $.intBin2 > 100";
 // Instantiating DSL parser
 DSLParser parser = new DSLParserImpl();
-// Parsing expression
-ParsedExpression expression = parser.parseExpression(ExpressionContext.of(input));
+// Providing list of existing secondary indexes
+// At most only one index will be chosen based on its namespace and binValuesRatio (cardinality)
+// If cardinality of multiple indexes is the same, the index is chosen alphabetically
+List<Index> indexes = List.of(
+        Index.builder().namespace("namespace").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+        Index.builder().namespace("namespace2").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+);
+// Parsing DSL expression
+ParsedExpression expression = parser.parseExpression(
+        // We provide expression context (it may also contain placeholders values as an optional argument)
+        ExpressionContext.of(input), 
+        // And optional index context with the required namespace and a list of existing indexes
+        IndexContext.of("namespace", indexes)
+);
 ```
 
 ### Getting filter expression
@@ -58,9 +70,10 @@ Expression actualExp = Exp.build(
         expression.getResult().getExp()
 );
 
+// Only one filter expression because the first part has secondary index filter
 Expression expectedExp = Exp.build(
     Exp.gt(
-        Exp.intBin("intBin1"),
+        Exp.intBin("intBin2"),
         Exp.val(100))
 );
 
@@ -71,8 +84,10 @@ assertEquals(actualExp, expectedExp);
 
 ```java
 // Getting secondary index filter
+// Only one secondary index filter can be created at most
 Filter actualFilter = expression.getResult().getFilter();
 
+// The second part has filter expression
 Filter expectedFilter = Filter.range("intBin1", 101, Long.MAX_VALUE);
 
 assertEquals(actualFilter, expectedFilter);
