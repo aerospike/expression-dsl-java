@@ -24,6 +24,10 @@ public class Index {
      */
     private final String bin;
     /**
+     * Name of the index
+     */
+    private final String name;
+    /**
      * {@link IndexType} of the index
      */
     private final IndexType indexType;
