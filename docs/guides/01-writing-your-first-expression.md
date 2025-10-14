@@ -12,7 +12,7 @@ $.binName > 100
  |    |   |  |
  |    |   |  +---- Value (can be integer, float, or 'string')
  |    |   +------- Comparison Operator (==, !=, >, <, etc.)
- |    +----------- Bin Name and / or Metadata Function
+ |    +----------- Bin Name and / or Function
  +---------------- Path Operator (always starts with $.)
 ```
 
