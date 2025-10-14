@@ -1,10 +1,17 @@
 # Guide: Using Placeholders for Security and Performance
 
-Placeholders allow you to create parameterized DSL expressions. Instead of embedding literal values directly into your DSL string, you use special markers (`?`) that are replaced with actual values at runtime.
+Placeholders allow you to create parameterized DSL expressions. Instead of embedding literal values directly into your DSL string, you use special markers (starting with `?`) that are replaced with actual values at runtime.
 
-This practice is highly recommended for two main reasons:
-1.  **Security**: It prevents injection attacks, where a user could provide a malicious string that alters the structure of your query.
-2.  **Performance**: It allows the DSL parser to compile the expression *once* and reuse the result many times with different values, which is much faster than re-parsing the string for every query.
+This practice is recommended due to performance enhancement. It allows the DSL parser to compile the expression *once* and reuse the result many times with different values, which is much faster than re-parsing the string for every query.
+
+## The Cost of Parsing
+
+When you provide the `DSLParser` with a string, it performs several steps:
+1.  **Lexing**: Breaks the string into a stream of tokens (e.g., `$.`, `age`, `>`, `100`).
+2.  **Parsing**: Builds an Abstract Syntax Tree (AST) representing the logical structure of the expression.
+3.  **Compilation**: Traverses the AST to create a template for the final result.
+
+This process has a small but non-zero CPU cost. If you are parsing the same string inside a tight loop (e.g., for every incoming web request), this cost can add up.
 
 ## Placeholder Syntax
 
@@ -43,16 +50,18 @@ PlaceholderValues values = PlaceholderValues.of(30, "New York");
 ExpressionContext context = ExpressionContext.of(dsl, values);
 
 // Parse the expression
-ParsedExpression parsedExpression = parser.parseExpression(context, null);
+ParsedExpression parsedExpression = parser.parseExpression(context);
 
 // Now you can get the result and use it in a query
 Expression filter = Exp.build(parsedExpression.getResult().getExp());
+
+QueryPolicy queryPolicy = new QueryPolicy();
 queryPolicy.filterExp = filter;
 ```
 
 ### Type Handling
 
-The library automatically handles different data types for placeholders, including `Integer`, `Long`, `Double`, `String`, and `byte[]`. The type of the value you provide in `PlaceholderValues` will be correctly translated into the final Aerospike Expression.
+The library automatically handles different data types for placeholders, including `Integer`, `Long`, `Double`, `String`, and `byte[]`. The type of the value you provide in `PlaceholderValues` will be translated into the final Aerospike Expression.
 
 **Example with different types:**
 ```
@@ -80,7 +89,7 @@ String dsl = "$.age > ?0 and $.city == ?1";
 ExpressionContext initialContext = ExpressionContext.of(dsl); // No values needed at first
 
 // Parse the expression once and cache the result
-ParsedExpression cachedParsedExpression = parser.parseExpression(initialContext, null);
+ParsedExpression cachedParsedExpression = parser.parseExpression(initialContext);
 
 
 // --- In your application's request-handling logic (called many times) ---
@@ -98,4 +107,4 @@ public void findUsers(int age, String city) {
 }
 ```
 
-By following this pattern, you minimize parsing overhead and create more secure, efficient applications.
+By following this pattern, you minimize parsing overhead and create more efficient applications.

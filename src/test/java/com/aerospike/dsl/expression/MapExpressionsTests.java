@@ -112,6 +112,22 @@ public class MapExpressionsTests {
                 expected);
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.'127.0.0.1'.bcc.get(type: INT) > 200"),
                 expected);
+
+
+        expected = Exp.gt(
+                MapExp.getByKey(
+                        MapReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val("bcc"),
+                        Exp.mapBin("mapBin1"),
+                        // Map key with spaces in it
+                        CTX.mapKey(Value.get("127 0 0 1"))
+                ),
+                Exp.val(200));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.\"127 0 0 1\".bcc.get(type: INT) > 200"),
+                expected);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.'127 0 0 1'.bcc.get(type: INT) > 200"),
+                expected);
     }
 
     @Test
@@ -199,6 +215,19 @@ public class MapExpressionsTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{0}.get(type: INT, return: VALUE) == 100"),
                 expected);
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{0}.asInt() == 100"), expected);
+
+        Exp expected2 = Exp.eq(
+                MapExp.getByIndex(
+                        MapReturnType.VALUE,
+                        Exp.Type.STRING,
+                        Exp.val(0),
+                        Exp.mapBin("mapBin1")
+                ),
+                Exp.val("value"));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{0} == 'value'"), expected2);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{0}.get(type: STRING) == 'value'"), expected2);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{0}.get(type: STRING, return: VALUE) == 'value'"),
+                expected2);
     }
 
     @Test

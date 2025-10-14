@@ -10,7 +10,12 @@ For a complete, detailed reference, please consult the Javadoc for the library.
 
 This is the main interface and entry point for the library.
 
+*   **`ParsedExpression parseExpression(ExpressionContext input)`**
+    *   **Description**: The primary method used to parse a DSL string when no secondary indexes are provided. It returns a `ParsedExpression` object that contains the compiled result, which can be reused.
 *   **`ParsedExpression parseExpression(ExpressionContext input, IndexContext indexContext)`**
+    *   **Description**: The primary method used to parse a DSL string. It returns a `ParsedExpression` object that contains the compiled result, which can be reused.
+    *   **Parameters**:
+        *   `input`: An `ExpressionContext` object containing the DSL string and any placeholder values.
     *   **Description**: The primary method used to parse a DSL string. It returns a `ParsedExpression` object that contains the compiled result, which can be reused.
     *   **Parameters**:
         *   `input`: An `ExpressionContext` object containing the DSL string and any placeholder values.
@@ -59,7 +64,7 @@ String dsl = "$.age > ?0";
 ExpressionContext context = ExpressionContext.of(dsl, PlaceholderValues.of(30));
 
 // (Optional) Define the index context for optimization
-IndexContext indexContext = IndexContext.of("test", availableIndexes);
+IndexContext indexContext = IndexContext.of("namespace", availableIndexes);
 
 // 3. Parse the expression once to get a reusable object
 ParsedExpression parsedExpression = parser.parseExpression(context, indexContext);

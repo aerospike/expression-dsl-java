@@ -69,8 +69,8 @@ This `parser` object is thread-safe and can be reused across your application to
 It is important to ensure the versions of the DSL library, Java client, and Aerospike Server are compatible.
 
 | `aerospike-expression-dsl` | `aerospike-client-jdk8` | Aerospike Server |
-| :--- | :--- | :--- |
-| 0.1.0 | 8.0.0+ | 5.2+ |
+| :--- | :--- |:-----------------|
+| 0.1.0 | 8.0.0+ | 6.1+             |
 
 ## Building from Source (Optional)
 

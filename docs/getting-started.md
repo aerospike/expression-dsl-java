@@ -1,6 +1,6 @@
 # Getting Started with Aerospike Expression DSL
 
-Welcome to the Aerospike Expression DSL for Java! This guide will walk you through your first steps, from setup to running your first query.
+Welcome to the Aerospike Expression DSL for Java! Let's walk you through the first steps, from setup to running your first query.
 
 ## What is the Expression DSL?
 
@@ -60,7 +60,7 @@ Add the Expression DSL and the Aerospike Java Client as dependencies to your pro
 
 ### 2. Write the Code
 
-Here is a complete Java example. It connects to a local Aerospike instance, writes a few sample records, and then uses a DSL expression to query for a subset of that data.
+Here is a Java example. It connects to a local Aerospike instance, writes a few sample records, and then uses a DSL expression to query for a subset of that data.
 
 ```java
 import com.aerospike.client.*;
@@ -78,9 +78,7 @@ public class DslQuickstart {
 
     public static void main(String[] args) {
         // 1. Connect to Aerospike
-        AerospikeClient client = new AerospikeClient("127.0.0.1", 3000);
-
-        try {
+        try (AerospikeClient client = new AerospikeClient("127.0.0.1", 3000)) {
             // 2. Write some sample data
             writeSampleData(client);
 
@@ -89,7 +87,7 @@ public class DslQuickstart {
             String dslString = "$.age > 30 and $.city == 'New York'";
             System.out.println("Using DSL Expression: " + dslString);
 
-            ParsedExpression parsedExpression = parser.parseExpression(ExpressionContext.of(dslString), null);
+            ParsedExpression parsedExpression = parser.parseExpression(ExpressionContext.of(dslString));
             Expression filterExpression = Exp.build(parsedExpression.getResult().getExp());
 
             // 4. Create and Execute the Query
@@ -106,9 +104,6 @@ public class DslQuickstart {
                     System.out.println(rs.getRecord());
                 }
             }
-
-        } finally {
-            client.close();
         }
     }
 
@@ -147,5 +142,5 @@ Congratulations! You've successfully used the Expression DSL to filter records i
 
 ### Next Steps
 
-*   Explore the **Core Concepts & How-To Guides** to learn about more advanced filtering capabilities.
+*   Explore the **Core Concepts in How-To Guides** to learn about more advanced filtering capabilities.
 *   Check out the **Installation & Setup Guide** for detailed configuration options.

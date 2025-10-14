@@ -1,6 +1,6 @@
 # Advanced Topic: Arithmetic Expressions
 
-The Expression DSL allows you to perform arithmetic operations directly on bin values within your filter expressions. This enables you to push mathematical computations to the Aerospike server, avoiding the need to pull data to the client for processing.
+The Expression DSL allows you to perform certain simple arithmetic operations directly on bin values within your expressions. This enables you to push mathematical computations to the Aerospike server, avoiding the need to pull data to the client for processing.
 
 This is useful for a wide range of scenarios, such as dynamic price calculations, scoring, or checking computed thresholds.
 
@@ -39,7 +39,22 @@ For each record being scanned, the server will:
 3.  It then compares the `order_total` bin's value with the computed result.
 4.  If the condition is met, the record is returned.
 
-This entire computation happens on the server, which is highly efficient.
+This entire computation happens on the server, which is efficient.
+
+**Java Usage:**
+```java
+// Find orders with quantity larger than 5 and arithmetical condition on order_total
+String dsl = "$.quantity >= 5 and $.order_total > ($.quantity * $.price_per_item * 0.9)";
+ExpressionContext context = ExpressionContext.of(dsl);
+
+ParsedExpression parsed = parser.parseExpression(context);
+Expression filter = Exp.build(parsed.getResult().getExp());
+
+// Setting the resulting Expression as query filter
+QueryPolicy queryPolicy = new QueryPolicy();
+queryPolicy.filterExp = filter;
+// ... execute query
+```
 
 ## Combining with Placeholders
 
@@ -61,9 +76,11 @@ String dsl = "$.login_streak > ($.account_age / ?0)";
 PlaceholderValues values = PlaceholderValues.of(7);
 ExpressionContext context = ExpressionContext.of(dsl, values);
 
-ParsedExpression parsed = parser.parseExpression(context, null);
+ParsedExpression parsed = parser.parseExpression(context);
 Expression filter = Exp.build(parsed.getResult().getExp());
 
+// Setting the resulting Expression as query filter
+QueryPolicy queryPolicy = new QueryPolicy();
 queryPolicy.filterExp = filter;
 // ... execute query
 ```

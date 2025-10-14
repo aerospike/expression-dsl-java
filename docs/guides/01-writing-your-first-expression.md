@@ -4,28 +4,28 @@ This guide covers the fundamental syntax of the Aerospike Expression DSL. You wi
 
 ## Anatomy of the DSL
 
-The DSL has a simple, SQL-like syntax. Here’s a breakdown of its core components:
+The Expression DSL is a functional language for applying predicates to Aerospike bin data and record metadata. Here’s a breakdown of a simple example:
 
 ```
 $.binName > 100
-  ^    ^   ^  ^
-  |    |   |  |
-  |    |   |  +---- Value (can be integer, float, or 'string')
-  |    |   +------- Comparison Operator (==, !=, >, <, etc.)
-  |    +----------- Bin Name or Metadata Function
-  +---------------- Path Operator (always starts with $.)
+ ^    ^   ^  ^
+ |    |   |  |
+ |    |   |  +---- Value (can be integer, float, or 'string')
+ |    |   +------- Comparison Operator (==, !=, >, <, etc.)
+ |    +----------- Bin Name and / or Metadata Function
+ +---------------- Path Operator (always starts with $.)
 ```
 
 ### Path Operator (`$.`)
 
-All expressions start with `$.` to signify the root of the record. You follow it with the name of a bin (e.g., `$.age`) or a metadata function (e.g., `$.ttl()`).
+All expressions start with `$.` to signify the root of the record. You follow it with the name of a bin (e.g., `$.name`) or a metadata function (e.g., `$.lastUpdate()`).
 
 ### Operators
 
 The DSL supports a rich set of operators.
 
 *   **Comparison**: `==`, `!=`, `>`, `>=`, `<`, `<=`
-*   **Logical**: `and`, `or`, `not()`
+*   **Logical**: `and`, `or`, `not()`, `exclusive()`
 *   **Arithmetic**: `+`, `-`, `*`, `/`, `%`
 
 ### Values
@@ -51,7 +51,8 @@ To filter on a bin containing an integer or float, use standard comparison opera
 **Java Usage:**
 ```java
 ExpressionContext context = ExpressionContext.of("$.age >= 30");
-ParsedExpression parsed = parser.parseExpression(context, null);
+ParsedExpression parsed = parser.parseExpression(context);
+QueryPolicy queryPolicy = new QueryPolicy();
 queryPolicy.filterExp = Exp.build(parsed.getResult().getExp());
 ```
 
@@ -106,6 +107,15 @@ Negates a condition.
 **DSL String:**
 ```
 "not($.country == 'US')"
+```
+
+### `exclusive()` Operator
+
+Creates an expression that returns true if only one of its parts is true.
+
+**DSL String:**
+```
+"exclusive($.x < '5', $.x > '5')"
 ```
 
 ### Controlling Precedence with Parentheses

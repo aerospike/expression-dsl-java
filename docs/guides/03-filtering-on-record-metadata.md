@@ -1,6 +1,6 @@
 # Guide: Filtering on Record Metadata
 
-Aerospike tracks several metadata fields for each record, such as its time-to-live (TTL) and last update time. The Expression DSL provides special functions to use this metadata in your filter expressions.
+Aerospike tracks several metadata fields for each record, such as its time-to-live (TTL), last update time and so on. The Expression DSL provides special functions to use this metadata in your filter expressions.
 
 All metadata functions are called on the record root, using the `$.` prefix.
 
