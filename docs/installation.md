@@ -70,4 +70,16 @@ It is important to ensure the versions of the DSL library, Java client, and Aero
 
 | `aerospike-expression-dsl` | `aerospike-client-jdk8` | Aerospike Server |
 | :--- | :--- |:-----------------|
-| 0.1.0 | 8.0.0+ | 6.1+             |
+| 0.1.0 | 8.0.0+ | 5.7+             |
+
+## Building from Source (Optional)
+
+If you need to build the library from source, you will need to regenerate the ANTLR sources first. 
+
+kThe grammar file is located at `src/main/antlr4/com/aerospike/dsl/Condition.g4`.
+
+Run the following Maven command to re-generate the Java parser classes:
+
+```sh
+mvn clean generate-sources compile
+```
