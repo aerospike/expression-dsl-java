@@ -22,6 +22,9 @@ public class ControlStructuresTests {
         // different spacing style
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("when($.who == 1 => \"bob\", default => \"other\")"),
                 expected);
+        // alternative quotation
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("when($.who == 1 => 'bob', default => 'other')"),
+                expected);
     }
 
     @Test

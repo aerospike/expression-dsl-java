@@ -61,6 +61,10 @@ public class LogicalExpressionsTests {
                 Exp.exclusive(
                         Exp.eq(Exp.stringBin("hand"), Exp.val("hook")),
                         Exp.eq(Exp.stringBin("leg"), Exp.val("peg"))));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("exclusive($.hand == 'hook', $.leg == 'peg')"),
+                Exp.exclusive(
+                        Exp.eq(Exp.stringBin("hand"), Exp.val("hook")),
+                        Exp.eq(Exp.stringBin("leg"), Exp.val("peg"))));
 
         // More than 2 expressions exclusive
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("exclusive($.a == \"aVal\", $.b == \"bVal\", " +
