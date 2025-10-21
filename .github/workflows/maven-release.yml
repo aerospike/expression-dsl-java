@@ -1,0 +1,33 @@
+name: Maven Deploy
+
+on:
+  workflow_dispatch:  # Manual trigger without inputs
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK
+        # Handles importing GPG private key to the local keyring and configures Maven to use GPG passphrase
+        # if pom.xml has the Maven GPG plugin configured
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          server-id: ossrh  # Must match server ID in settings.xml/pom.xml
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          # The private key is not required as a standard environment variable
+          gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+
+      - name: Deploy to Maven Central
+        env:
+          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
+        # No interactive prompts, cleaner logs
+        run: mvn --batch-mode clean deploy
