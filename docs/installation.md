@@ -5,7 +5,7 @@ This guide provides detailed instructions for adding the Aerospike Expression DS
 ## Prerequisites
 
 *   **Java 17 or later**
-*   **Aerospike Server 5.7 or later**
+*   See the minimal supported version of **Aerospike Server** in the compatibility table below
 *   A build tool such as **Maven** or **Gradle**.
 
 ## Library Installation
@@ -64,13 +64,14 @@ DSLParser parser = new DSLParserImpl();
 
 This `parser` object is thread-safe and can be reused across your application to parse different DSL expression strings.
 
-## Compatibility Matrix
+## Compatibility Table
 
 It is important to ensure the versions of the DSL library, Java client, and Aerospike Server are compatible.
 
 | `aerospike-expression-dsl` | `aerospike-client-jdk8` | Aerospike Server |
-| :--- | :--- |:-----------------|
-| 0.1.0 | 8.0.0+ | 5.7+             |
+|:---------------------------| :--- |:-----------------|
+| 0.1.0                      | 8.0.0+ | 5.7+             |
+| 0.2.0                      | 8.0.0+ | 5.7+             |
 
 ## Building from Source (Optional)
 
