@@ -10,6 +10,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.6
+
       - name: Set up JDK
         # Handles importing GPG private key to the local keyring and configures Maven to use GPG passphrase
         # if pom.xml has the Maven GPG plugin configured
@@ -23,11 +28,14 @@ jobs:
           # The private key is not required as a standard environment variable
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
+          # Parameters for handling GPG in headless CI/CD
+          gpg-passphrase-args: --pinentry-mode=loopback --no-tty --batch
 
       - name: Deploy to Maven Central
         env:
           MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
-        # No interactive prompts, cleaner logs
+          GPG_TTY: "" # Tell GPG not to use terminal
+        # Use batch mode: no interactive prompts, cleaner logs
         run: mvn --batch-mode clean deploy
