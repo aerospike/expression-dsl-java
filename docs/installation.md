@@ -5,7 +5,7 @@ This guide provides detailed instructions for adding the Aerospike Expression DS
 ## Prerequisites
 
 *   **Java 17 or later**
-*   See the minimal version of **Aerospike Server** in the compatibility table below
+*   See the minimal supported version of **Aerospike Server** in the compatibility table below
 *   A build tool such as **Maven** or **Gradle**.
 
 ## Library Installation
