@@ -15,18 +15,6 @@ jobs:
         with:
           maven-version: 3.9.6
 
-      - name: Configure GPG for CI environment
-        # Create GPG config directory, bypass dialogs and terminal, use GPG agent, allow GPG to get passphrase directly
-        run: |
-          mkdir -p ~/.gnupg
-          echo "pinentry-mode loopback" > ~/.gnupg/gpg.conf
-          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
-          echo "use-agent" >> ~/.gnupg/gpg.conf
-          echo "batch" >> ~/.gnupg/gpg.conf
-          echo "no-tty" >> ~/.gnupg/gpg.conf
-          chmod 700 ~/.gnupg
-
-
       - name: Set up JDK
         # Handles importing GPG private key to the local keyring and configures Maven to use GPG passphrase
         # if pom.xml has the Maven GPG plugin configured
@@ -40,6 +28,8 @@ jobs:
           # The private key is not required as a standard environment variable
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
+          # Parameters for handling GPG in headless CI/CD
+          gpg-passphrase-args: --pinentry-mode=loopback --no-tty --batch
 
       - name: Deploy to Maven Central
         env:
@@ -47,5 +37,5 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
           GPG_TTY: "" # Tell GPG not to use terminal
-        # No interactive prompts, cleaner logs
+        # Use batch mode: no interactive prompts, cleaner logs
         run: mvn --batch-mode clean deploy
