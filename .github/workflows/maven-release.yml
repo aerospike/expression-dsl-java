@@ -36,10 +36,10 @@ jobs:
         run: |
           echo "::group::Checking passphrase"
           if [ -z "${MAVEN_GPG_PASSPHRASE}" ]; then
-            echo "❌ ERROR: MAVEN_GPG_PASSPHRASE is empty!"
+            echo "ERROR: MAVEN_GPG_PASSPHRASE is empty!"
             exit 1
           else
-            echo "✅ MAVEN_GPG_PASSPHRASE is set (length: ${#MAVEN_GPG_PASSPHRASE} characters)"
+            echo "MAVEN_GPG_PASSPHRASE is set (length: ${#MAVEN_GPG_PASSPHRASE} characters)"
           fi
           echo "::endgroup::"
           
