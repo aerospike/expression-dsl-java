@@ -25,7 +25,6 @@ jobs:
           server-password: MAVEN_PASSWORD
           # The private key is not required as a standard environment variable
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
       - name: Configure GPG
         env:
