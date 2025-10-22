@@ -34,18 +34,68 @@ jobs:
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          # Configure GPG agent
+          echo "::group::Initial GPG state"
+          echo "=== Checking GPG version ==="
+          gpg --version
+          
+          echo "=== Listing secret keys ==="
+          gpg --list-secret-keys
+          
+          echo "=== Current GPG home directory ==="
+          ls -la ~/.gnupg/
+          echo "::endgroup::"
+          
+          echo "::group::Configuring GPG agent"
+          echo "=== Creating gpg-agent.conf ==="
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
           echo "default-cache-ttl 7200" >> ~/.gnupg/gpg-agent.conf
           echo "max-cache-ttl 7200" >> ~/.gnupg/gpg-agent.conf
+          
+          echo "=== Contents of gpg-agent.conf ==="
+          cat ~/.gnupg/gpg-agent.conf
+          
+          echo "=== Checking if gpg.conf exists ==="
+          if [ -f ~/.gnupg/gpg.conf ]; then
+            echo "gpg.conf exists:"
+            cat ~/.gnupg/gpg.conf
+          else
+            echo "gpg.conf does not exist"
+          fi
+          
+          echo "=== Restarting GPG agent ==="
           gpgconf --kill gpg-agent
           gpg-connect-agent /bye
           
-          # Get the key grip (fingerprint used by gpg-agent)
-          KEYGRIP=$(gpg --with-keygrip --list-secret-keys | grep "Keygrip" | head -n 1 | awk '{print $3}')
+          echo "=== Checking GPG agent status ==="
+          gpg-connect-agent 'keyinfo --list' /bye
+          echo "::endgroup::"
           
-          # Cache the passphrase in the agent
-          echo "$MAVEN_GPG_PASSPHRASE" | /usr/lib/gnupg2/gpg-preset-passphrase --preset $KEYGRIP
+          echo "::group::Test signing to cache passphrase"
+          echo "=== Performing test signing ==="
+          echo "test" | gpg --pinentry-mode loopback --passphrase "${MAVEN_GPG_PASSPHRASE}" --armor --detach-sign --output test.sig
+          
+          if [ $? -eq 0 ]; then
+            echo "Test signing successful - passphrase is now cached in agent"
+            echo "=== Contents of test signature ==="
+            cat test.sig | head -n 3
+            rm -f test.sig
+          else
+            echo "Test signing failed!"
+            exit 1
+          fi
+          echo "::endgroup::"
+          
+          echo "::group::Verify GPG can sign without explicit passphrase"
+          echo "=== Testing if agent has cached passphrase ==="
+          echo "test2" | gpg --pinentry-mode loopback --armor --detach-sign --output test2.sig
+          
+          if [ $? -eq 0 ]; then
+            echo "Signing without passphrase works - agent has it cached!"
+            rm -f test2.sig
+          else
+            echo "Signing without passphrase failed - agent may not have cached it"
+          fi
+          echo "::endgroup::"
 
       - name: Deploy to Maven Central
         env:
