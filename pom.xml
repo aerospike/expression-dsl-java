@@ -217,6 +217,8 @@
                         <arg>--pinentry-mode</arg>
                         <arg>loopback</arg>
                     </gpgArguments>
+                    <!-- Tell Maven GPG plugin to use passphrase from environment/property instead of agent -->
+                    <useAgent>false</useAgent>
                 </configuration>
                 <executions>
                     <execution>
