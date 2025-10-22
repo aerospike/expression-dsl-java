@@ -43,4 +43,4 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GPG_TTY: "" # Tell GPG not to use a terminal
         # Use batch mode: no interactive prompts, cleaner logs
-        run: mvn --batch-mode clean deploy -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
+        run: mvn --batch-mode clean deploy

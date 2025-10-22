@@ -28,7 +28,6 @@
         <lombok.version>1.18.42</lombok.version>
         <junit-jupiter.version>5.14.0</junit-jupiter.version>
         <assertj-core.version>3.27.6</assertj-core.version>
-        <gpg.passphrase></gpg.passphrase>
     </properties>
 
     <licenses>
@@ -216,8 +215,6 @@
                     <gpgArguments>
                         <arg>--pinentry-mode</arg>
                         <arg>loopback</arg>
-                        <arg>--passphrase</arg>
-                        <arg>${gpg.passphrase}</arg>
                         <arg>--batch</arg>
                         <arg>--yes</arg>
                         <arg>--no-tty</arg>
