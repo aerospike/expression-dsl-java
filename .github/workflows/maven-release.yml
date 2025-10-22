@@ -15,9 +15,6 @@ jobs:
         with:
           maven-version: 3.9.6
 
-      - name: Build with Maven
-        run: mvn -B package
-
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
@@ -32,94 +29,51 @@ jobs:
 
       - name: Configure GPG and cache passphrase
         env:
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
         run: |
-          echo "::group::Checking passphrase"
+          echo "=== Checking passphrase is set ==="
           if [ -z "${MAVEN_GPG_PASSPHRASE}" ]; then
             echo "ERROR: MAVEN_GPG_PASSPHRASE is empty!"
             exit 1
-          else
-            echo "MAVEN_GPG_PASSPHRASE is set (length: ${#MAVEN_GPG_PASSPHRASE} characters)"
           fi
-          echo "::endgroup::"
+          echo "Passphrase is set (length: ${#MAVEN_GPG_PASSPHRASE} characters)"
           
-          echo "::group::Initial GPG state"
-          echo "=== Checking GPG version ==="
-          gpg --version | head -n 1
-          
-          echo "=== Listing secret keys ==="
-          gpg --list-secret-keys
-          echo "::endgroup::"
-          
-          echo "::group::Configuring GPG agent"
-          echo "=== Creating gpg-agent.conf ==="
-          cat > ~/.gnupg/gpg-agent.conf <<EOF
-          allow-loopback-pinentry
-          default-cache-ttl 7200
-          max-cache-ttl 7200
-          EOF
-          
-          echo "=== Contents of gpg-agent.conf ==="
+          echo "=== Configuring GPG agent ==="
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
           cat ~/.gnupg/gpg-agent.conf
           
-          echo "=== Restarting GPG agent ==="
+          echo "=== Killing GPG agent ==="
           gpgconf --kill gpg-agent
-          gpg-connect-agent /bye
-          echo "::endgroup::"
           
-          echo "::group::Test signing to cache passphrase"
-          echo "=== Method 1: Using passphrase via stdin (file descriptor 3) ==="
-          gpg --pinentry-mode loopback --passphrase-fd 3 --batch --yes --armor --detach-sign --output test.sig 3<<< "${MAVEN_GPG_PASSPHRASE}" <<< "test"
+          echo "=== Signing pom.xml to cache passphrase ==="
+          echo "${MAVEN_GPG_PASSPHRASE}" | gpg --pinentry-mode loopback --passphrase-fd 0 --batch --yes --no-tty --armor --detach-sign pom.xml
           
           if [ $? -eq 0 ]; then
-            echo "Test signing successful with fd 3!"
-            rm -f test.sig
+            echo "Initial signing successful"
+            rm -f pom.xml.asc
           else
-            echo "Method 1 failed, trying method 2..."
-          
-            echo "=== Method 2: Using echo to pipe passphrase ==="
-            echo "${MAVEN_GPG_PASSPHRASE}" | gpg --pinentry-mode loopback --passphrase-fd 0 --batch --yes --armor --detach-sign --output test.sig <<< "test"
-          
-            if [ $? -eq 0 ]; then
-              echo "Test signing successful with method 2!"
-              rm -f test.sig
-            else
-              echo "Method 2 failed, trying method 3..."
-          
-              echo "=== Method 3: Using temporary file ==="
-              echo "${MAVEN_GPG_PASSPHRASE}" > /tmp/gpg_pass
-              chmod 600 /tmp/gpg_pass
-              gpg --pinentry-mode loopback --passphrase-file /tmp/gpg_pass --batch --yes --armor --detach-sign --output test.sig <<< "test"
-          
-              if [ $? -eq 0 ]; then
-                echo "Test signing successful with passphrase file!"
-                rm -f test.sig /tmp/gpg_pass
-              else
-                echo "All methods failed!"
-                rm -f /tmp/gpg_pass
-                exit 1
-              fi
-            fi
+            echo "Initial signing failed!"
+            exit 1
           fi
-          echo "::endgroup::"
           
-          echo "::group::Verify GPG can sign without explicit passphrase"
-          echo "=== Testing if agent has cached passphrase ==="
-          gpg --pinentry-mode loopback --batch --yes --armor --detach-sign --output test2.sig <<< "test2"
+          echo "=== Verifying GPG agent is running ==="
+          gpg-connect-agent 'getinfo pid' /bye
+          
+          echo "=== Testing if passphrase is cached (signing without passphrase) ==="
+          gpg --pinentry-mode loopback --batch --yes --no-tty --armor --detach-sign pom.xml
           
           if [ $? -eq 0 ]; then
-            echo "Signing without passphrase works - agent has it cached!"
-            rm -f test2.sig
+            echo "SUCCESS: Passphrase is cached in GPG agent!"
+            rm -f pom.xml.asc
           else
-            echo "Signing without passphrase failed - agent may not have cached it"
+            echo "WARNING: Passphrase may not be cached, but continuing"
+            echo "Maven will attempt to use the passphrase directly"
           fi
-          echo "::endgroup::"
-
-      - name: Deploy to Maven Central
-        env:
-          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          GPG_TTY: "" # Tell GPG not to use a terminal
-        # Use batch mode: no interactive prompts, cleaner logs
-        run: mvn --batch-mode clean deploy
+#
+#      - name: Deploy to Maven Central
+#        env:
+#          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
+#          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
+#          GPG_TTY: no-tty
+#        # Use batch mode: no interactive prompts, cleaner logs
+#        run: mvn --batch-mode clean deploy
