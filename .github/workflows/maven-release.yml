@@ -1,7 +1,7 @@
 name: Maven Deploy
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Manual trigger without inputs
 
 jobs:
   deploy:
@@ -23,6 +23,7 @@ jobs:
           server-id: ossrh  # Must match server ID in settings.xml/pom.xml
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
+          # The private key is not required as a standard environment variable
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
@@ -31,5 +32,6 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_TTY: "" # Tell GPG not to use a terminal
         # Use batch mode: no interactive prompts, cleaner logs
         run: mvn --batch-mode clean deploy -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
