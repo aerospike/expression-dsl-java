@@ -44,4 +44,4 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
           GPG_TTY: no-tty
         # Use batch mode: no interactive prompts, cleaner logs
-        run: mvn --batch-mode clean deploy
+        run: mvn --batch-mode clean deploy -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
