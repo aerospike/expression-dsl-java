@@ -1,7 +1,7 @@
 name: Maven Deploy
 
 on:
-  workflow_dispatch:  # Manual trigger without inputs
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -15,32 +15,6 @@ jobs:
         with:
           maven-version: 3.9.6
 
-        # Handle importing GPG private key to the local keyring and manually configure Maven to use GPG passphrase
-        # pom.xml is required to have the Maven GPG plugin configured
-      - name: Import GPG key
-        run: |
-          # Create gnupg directory with correct permissions
-          mkdir -p ~/.gnupg/
-          chmod 700 ~/.gnupg/
-          
-          # Configure GPG to use non-interactive mode
-          echo "use-agent" > ~/.gnupg/gpg.conf
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-          echo "batch" >> ~/.gnupg/gpg.conf
-          echo "no-tty" >> ~/.gnupg/gpg.conf
-          
-          # Configure GPG agent
-          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
-          
-          # Import the GPG key
-          echo "${{ secrets.GPG_SECRET_KEY }}" | gpg --batch --import
-          
-          # Trust the key
-          echo -n "${{ secrets.GPG_PASSPHRASE }}" | gpg --passphrase-fd 0 --pinentry-mode loopback --batch --yes --trust-model always --command-fd 0 --change-trustdb << EOF
-          5
-          y
-          EOF
-
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
@@ -49,18 +23,13 @@ jobs:
           server-id: ossrh  # Must match server ID in settings.xml/pom.xml
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
-          # No need for GPG config here as we do it manually above
+          gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
       - name: Deploy to Maven Central
         env:
           MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
-          GPG_TTY: $(tty)
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: |
-          # Export the passphrase for Maven GPG Plugin
-          echo $GPG_PASSPHRASE | gpg --passphrase-fd 0 --pinentry-mode loopback --batch --yes --sign --output /dev/null --armor <<< "test"
-          # Tell GPG not to use terminal
-          export GPG_TTY=""
-          # Use batch mode: no interactive prompts, cleaner logs
-          mvn --batch-mode clean deploy -Dgpg.passphrase="${GPG_PASSPHRASE}"
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        # Use batch mode: no interactive prompts, cleaner logs
+        run: mvn --batch-mode clean deploy -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
