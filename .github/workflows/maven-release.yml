@@ -36,24 +36,23 @@ jobs:
         run: |
           echo "::group::Initial GPG state"
           echo "=== Checking GPG version ==="
-          gpg --version
+          gpg --version | head -n 1
           
           echo "=== Listing secret keys ==="
           gpg --list-secret-keys
-          
-          echo "=== Current GPG home directory ==="
-          ls -la ~/.gnupg/
           echo "::endgroup::"
           
           echo "::group::Configuring GPG agent"
           echo "=== Creating gpg-agent.conf ==="
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          echo "default-cache-ttl 7200" >> ~/.gnupg/gpg-agent.conf
-          echo "max-cache-ttl 7200" >> ~/.gnupg/gpg-agent.conf
+          cat > ~/.gnupg/gpg-agent.conf <<EOF
+          allow-loopback-pinentry
+          default-cache-ttl 7200
+          max-cache-ttl 7200
+          EOF
           
           echo "=== Contents of gpg-agent.conf ==="
           cat ~/.gnupg/gpg-agent.conf
-          
+
           echo "=== Checking if gpg.conf exists ==="
           if [ -f ~/.gnupg/gpg.conf ]; then
             echo "gpg.conf exists:"
@@ -71,13 +70,11 @@ jobs:
           echo "::endgroup::"
           
           echo "::group::Test signing to cache passphrase"
-          echo "=== Performing test signing ==="
-          echo "test" | gpg --pinentry-mode loopback --passphrase "${MAVEN_GPG_PASSPHRASE}" --armor --detach-sign --output test.sig
+          echo "=== Performing test signing (using passphrase-fd) ==="
+          echo "test" | gpg --pinentry-mode loopback --passphrase-fd 0 --batch --yes --armor --detach-sign --output test.sig <<< "${MAVEN_GPG_PASSPHRASE}"
           
           if [ $? -eq 0 ]; then
             echo "Test signing successful - passphrase is now cached in agent"
-            echo "=== Contents of test signature ==="
-            cat test.sig | head -n 3
             rm -f test.sig
           else
             echo "Test signing failed!"
@@ -87,7 +84,7 @@ jobs:
           
           echo "::group::Verify GPG can sign without explicit passphrase"
           echo "=== Testing if agent has cached passphrase ==="
-          echo "test2" | gpg --pinentry-mode loopback --armor --detach-sign --output test2.sig
+          echo "test2" | gpg --pinentry-mode loopback --batch --yes --armor --detach-sign --output test2.sig
           
           if [ $? -eq 0 ]; then
             echo "Signing without passphrase works - agent has it cached!"
