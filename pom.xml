@@ -211,6 +211,7 @@
                 <artifactId>maven-gpg-plugin</artifactId>
                 <version>${maven-gpg-plugin.version}</version>
                 <configuration>
+                    <passphraseServerId/>  <!-- Empty = don't look for passphrase in Maven settings -->
                     <gpgArguments>
                         <arg>--pinentry-mode</arg>
                         <arg>loopback</arg>
