@@ -30,11 +30,22 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      # Enable loopback pinentry in GPG agent configuration, restart the GPG agent to pick up the change
-      - name: Configure GPG
+      - name: Configure GPG and cache passphrase
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
+          # Configure GPG agent
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "default-cache-ttl 7200" >> ~/.gnupg/gpg-agent.conf
+          echo "max-cache-ttl 7200" >> ~/.gnupg/gpg-agent.conf
           gpgconf --kill gpg-agent
+          gpg-connect-agent /bye
+          
+          # Get the key grip (fingerprint used by gpg-agent)
+          KEYGRIP=$(gpg --with-keygrip --list-secret-keys | grep "Keygrip" | head -n 1 | awk '{print $3}')
+          
+          # Cache the passphrase in the agent
+          echo "$MAVEN_GPG_PASSPHRASE" | /usr/lib/gnupg2/gpg-preset-passphrase --preset $KEYGRIP
 
       - name: Deploy to Maven Central
         env:

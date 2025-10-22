@@ -211,13 +211,10 @@
                 <artifactId>maven-gpg-plugin</artifactId>
                 <version>${maven-gpg-plugin.version}</version>
                 <configuration>
-                    <!-- Prevent gpg from using pinentry programs and from using interactive prompt -->
+                    <!-- Prevent gpg from using pinentry programs -->
                     <gpgArguments>
                         <arg>--pinentry-mode</arg>
                         <arg>loopback</arg>
-                        <arg>--batch</arg>
-                        <arg>--yes</arg>
-                        <arg>--no-tty</arg>
                     </gpgArguments>
                 </configuration>
                 <executions>
