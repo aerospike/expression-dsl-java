@@ -20,60 +20,29 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          server-id: ossrh  # Must match server ID in settings.xml/pom.xml
+          server-id: ossrh  # Must match server id in settings.xml/pom.xml
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
           # The private key is not required as a standard environment variable
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      - name: Configure GPG and cache passphrase
+      - name: Configure GPG
         env:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
         run: |
-          echo "=== Checking passphrase is set ==="
-          if [ -z "${MAVEN_GPG_PASSPHRASE}" ]; then
-            echo "ERROR: MAVEN_GPG_PASSPHRASE is empty!"
-            exit 1
-          fi
-          echo "Passphrase is set (length: ${#MAVEN_GPG_PASSPHRASE} characters)"
-          
-          echo "=== Configuring GPG agent ==="
+          # Allow GPG agent to accept loopback pinentry, kill gpg-agent
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          cat ~/.gnupg/gpg-agent.conf
-          
-          echo "=== Killing GPG agent ==="
           gpgconf --kill gpg-agent
           
-          echo "=== Signing pom.xml to cache passphrase ==="
+          # Cache passphrase by signing pom.xml (actual signing will take place during deploy), gpg-agent is restarted
           echo "${MAVEN_GPG_PASSPHRASE}" | gpg --pinentry-mode loopback --passphrase-fd 0 --batch --yes --no-tty --armor --detach-sign pom.xml
-          
-          if [ $? -eq 0 ]; then
-            echo "Initial signing successful"
-            rm -f pom.xml.asc
-          else
-            echo "Initial signing failed!"
-            exit 1
-          fi
-          
-          echo "=== Verifying GPG agent is running ==="
-          gpg-connect-agent 'getinfo pid' /bye
-          
-          echo "=== Testing if passphrase is cached (signing without passphrase) ==="
-          gpg --pinentry-mode loopback --batch --yes --no-tty --armor --detach-sign pom.xml
-          
-          if [ $? -eq 0 ]; then
-            echo "SUCCESS: Passphrase is cached in GPG agent!"
-            rm -f pom.xml.asc
-          else
-            echo "WARNING: Passphrase may not be cached, but continuing"
-            echo "Maven will attempt to use the passphrase directly"
-          fi
-#
-#      - name: Deploy to Maven Central
-#        env:
-#          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
-#          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
-#          GPG_TTY: no-tty
-#        # Use batch mode: no interactive prompts, cleaner logs
-#        run: mvn --batch-mode clean deploy
+          rm -f pom.xml.asc
+
+      - name: Deploy to Maven Central
+        env:
+          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
+          GPG_TTY: no-tty
+        # Use batch mode: no interactive prompts, cleaner logs
+        run: mvn --batch-mode clean deploy
