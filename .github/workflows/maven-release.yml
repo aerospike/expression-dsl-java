@@ -1,7 +1,7 @@
 name: Maven Deploy
 
 on:
-  workflow_dispatch:  # Manual trigger without inputs
+  workflow_dispatch: # Manual trigger without inputs
 
 jobs:
   deploy:
@@ -16,26 +16,50 @@ jobs:
           maven-version: 3.9.6
 
       - name: Set up JDK
-        # Handles importing GPG private key to the local keyring and configures Maven to use GPG passphrase
-        # if pom.xml has the Maven GPG plugin configured
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
-          server-id: ossrh  # Must match server ID in settings.xml/pom.xml
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
-          # The private key is not required as a standard environment variable
-          gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
-          gpg-passphrase: MAVEN_GPG_PASSPHRASE
-          # Parameters for handling GPG in headless CI/CD
-          gpg-passphrase-args: --pinentry-mode=loopback --no-tty --batch
+          cache: maven
 
-      - name: Deploy to Maven Central
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_SECRET_KEY }}
+          passphrase: ${{ secrets.GPG_PASS }}
+
+      - name: Configure Maven settings
         env:
           MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
-          GPG_TTY: "" # Tell GPG not to use terminal
-        # Use batch mode: no interactive prompts, cleaner logs
-        run: mvn --batch-mode clean deploy
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<EOF
+          <settings>
+            <servers>
+              <server>
+                <id>ossrh</id>
+                <username>${MAVEN_USERNAME}</username>
+                <password>${MAVEN_PASSWORD}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Test credentials
+        env:
+          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
+        run: |
+          echo "Testing Sonatype authentication..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -u "${MAVEN_USERNAME}:${MAVEN_PASSWORD}" https://oss.sonatype.org/service/local/status)
+          
+          if [ "$STATUS" = "200" ]; then
+            echo "Credentials are valid"
+          else
+            echo "Authentication failed (HTTP $STATUS)"
+            exit 1
+          fi
+
+      - name: Deploy to Maven Central
+        run: mvn --batch-mode deploy
