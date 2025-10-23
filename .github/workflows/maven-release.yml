@@ -31,18 +31,44 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_SECRET_KEY }}
           passphrase: ${{ secrets.GPG_PASS }}
 
-      - name: Test Nexus credentials
+#      - name: Test Nexus credentials
+#        env:
+#          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
+#          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
+#        run: |
+#          echo "Testing authentication to Sonatype..."
+#          curl -u "${MAVEN_USERNAME}:${MAVEN_PASSWORD}" \
+#            -I https://oss.sonatype.org/service/local/status
+#
+#          echo ""
+#          echo "'401 Unauthorized' above -> credentials are invalid"
+#          echo "'200 OK' -> credentials work but Maven isn't using them correctly"
+
+      - name: Create settings.xml with credentials
         env:
           MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
         run: |
-          echo "Testing authentication to Sonatype..."
-          curl -u "${MAVEN_USERNAME}:${MAVEN_PASSWORD}" \
-            -I https://oss.sonatype.org/service/local/status
-          
-          echo ""
-          echo "'401 Unauthorized' above -> credentials are invalid"
-          echo "'200 OK' -> credentials work but Maven isn't using them correctly"
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<EOF
+          <settings>
+            <servers>
+              <server>
+                <id>ossrh</id>
+                <username>${MAVEN_USERNAME}</username>
+                <password>${MAVEN_PASSWORD}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Test credentials
+        env:
+          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
+        run: |
+          # Test with actual values (not ${env.} placeholders)
+          curl -u "${MAVEN_USERNAME}:${MAVEN_PASSWORD}" -I https://oss.sonatype.org/service/local/status
 
       - name: Deploy to Maven Central
         env:
