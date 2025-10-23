@@ -20,17 +20,16 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-#          cache: maven
+          cache: maven
           server-id: ossrh  # Must match server id in settings.xml/pom.xml
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
 
-      - name: setup GPG
-        uses: aerospike/shared-workflows/devops/setup-gpg@main
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
         with:
-          gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
-          gpg-key-pass: ${{ secrets.GPG_PASS }}
-          gpg-key-name: "Aerospike"
+          gpg_private_key: ${{ secrets.GPG_SECRET_KEY }}
+          passphrase: ${{ secrets.GPG_PASS }}
 
       - name: Deploy to Maven Central
         env:
