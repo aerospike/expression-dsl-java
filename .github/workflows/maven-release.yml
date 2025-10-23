@@ -20,32 +20,17 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+#          cache: maven
           server-id: ossrh  # Must match server id in settings.xml/pom.xml
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
-          # The private key is not required as a standard environment variable
+
+      - name: setup GPG
+        uses: aerospike/shared-workflows/devops/setup-gpg@main
+        with:
           gpg-private-key: ${{ secrets.GPG_SECRET_KEY }}
-
-      - name: Create settings-security.xml
-        run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/settings-security.xml <<EOF
-          <settingsSecurity>
-            <master>{jSMOWnoPFgsHVpMvz5VrIt5kRbzGpI8u+9EF1iFQyJQ=}</master>
-          </settingsSecurity>
-          EOF
-
-      - name: Configure GPG
-        env:
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASS }}
-        run: |
-          # Allow GPG agent to accept loopback pinentry, kill gpg-agent
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          gpgconf --kill gpg-agent
-          
-          # Cache passphrase by signing pom.xml (actual signing will take place during deploy), gpg-agent is restarted
-          echo "${MAVEN_GPG_PASSPHRASE}" | gpg --pinentry-mode loopback --passphrase-fd 0 --batch --yes --no-tty --armor --detach-sign pom.xml
-          rm -f pom.xml.asc
+          gpg-key-pass: ${{ secrets.GPG_PASS }}
+          gpg-key-name: "Aerospike"
 
       - name: Deploy to Maven Central
         env:
@@ -53,4 +38,4 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
           GPG_TTY: no-tty
         # Use batch mode: no interactive prompts, cleaner logs
-        run: mvn --batch-mode clean deploy -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
+        run: mvn --batch-mode clean deploy # -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
