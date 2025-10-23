@@ -21,9 +21,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: maven
-          server-id: ossrh  # Must match server id in settings.xml/pom.xml
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
@@ -31,20 +28,7 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_SECRET_KEY }}
           passphrase: ${{ secrets.GPG_PASS }}
 
-#      - name: Test Nexus credentials
-#        env:
-#          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
-#          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
-#        run: |
-#          echo "Testing authentication to Sonatype..."
-#          curl -u "${MAVEN_USERNAME}:${MAVEN_PASSWORD}" \
-#            -I https://oss.sonatype.org/service/local/status
-#
-#          echo ""
-#          echo "'401 Unauthorized' above -> credentials are invalid"
-#          echo "'200 OK' -> credentials work but Maven isn't using them correctly"
-
-      - name: Create settings.xml with credentials
+      - name: Configure Maven settings
         env:
           MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
@@ -67,15 +51,15 @@ jobs:
           MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
         run: |
-          # Test with actual values (not ${env.} placeholders)
-          curl -u "${MAVEN_USERNAME}:${MAVEN_PASSWORD}" -I https://oss.sonatype.org/service/local/status
+          echo "Testing Sonatype authentication..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -u "${MAVEN_USERNAME}:${MAVEN_PASSWORD}" https://oss.sonatype.org/service/local/status)
+          
+          if [ "$STATUS" = "200" ]; then
+            echo "Credentials are valid"
+          else
+            echo "Authentication failed (HTTP $STATUS)"
+            exit 1
+          fi
 
       - name: Deploy to Maven Central
-        env:
-          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
-        run: |
-          # Use batch mode: no interactive prompts, cleaner logs
-          mvn --batch-mode deploy \
-            -s .github/maven-settings.xml \
-            -Possrh
+        run: mvn --batch-mode deploy
