@@ -6,6 +6,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
+      MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -31,15 +34,11 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_SECRET_KEY }}
           passphrase: ${{ secrets.GPG_PASS }}
 
-      - name: Verify Maven settings
+      - name: Verify environment variables
         run: |
-          echo "Contents of settings.xml:"
-          cat ~/.m2/settings.xml
+          echo "MAVEN_USERNAME is set: $([ -n "$MAVEN_USERNAME" ] && echo 'yes' || echo 'no')"
+          echo "MAVEN_PASSWORD is set: $([ -n "$MAVEN_PASSWORD" ] && echo 'yes' || echo 'no')"
 
       - name: Deploy to Maven Central
-        env:
-          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
-          GPG_TTY: no-tty
         # Use batch mode: no interactive prompts, cleaner logs
-        run: mvn --batch-mode clean deploy # -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}"
+        run: mvn --batch-mode clean deploy
