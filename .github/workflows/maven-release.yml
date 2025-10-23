@@ -6,9 +6,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
-      MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -34,11 +31,25 @@ jobs:
           gpg_private_key: ${{ secrets.GPG_SECRET_KEY }}
           passphrase: ${{ secrets.GPG_PASS }}
 
-      - name: Verify environment variables
+      - name: Test Nexus credentials
+        env:
+          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
         run: |
-          echo "MAVEN_USERNAME is set: $([ -n "$MAVEN_USERNAME" ] && echo 'yes' || echo 'no')"
-          echo "MAVEN_PASSWORD is set: $([ -n "$MAVEN_PASSWORD" ] && echo 'yes' || echo 'no')"
+          echo "Testing authentication to Sonatype..."
+          curl -u "${MAVEN_USERNAME}:${MAVEN_PASSWORD}" \
+            -I https://oss.sonatype.org/service/local/status
+          
+          echo ""
+          echo "'401 Unauthorized' above -> credentials are invalid"
+          echo "'200 OK' -> credentials work but Maven isn't using them correctly"
 
       - name: Deploy to Maven Central
-        # Use batch mode: no interactive prompts, cleaner logs
-        run: mvn --batch-mode clean deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.AEROSPIKE_SA_CICD_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.AEROSPIKE_SA_CICD_PASSWORD }}
+        run: |
+          # Use batch mode: no interactive prompts, cleaner logs
+          mvn --batch-mode deploy \
+            -s .github/maven-settings.xml \
+            -Possrh
