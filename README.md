@@ -3,7 +3,7 @@
 
 > [!NOTE]
 > This is a developer preview, not yet ready for production use, but with future releases planned. We appreciate feedback from the Aerospike 
-> developer community through GitHub issues or the [Aerospike Developers Discord](https://aerospike.com/community/).
+> developer community through GitHub issues.
 
 Aerospike Expression DSL is a Java library that allows translating a canonical Aerospike Expression DSL string into an Aerospike Expression.
 
