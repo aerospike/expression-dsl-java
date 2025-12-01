@@ -95,58 +95,6 @@ public final class Buffer {
         }
     }
 
-	/*
-	private static Object parseList(byte[] buf, int offset, int len) throws AerospikeException {
-		int limit = offset + len;
-		int itemCount = Buffer.bytesToInt(buf, offset);
-		offset += 4;
-		ArrayList<Object> list = new ArrayList<Object>(itemCount);
-
-		while (offset < limit) {
-			int sz = Buffer.bytesToInt(buf, offset);
-			offset += 4;
-			int type = buf[offset];
-			offset++;
-			list.add(bytesToParticle(type, buf, offset, sz));
-			offset += sz;
-		}
-		return list;
-	}
-
-	private static Object parseMap(byte[] buf, int offset, int len) throws AerospikeException {
-		Object key;
-		Object value;
-
-		int limit = offset + len;
-		int n_items = Buffer.bytesToInt(buf, offset);
-		offset += 4;
-		HashMap<Object, Object> map = new HashMap<Object, Object>(n_items);
-
-		while (offset < limit) {
-			// read out the key
-			int sz = Buffer.bytesToInt(buf, offset);
-			offset += 4;
-			int type = buf[offset];
-			offset++;
-
-			key = bytesToParticle(type, buf, offset, len);
-			offset += sz;
-
-			// read out the value
-			sz = Buffer.bytesToInt(buf, offset);
-			offset += 4;
-			type = buf[offset];
-			offset++;
-
-			value = bytesToParticle(type, buf, offset, len);
-			offset += sz;
-
-			map.put(key, value);
-		}
-		return map;
-	}
-	*/
-
     /**
      * Estimate size of Utf8 encoded bytes without performing the actual encoding.
      */

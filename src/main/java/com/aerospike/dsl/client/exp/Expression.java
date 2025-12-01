@@ -16,7 +16,6 @@
  */
 package com.aerospike.dsl.client.exp;
 
-import com.aerospike.dsl.client.command.Command;
 import com.aerospike.dsl.client.util.Crypto;
 import com.aerospike.dsl.client.util.Packer;
 
@@ -86,14 +85,6 @@ public final class Expression implements Serializable {
      */
     public String getBase64() {
         return Crypto.encodeBase64(bytes);
-    }
-
-    /**
-     * Estimate expression size in wire protocol.
-     * For internal use only.
-     */
-    public int size() {
-        return bytes.length + Command.FIELD_HEADER_SIZE;
     }
 
     @Override
