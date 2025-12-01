@@ -1,9 +1,9 @@
 package com.aerospike.dsl.parts.cdt.map;
 
-import com.aerospike.client.cdt.CTX;
-import com.aerospike.client.exp.Exp;
-import com.aerospike.dsl.parts.path.BasePath;
+import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.parts.cdt.CdtPart;
+import com.aerospike.dsl.parts.path.BasePath;
 
 /**
  * Designates that the element to the left is a Map.

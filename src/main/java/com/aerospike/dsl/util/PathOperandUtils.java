@@ -1,9 +1,9 @@
 package com.aerospike.dsl.util;
 
-import com.aerospike.client.cdt.CTX;
-import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.ListExp;
-import com.aerospike.client.exp.MapExp;
+import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.exp.ListExp;
+import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.cdt.CdtPart;
 import com.aerospike.dsl.parts.cdt.list.ListPart;

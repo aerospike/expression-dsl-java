@@ -1,11 +1,11 @@
 package com.aerospike.dsl.parts.cdt.list;
 
-import com.aerospike.client.cdt.CTX;
-import com.aerospike.client.cdt.ListReturnType;
-import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.cdt.ListReturnType;
+import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.aerospike.dsl.util;
 
-import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.cdt.map.MapTypeDesignator;
 import lombok.experimental.UtilityClass;

@@ -1,7 +1,7 @@
 package com.aerospike.dsl;
 
-import com.aerospike.client.exp.Exp;
-import com.aerospike.client.query.Filter;
+import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.query.Filter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
