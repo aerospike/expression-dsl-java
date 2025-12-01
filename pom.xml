@@ -63,11 +63,6 @@
     </distributionManagement>
 
     <dependencies>
-<!--        <dependency>-->
-<!--            <groupId>com.aerospike</groupId>-->
-<!--            <artifactId>aerospike-client-jdk8</artifactId>-->
-<!--            <version>${aerospike-client-jdk8.version}</version>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
