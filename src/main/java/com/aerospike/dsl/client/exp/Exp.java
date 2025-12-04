@@ -20,6 +20,7 @@ import com.aerospike.dsl.client.command.ParticleType;
 import com.aerospike.dsl.client.query.RegexFlag;
 import com.aerospike.dsl.client.util.Packer;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
@@ -402,12 +403,23 @@ public abstract class Exp {
      * Exp.regexCompare("prefix.*suffix", RegexFlag.ICASE | RegexFlag.NEWLINE, Exp.stringBin("a"))
      * }</pre>
      *
-     * @param regex		regular expression string
-     * @param flags		regular expression bit flags. See {@link RegexFlag}
-     * @param bin		string bin or string value expression
+     * @param regex regular expression string
+     * @param flags regular expression bit flags. See {@link RegexFlag}
+     * @param bin   string bin or string value expression
      */
     public static Exp regexCompare(String regex, int flags, Exp bin) {
         return new Regex(bin, regex, flags);
+    }
+
+    protected String expsAsString(Exp[] exps) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < exps.length; i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            sb.append(exps[i].toString());
+        }
+        return sb.toString();
     }
 
     //--------------------------------------------------
@@ -499,7 +511,7 @@ public abstract class Exp {
      * Create map value. For ordered maps, pass in a TreeMap or a map that implements the SortedMap
      * interface. For unordered maps, pass in a HashMap.
      */
-    public static Exp val(Map<?,?> map) {
+    public static Exp val(Map<?, ?> map) {
         return new MapVal(map);
     }
 
@@ -1237,6 +1249,69 @@ public abstract class Exp {
 
     public abstract void pack(Packer packer);
 
+    // Package visible
+    static String cmdAsString(int cmd) {
+        return switch (cmd) {
+            case UNKNOWN -> "UNKNOWN";
+            case EQ -> "EQ";
+            case NE -> "NE";
+            case GT -> "GT";
+            case GE -> "GE";
+            case LT -> "LT";
+            case LE -> "LE";
+            case REGEX -> "REGEX";
+            case GEO -> "GEO";
+            case AND -> "AND";
+            case OR -> "OR";
+            case NOT -> "NOT";
+            case EXCLUSIVE -> "EXCLUSIVE";
+            case ADD -> "ADD";
+            case SUB -> "SUB";
+            case MUL -> "MUL";
+            case DIV -> "DIV";
+            case POW -> "POW";
+            case LOG -> "LOG";
+            case MOD -> "MOD";
+            case ABS -> "ABS";
+            case FLOOR -> "FLOOR";
+            case CEIL -> "CEIL";
+            case TO_INT -> "TO_INT";
+            case TO_FLOAT -> "TO_FLOAT";
+            case INT_AND -> "INT_AND";
+            case INT_OR -> "INT_OR";
+            case INT_XOR -> "INT_XOR";
+            case INT_NOT -> "INT_NOT";
+            case INT_LSHIFT -> "INT_LSHIFT";
+            case INT_RSHIFT -> "INT_RSHIFT";
+            case INT_ARSHIFT -> "INT_ARSHIFT";
+            case INT_COUNT -> "INT_COUNT";
+            case INT_LSCAN -> "INT_LSCAN";
+            case INT_RSCAN -> "INT_RSCAN";
+            case MIN -> "MIN";
+            case MAX -> "MAX";
+            case DIGEST_MODULO -> "DIGEST_MODULO";
+            case DEVICE_SIZE -> "DEVICE_SIZE";
+            case LAST_UPDATE -> "LAST_UPDATE";
+            case SINCE_UPDATE -> "SINCE_UPDATE";
+            case VOID_TIME -> "VOID_TIME";
+            case TTL -> "TTL";
+            case SET_NAME -> "SET_NAME";
+            case KEY_EXISTS -> "KEY_EXISTS";
+            case IS_TOMBSTONE -> "IS_TOMBSTONE";
+            case MEMORY_SIZE -> "MEMORY_SIZE";
+            case RECORD_SIZE -> "RECORD_SIZE";
+            case KEY -> "KEY";
+            case BIN -> "BIN";
+            case BIN_TYPE -> "BIN_TYPE";
+            case COND -> "COND";
+            case VAR -> "VAR";
+            case LET -> "LET";
+            case QUOTED -> "QUOTED";
+            case CALL -> "CALL";
+            default -> null;
+        };
+    }
+
     /**
      * For internal use only.
      */
@@ -1251,6 +1326,11 @@ public abstract class Exp {
             this.bytes = bytes;
             this.retType = retType;
             this.module = module;
+        }
+
+        public String toString() {
+            return "Module [bin=" + bin + ", bytes=" + Arrays.toString(bytes) + ", retType=" + retType +
+                    ", module=" + module + "]";
         }
 
         @Override
@@ -1273,6 +1353,10 @@ public abstract class Exp {
             this.type = type;
         }
 
+        public String toString() {
+            return "Bin(" + type.toString().charAt(0) + "\"" + name + "\")";
+        }
+
         @Override
         public void pack(Packer packer) {
             packer.packArrayBegin(3);
@@ -1293,6 +1377,10 @@ public abstract class Exp {
             this.flags = flags;
         }
 
+        public String toString() {
+            return "Regex [bin=" + bin + ", regex=" + regex + ", flags=" + flags + "]";
+        }
+
         @Override
         public void pack(Packer packer) {
             packer.packArrayBegin(4);
@@ -1308,6 +1396,11 @@ public abstract class Exp {
 
         private Let(Exp... exps) {
             this.exps = exps;
+        }
+
+        @Override
+        public String toString() {
+            return "Let [exps=" + expsAsString(exps) + "]";
         }
 
         @Override
@@ -1333,6 +1426,11 @@ public abstract class Exp {
         }
 
         @Override
+        public String toString() {
+            return "Def [name=" + name + ", exp=" + exp + "]";
+        }
+
+        @Override
         public void pack(Packer packer) {
             packer.packString(name);
             exp.pack(packer);
@@ -1346,6 +1444,95 @@ public abstract class Exp {
         private CmdExp(int cmd, Exp... exps) {
             this.exps = exps;
             this.cmd = cmd;
+        }
+
+        @Override
+        public String toString() {
+            String cmdStr = cmdAsString(cmd);
+            if (cmdStr == null) {
+                return "CmdExp [exps=" + expsAsString(exps) + ", cmd=" + cmd + "]";
+            }
+            switch (cmd) {
+                case GT:
+                    return multiArgOp(">");
+                case GE:
+                    return multiArgOp(">=");
+                case LE:
+                    return multiArgOp("<=");
+                case LT:
+                    return multiArgOp("<");
+                case EQ:
+                    return multiArgOp("==");
+                case NE:
+                    return multiArgOp("!=");
+                case ADD:
+                    return multiArgOp("+");
+                case SUB:
+                    return multiArgOp("-");
+                case MUL:
+                    return multiArgOp("*");
+                case DIV:
+                    return multiArgOp("/");
+                case AND:
+                    return multiArgOp(" AND ");
+                case OR:
+                    return multiArgOp(" OR ");
+                case INT_AND:
+                    return multiArgOp("&");
+                case INT_ARSHIFT:
+                    return multiArgOp(">>");
+                case INT_LSHIFT:
+                    return multiArgOp("<<");
+                case INT_OR:
+                    return multiArgOp("|");
+                case INT_RSHIFT:
+                    return multiArgOp(">>>");
+                case COND:
+                    // Special case
+                    return formatCond();
+                default:
+                    return cmdStr + "(" + expsAsString(exps) + ")";
+
+            }
+        }
+
+        private String multiArgOp(String separator) {
+            StringBuilder sb = new StringBuilder().append('(');
+            for (int i = 0; i < exps.length; i++) {
+                if (i > 0) {
+                    sb.append(' ').append(separator).append(' ');
+                }
+                sb.append(exps[i].toString());
+            }
+            return sb.append(')').toString();
+        }
+
+        private String formatCond() {
+            StringBuilder sb = new StringBuilder();
+            if (exps.length == 0) {
+                return "COND()";
+            } else if (exps.length == 1) {
+                return "COND(" + exps[0].toString() + ")";
+            }
+            for (int i = 0; i < exps.length; i += 2) {
+                boolean needsThen = true;
+                int index = i + 1;
+                if (i == 0) {
+                    sb.append("IF (");
+                } else if (i < (exps.length - 1)) {
+                    sb.append(" ELSE IF (");
+                } else {
+                    needsThen = false;
+                }
+                if (needsThen) {
+                    sb.append(exps[i].toString()).append(") THEN ");
+                } else {
+                    sb.append(" ELSE ");
+                    index = i;
+                }
+                sb.append(exps[index].toString());
+            }
+            return sb.toString();
         }
 
         @Override
@@ -1369,6 +1556,15 @@ public abstract class Exp {
         }
 
         @Override
+        public String toString() {
+            String cmdStr = cmdAsString(cmd);
+            if (cmdStr == null) {
+                return "CmdInt [cmd=" + cmd + ", val=" + val + "]";
+            }
+            return cmdStr + "(" + val + ")";
+        }
+
+        @Override
         public void pack(Packer packer) {
             packer.packArrayBegin(2);
             packer.packInt(cmd);
@@ -1383,6 +1579,15 @@ public abstract class Exp {
         private CmdStr(int cmd, String str) {
             this.str = str;
             this.cmd = cmd;
+        }
+
+        @Override
+        public String toString() {
+            String cmdStr = cmdAsString(cmd);
+            if (cmdStr == null) {
+                return "CmdStr [str=" + str + ", cmd=" + cmd + "]";
+            }
+            return cmdStr + "(\"" + str + "\")";
         }
 
         @Override
@@ -1401,6 +1606,17 @@ public abstract class Exp {
         }
 
         @Override
+        public String toString() {
+            String cmdStr = cmdAsString(cmd);
+            if (cmdStr == null) {
+                return "Cmd [cmd=" + cmd + "]";
+
+            } else {
+                return cmdStr;
+            }
+        }
+
+        @Override
         public void pack(Packer packer) {
             packer.packArrayBegin(1);
             packer.packInt(cmd);
@@ -1412,6 +1628,11 @@ public abstract class Exp {
 
         private Bool(boolean val) {
             this.val = val;
+        }
+
+        @Override
+        public String toString() {
+            return "Bool [val=" + val + "]";
         }
 
         @Override
@@ -1428,6 +1649,11 @@ public abstract class Exp {
         }
 
         @Override
+        public String toString() {
+            return val + "L";
+        }
+
+        @Override
         public void pack(Packer packer) {
             packer.packLong(val);
         }
@@ -1438,6 +1664,11 @@ public abstract class Exp {
 
         private Float(double val) {
             this.val = val;
+        }
+
+        @Override
+        public String toString() {
+            return val + "f";
         }
 
         @Override
@@ -1455,6 +1686,11 @@ public abstract class Exp {
         }
 
         @Override
+        public String toString() {
+            return "\"" + val + "\"";
+        }
+
+        @Override
         public void pack(Packer packer) {
             packer.packParticleString(val);
         }
@@ -1468,6 +1704,11 @@ public abstract class Exp {
         }
 
         @Override
+        public String toString() {
+            return "Geo [val=" + val + "]";
+        }
+
+        @Override
         public void pack(Packer packer) {
             packer.packGeoJSON(val);
         }
@@ -1478,6 +1719,11 @@ public abstract class Exp {
 
         private Blob(byte[] val) {
             this.val = val;
+        }
+
+        @Override
+        public String toString() {
+            return "Blob [val=" + Arrays.toString(val) + "]";
         }
 
         @Override
@@ -1495,6 +1741,11 @@ public abstract class Exp {
         }
 
         @Override
+        public String toString() {
+            return "ListVal [list=" + list + "]";
+        }
+
+        @Override
         public void pack(Packer packer) {
             // List values need an extra array and QUOTED in order to distinguish
             // between a multiple argument array call and a local list.
@@ -1505,10 +1756,15 @@ public abstract class Exp {
     }
 
     private static final class MapVal extends Exp {
-        private final Map<?,?> map;
+        private final Map<?, ?> map;
 
-        private MapVal(Map<?,?> map) {
+        private MapVal(Map<?, ?> map) {
             this.map = map;
+        }
+
+        @Override
+        public String toString() {
+            return "MapVal [map=" + map + "]";
         }
 
         @Override
@@ -1519,12 +1775,22 @@ public abstract class Exp {
 
     private static final class Nil extends Exp {
         @Override
+        public String toString() {
+            return "Nil";
+        }
+
+        @Override
         public void pack(Packer packer) {
             packer.packNil();
         }
     }
 
     private static final class Infinity extends Exp {
+        @Override
+        public String toString() {
+            return "Infinity []";
+        }
+
         @Override
         public void pack(Packer packer) {
             packer.packInfinity();
@@ -1533,18 +1799,26 @@ public abstract class Exp {
 
     private static final class Wildcard extends Exp {
         @Override
+        public String toString() {
+            return "Wildcard []";
+        }
+
+        @Override
         public void pack(Packer packer) {
             packer.packWildcard();
         }
     }
 
-    private static final class ExpBytes extends Exp
-    {
+    private static final class ExpBytes extends Exp {
         private final byte[] bytes;
 
-        private ExpBytes(Expression e)
-        {
+        private ExpBytes(Expression e) {
             this.bytes = e.getBytes();
+        }
+
+        @Override
+        public String toString() {
+            return "ExpBytes [bytes=" + Arrays.toString(bytes) + "]";
         }
 
         @Override
