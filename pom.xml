@@ -27,7 +27,7 @@
         <assertj-core.version>3.27.6</assertj-core.version>
         <central.publishing.maven.plugin>0.8.0</central.publishing.maven.plugin>
         <gnu.crypto.version>2.0.1</gnu.crypto.version>
-        <logback.version>1.5.21</logback.version>
+        <slf4j-simple.version>2.0.17</slf4j-simple.version>
     </properties>
 
     <licenses>
@@ -79,9 +79,15 @@
             <version>${gnu.crypto.version}</version>
         </dependency>
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j-simple.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j-simple.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
