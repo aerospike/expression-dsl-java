@@ -21,12 +21,13 @@
         <maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
-        <aerospike-client-jdk8.version>9.2.0</aerospike-client-jdk8.version>
         <antlr.version>4.13.2</antlr.version>
         <lombok.version>1.18.42</lombok.version>
         <junit-jupiter.version>5.14.0</junit-jupiter.version>
         <assertj-core.version>3.27.6</assertj-core.version>
         <central.publishing.maven.plugin>0.8.0</central.publishing.maven.plugin>
+        <gnu.crypto.version>2.0.1</gnu.crypto.version>
+        <slf4j-simple.version>2.0.17</slf4j-simple.version>
     </properties>
 
     <licenses>
@@ -63,11 +64,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.aerospike</groupId>
-            <artifactId>aerospike-client-jdk8</artifactId>
-            <version>${aerospike-client-jdk8.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
             <version>${antlr.version}</version>
@@ -76,6 +72,22 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.gnu</groupId>
+            <artifactId>gnu-crypto</artifactId>
+            <version>${gnu.crypto.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${slf4j-simple.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j-simple.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

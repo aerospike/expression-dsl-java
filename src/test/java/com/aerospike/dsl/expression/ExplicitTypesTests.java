@@ -1,8 +1,8 @@
 package com.aerospike.dsl.expression;
 
-import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.ExpressionContext;
+import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 

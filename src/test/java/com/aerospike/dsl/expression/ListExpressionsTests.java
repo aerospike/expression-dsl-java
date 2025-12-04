@@ -1,11 +1,11 @@
 package com.aerospike.dsl.expression;
 
-import com.aerospike.client.cdt.CTX;
-import com.aerospike.client.cdt.ListReturnType;
-import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.ListExp;
 import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.ExpressionContext;
+import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.cdt.ListReturnType;
+import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 

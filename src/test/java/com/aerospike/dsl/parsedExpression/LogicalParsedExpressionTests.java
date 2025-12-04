@@ -1,11 +1,11 @@
 package com.aerospike.dsl.parsedExpression;
 
-import com.aerospike.client.exp.Exp;
-import com.aerospike.client.query.Filter;
-import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
+import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.query.Filter;
+import com.aerospike.dsl.client.query.IndexType;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 

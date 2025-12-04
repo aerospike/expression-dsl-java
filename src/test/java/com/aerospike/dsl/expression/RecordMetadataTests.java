@@ -1,8 +1,8 @@
 package com.aerospike.dsl.expression;
 
-import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.ExpressionContext;
+import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +15,7 @@ class RecordMetadataTests {
     void deviceSize() {
         // Expression to find records that occupy more than 1 MiB of storage space
         ExpressionContext input = ExpressionContext.of("$.deviceSize() > 1048576");
-        Exp expected = Exp.gt(Exp.deviceSize(), Exp.val(1024 * 1024));
+        Exp expected = Exp.gt(Exp.recordSize(), Exp.val(1024 * 1024));
         TestUtils.parseFilterExpressionAndCompare(input, expected);
     }
 
@@ -23,7 +23,7 @@ class RecordMetadataTests {
     void memorySize() {
         // Expression to find records that occupy more than 1 MiB of memory
         ExpressionContext input = ExpressionContext.of("$.memorySize() > 1048576");
-        Exp expected = Exp.gt(Exp.memorySize(), Exp.val(1024 * 1024));
+        Exp expected = Exp.gt(Exp.recordSize(), Exp.val(1024 * 1024));
         TestUtils.parseFilterExpressionAndCompare(input, expected);
     }
 
@@ -146,7 +146,7 @@ class RecordMetadataTests {
         // test AND
         ExpressionContext input = ExpressionContext.of("$.deviceSize() > 1024 and $.ttl() < 300");
         Exp expected = Exp.and(
-                Exp.gt(Exp.deviceSize(), Exp.val(1024)),
+                Exp.gt(Exp.recordSize(), Exp.val(1024)),
                 Exp.lt(Exp.ttl(), Exp.val(300))
         );
         TestUtils.parseFilterExpressionAndCompare(input, expected);
@@ -154,7 +154,7 @@ class RecordMetadataTests {
         // test OR
         ExpressionContext input2 = ExpressionContext.of("$.deviceSize() > 1024 or $.ttl() < 300");
         Exp expected2 = Exp.or(
-                Exp.gt(Exp.deviceSize(), Exp.val(1024)),
+                Exp.gt(Exp.recordSize(), Exp.val(1024)),
                 Exp.lt(Exp.ttl(), Exp.val(300))
         );
         TestUtils.parseFilterExpressionAndCompare(input2, expected2);

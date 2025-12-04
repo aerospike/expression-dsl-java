@@ -1,15 +1,5 @@
 package com.aerospike.dsl.parsedExpression;
 
-import com.aerospike.client.Value;
-import com.aerospike.client.cdt.CTX;
-import com.aerospike.client.cdt.ListReturnType;
-import com.aerospike.client.cdt.MapReturnType;
-import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.Expression;
-import com.aerospike.client.exp.ListExp;
-import com.aerospike.client.exp.MapExp;
-import com.aerospike.client.query.Filter;
-import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.Index;
@@ -17,6 +7,16 @@ import com.aerospike.dsl.IndexContext;
 import com.aerospike.dsl.ParseResult;
 import com.aerospike.dsl.ParsedExpression;
 import com.aerospike.dsl.PlaceholderValues;
+import com.aerospike.dsl.client.Value;
+import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.cdt.ListReturnType;
+import com.aerospike.dsl.client.cdt.MapReturnType;
+import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.exp.Expression;
+import com.aerospike.dsl.client.exp.ListExp;
+import com.aerospike.dsl.client.exp.MapExp;
+import com.aerospike.dsl.client.query.Filter;
+import com.aerospike.dsl.client.query.IndexType;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 

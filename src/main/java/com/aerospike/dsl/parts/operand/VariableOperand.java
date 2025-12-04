@@ -1,6 +1,6 @@
 package com.aerospike.dsl.parts.operand;
 
-import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.parts.AbstractPart;
 import lombok.Getter;
 

@@ -1,6 +1,6 @@
 package com.aerospike.dsl.parts.operand;
 
-import com.aerospike.client.exp.Exp;
+import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.parts.ExpressionContainer;
 import lombok.Getter;
 
@@ -26,9 +26,7 @@ public class MetadataOperand extends ExpressionContainer {
 
     private Exp constructMetadataExp(String functionName, Integer parameter) {
         return switch (functionName) {
-            case "deviceSize" -> Exp.deviceSize();
-            case "memorySize" -> Exp.memorySize();
-            case "recordSize" -> Exp.recordSize();
+            case "deviceSize", "recordSize", "memorySize" -> Exp.recordSize();
             case "digestModulo" -> Exp.digestModulo(parameter);
             case "isTombstone" -> Exp.isTombstone();
             case "keyExists" -> Exp.keyExists();

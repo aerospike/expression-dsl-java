@@ -1,6 +1,5 @@
 package com.aerospike.dsl.impl;
 
-import com.aerospike.client.cdt.CTX;
 import com.aerospike.dsl.ConditionLexer;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
@@ -11,6 +10,7 @@ import com.aerospike.dsl.ParsedExpression;
 import com.aerospike.dsl.PlaceholderValues;
 import com.aerospike.dsl.annotation.Beta;
 import com.aerospike.dsl.api.DSLParser;
+import com.aerospike.dsl.client.cdt.CTX;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.visitor.ExpressionConditionVisitor;
 import org.antlr.v4.runtime.CharStreams;

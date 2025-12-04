@@ -1,8 +1,8 @@
 package com.aerospike.dsl.ctx;
 
-import com.aerospike.client.Value;
-import com.aerospike.client.cdt.CTX;
 import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.client.Value;
+import com.aerospike.dsl.client.cdt.CTX;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseCtx;

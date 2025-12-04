@@ -1,8 +1,8 @@
 package com.aerospike.dsl;
 
-import com.aerospike.client.cdt.CTX;
-import com.aerospike.client.query.IndexCollectionType;
-import com.aerospike.client.query.IndexType;
+import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.query.IndexCollectionType;
+import com.aerospike.dsl.client.query.IndexType;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
