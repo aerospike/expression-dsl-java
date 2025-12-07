@@ -10,7 +10,7 @@ This guide provides detailed instructions for adding the Aerospike Expression DS
 
 ## Library Installation
 
-To use the Expression DSL, you need to add two dependencies to your project: `aerospike-expression-dsl` and the core `aerospike-client-jdk8`.
+To use the Expression DSL, you need to add this dependency to your project: `aerospike-expression-dsl`. Library versions prior to 0.3.0 had an additional dependency `aerospike-client-jdk8`.
 
 ### Maven
 
@@ -22,15 +22,7 @@ Add the following dependencies to your `pom.xml` file:
     <dependency>
         <groupId>com.aerospike</groupId>
         <artifactId>aerospike-expression-dsl</artifactId>
-        <version>0.1.0</version>
-    </dependency>
-
-    <!-- The core Aerospike Java Client -->
-    <!-- Ensure this version is compatible with your server version -->
-    <dependency>
-        <groupId>com.aerospike</groupId>
-        <artifactId>aerospike-client-jdk8</artifactId>
-        <version>8.1.1</version>
+        <version>0.3.0</version>
     </dependency>
 </dependencies>
 ```
@@ -42,11 +34,7 @@ Add the following to your `build.gradle` file's `dependencies` block:
 ```groovy
 dependencies {
     // The Expression DSL Library
-    implementation 'com.aerospike:aerospike-expression-dsl:0.1.0'
-
-    // The core Aerospike Java Client
-    // Ensure this version is compatible with your server version
-    implementation 'com.aerospike:aerospike-client-jdk8:8.1.1'
+    implementation 'com.aerospike:aerospike-expression-dsl:0.3.0'
 }
 ```
 
@@ -68,10 +56,13 @@ This `parser` object is thread-safe and can be reused across your application to
 
 It is important to ensure the versions of the DSL library, Java client, and Aerospike Server are compatible.
 
+NOTE: Starting with version `0.3.0`, there is no dependency on Java client.
+
 | `aerospike-expression-dsl` | `aerospike-client-jdk8` | Aerospike Server |
-|:---------------------------| :--- |:-----------------|
-| 0.1.0                      | 8.0.0+ | 5.7+             |
-| 0.2.0                      | 8.0.0+ | 5.7+             |
+|:---------------------------|:------------------------|:-----------------|
+| 0.1.0                      | 8.0.0+                  | 5.7+             |
+| 0.2.0                      | 8.0.0+                  | 5.7+             |
+| 0.3.0                      | -                       | 6.1+             |
 
 ## Building from Source (Optional)
 
