@@ -1,9 +1,11 @@
 package com.aerospike.dsl;
 
+import com.aerospike.dsl.client.query.Filter;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * This class stores namespace and indexes required to build secondary index Filter
@@ -22,4 +24,24 @@ public class IndexContext {
      * with bins in DSL String
      */
     private Collection<Index> indexes;
+
+
+    /**
+     * Create index context specifying the index to be used.
+     *
+     * @param namespace  Namespace to be used for creating {@link Filter}. Is matched with namespace of indexes
+     * @param indexes    Collection of {@link Index} objects to be used for creating {@link Filter}. Bin name and
+     *                   index type are matched with bins in DSL String
+     * @param indexToUse The name of an index to use for creating {@link Filter}. If the index with the specified name
+     *                   is not found, the resulting index is chosen the usual way (cardinality-based or alphabetically)
+     * @return A new instance of {@code IndexContext}
+     */
+    public static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse) {
+        List<Index> singleIndexList = indexes.stream().filter(idx -> areNamesEqual(idx, indexToUse)).toList();
+        return new IndexContext(namespace, singleIndexList.isEmpty() ? indexes : singleIndexList);
+    }
+
+    private static boolean areNamesEqual(Index idx, String indexToUse) {
+        return idx != null && idx.getName() != null && idx.getName().equals(indexToUse);
+    }
 }
