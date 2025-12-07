@@ -1,13 +1,13 @@
 package com.aerospike.dsl.visitor;
 
-import com.aerospike.client.cdt.CTX;
-import com.aerospike.client.exp.Exp;
-import com.aerospike.client.query.Filter;
-import com.aerospike.client.query.IndexType;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.PlaceholderValues;
+import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.query.Filter;
+import com.aerospike.dsl.client.query.IndexType;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.ExpressionContainer;
 import com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation;

@@ -1,9 +1,9 @@
 package com.aerospike.dsl.visitor;
 
-import com.aerospike.client.exp.Exp;
 import com.aerospike.dsl.ConditionBaseVisitor;
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.parts.AbstractPart;
 import com.aerospike.dsl.parts.ExpressionContainer;
 import com.aerospike.dsl.parts.cdt.list.ListIndex;
