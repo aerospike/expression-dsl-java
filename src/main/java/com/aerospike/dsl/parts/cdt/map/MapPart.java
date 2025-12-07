@@ -1,8 +1,8 @@
 package com.aerospike.dsl.parts.cdt.map;
 
-import com.aerospike.client.cdt.MapReturnType;
-import com.aerospike.dsl.parts.path.PathFunction;
+import com.aerospike.dsl.client.cdt.MapReturnType;
 import com.aerospike.dsl.parts.cdt.CdtPart;
+import com.aerospike.dsl.parts.path.PathFunction;
 import lombok.Getter;
 
 @Getter

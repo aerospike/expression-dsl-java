@@ -1,12 +1,12 @@
 package com.aerospike.dsl.util;
 
-import com.aerospike.client.cdt.CTX;
-import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.Expression;
-import com.aerospike.client.query.Filter;
 import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.IndexContext;
 import com.aerospike.dsl.ParsedExpression;
+import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.exp.Expression;
+import com.aerospike.dsl.client.query.Filter;
 import com.aerospike.dsl.impl.DSLParserImpl;
 import lombok.experimental.UtilityClass;
 
