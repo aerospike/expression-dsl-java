@@ -204,6 +204,40 @@ public class ArithmeticExpressionsTests {
                 Exp.eq(Exp.arshift(Exp.intBin("a"), Exp.val(0)), Exp.intBin("a")));
     }
 
+    // --- Spaceless arithmetic (no whitespace around operators) ---
+
+    @Test
+    void addSpacelessBinAndLiteral() {
+        // '$.apples+5' must parse '+' as operator, not sign prefix on '5'
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("($.apples+5) > 10"),
+                Exp.gt(Exp.add(Exp.intBin("apples"), Exp.val(5)), Exp.val(10)));
+    }
+
+    @Test
+    void subSpacelessBinAndLiteral() {
+        // '$.apples-5' must parse '-' as operator, not sign prefix on '5'
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("($.apples-5) == 10"),
+                Exp.eq(Exp.sub(Exp.intBin("apples"), Exp.val(5)), Exp.val(10)));
+    }
+
+    @Test
+    void addSpacelessLiteralAndBin() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(5+$.bananas) > 10"),
+                Exp.gt(Exp.add(Exp.val(5), Exp.intBin("bananas")), Exp.val(10)));
+    }
+
+    @Test
+    void subSpacelessLiteralAndBin() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(15-$.bananas) == 10"),
+                Exp.eq(Exp.sub(Exp.val(15), Exp.intBin("bananas")), Exp.val(10)));
+    }
+
+    @Test
+    void spacelessFloatArithmetic() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(5.2+$.bananas) > 10.2"),
+                Exp.gt(Exp.add(Exp.val(5.2), Exp.floatBin("bananas")), Exp.val(10.2)));
+    }
+
     // --- Function-style arithmetic operations ---
 
     @Test

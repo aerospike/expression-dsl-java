@@ -6,6 +6,8 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
+
 public class MapIndex extends MapPart {
     private final int index;
 
@@ -15,7 +17,7 @@ public class MapIndex extends MapPart {
     }
 
     public static MapIndex from(ConditionParser.MapIndexContext ctx) {
-        return new MapIndex(Integer.parseInt(ctx.INT().getText()));
+        return new MapIndex(parseSignedInt(ctx.signedInt()));
     }
 
     @Override

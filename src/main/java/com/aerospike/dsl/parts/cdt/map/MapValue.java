@@ -7,6 +7,7 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class MapValue extends MapPart {
@@ -23,8 +24,8 @@ public class MapValue extends MapPart {
             mapValue = ctx.valueIdentifier().NAME_IDENTIFIER().getText();
         } else if (ctx.valueIdentifier().QUOTED_STRING() != null) {
             mapValue = unquote(ctx.valueIdentifier().QUOTED_STRING().getText());
-        } else if (ctx.valueIdentifier().INT() != null) {
-            mapValue = Integer.parseInt(ctx.valueIdentifier().INT().getText());
+        } else if (ctx.valueIdentifier().signedInt() != null) {
+            mapValue = parseSignedInt(ctx.valueIdentifier().signedInt());
         }
         return new MapValue(mapValue);
     }

@@ -162,6 +162,48 @@ public class NumericLiteralsTests {
                 Exp.eq(Exp.sub(Exp.val(5), Exp.val(3)), Exp.val(2)));
     }
 
+    @Test
+    void plusAsOperatorWithoutSpaces() {
+        // '5+3' must tokenize as INT(5) '+' INT(3), not INT(5) INT(+3)
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(5+3) == 8"),
+                Exp.eq(Exp.add(Exp.val(5), Exp.val(3)), Exp.val(8)));
+    }
+
+    @Test
+    void minusAsOperatorWithoutSpaces() {
+        // '5-3' must tokenize as INT(5) '-' INT(3), not INT(5) INT(-3)
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(5-3) == 2"),
+                Exp.eq(Exp.sub(Exp.val(5), Exp.val(3)), Exp.val(2)));
+    }
+
+    @Test
+    void mixedSpacelessOperators() {
+        // Multiple spaceless operators in one expression
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(10-3+1) == 8"),
+                Exp.eq(Exp.add(Exp.sub(Exp.val(10), Exp.val(3)), Exp.val(1)), Exp.val(8)));
+    }
+
+    @Test
+    void spacelessSubtractionOfNegative() {
+        // '5 - -3' should parse as subtraction of a negated literal
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(5 - -3) == 8"),
+                Exp.eq(Exp.sub(Exp.val(5), Exp.val(-3)), Exp.val(8)));
+    }
+
+    @Test
+    void doubleNegation() {
+        // '--5' should parse as two unary minuses, resulting in 5
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("--5 == 5"),
+                Exp.eq(Exp.val(5), Exp.val(5)));
+    }
+
+    @Test
+    void unaryPlusBeforeParenthesized() {
+        // Unary '+' before a parenthesized expression is a no-op
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("+(5) == 5"),
+                Exp.eq(Exp.val(5), Exp.val(5)));
+    }
+
     // ==================== Negative / error tests ====================
 
     @Test

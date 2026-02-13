@@ -163,6 +163,52 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
+    public AbstractPart visitUnaryExpressionWrapper(ConditionParser.UnaryExpressionWrapperContext ctx) {
+        // Pass through the wrapper
+        return visit(ctx.unaryExpression());
+    }
+
+    @Override
+    public AbstractPart visitUnaryPlusExpression(ConditionParser.UnaryPlusExpressionContext ctx) {
+        // Unary '+' is a no-op, delegate to the inner expression
+        return visit(ctx.unaryExpression());
+    }
+
+    @Override
+    public AbstractPart visitUnaryMinusExpression(ConditionParser.UnaryMinusExpressionContext ctx) {
+        AbstractPart operand = visit(ctx.unaryExpression());
+
+        // Negate literal operands directly
+        if (operand instanceof IntOperand intOp) {
+            return new IntOperand(-intOp.getValue());
+        }
+        if (operand instanceof FloatOperand floatOp) {
+            return new FloatOperand(-floatOp.getValue());
+        }
+
+        // For type-cast expressions (TO_INT, TO_FLOAT) with a literal operand,
+        // push negation into the literal to preserve Exp tree equivalence (e.g., -5.asFloat())
+        if (operand instanceof ExpressionContainer container && container.isUnary()) {
+            ExpressionContainer.ExprPartsOperation op = container.getOperationType();
+            if (op == ExpressionContainer.ExprPartsOperation.TO_INT
+                    || op == ExpressionContainer.ExprPartsOperation.TO_FLOAT) {
+                AbstractPart inner = container.getLeft();
+                if (inner instanceof IntOperand intOp) {
+                    container.setLeft(new IntOperand(-intOp.getValue()));
+                    return container;
+                }
+                if (inner instanceof FloatOperand floatOp) {
+                    container.setLeft(new FloatOperand(-floatOp.getValue()));
+                    return container;
+                }
+            }
+        }
+
+        // General case: negate via 0 - operand
+        return new ExpressionContainer(new IntOperand(0L), operand, ExpressionContainer.ExprPartsOperation.SUB);
+    }
+
+    @Override
     public AbstractPart visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {
         AbstractPart left = visit(ctx.additiveExpression(0));
         AbstractPart right = visit(ctx.additiveExpression(1));
@@ -278,9 +324,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitFunctionCall(ConditionParser.FunctionCallContext ctx) {
-        // If error recovery created this node without actual parentheses, bail out
+        // If error recovery created this node without actual parentheses, fail fast
         if (ctx.getChildCount() < 3 || !ctx.getChild(1).getText().equals("(")) {
-            return null;
+            throw new DslParseException("Unexpected identifier: " + ctx.getChild(0).getText());
         }
 
         String funcName = ctx.NAME_IDENTIFIER().getText();
@@ -388,7 +434,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitIntLShiftExpression(ConditionParser.IntLShiftExpressionContext ctx) {
         AbstractPart left = visit(ctx.shiftExpression()); // first operand
-        AbstractPart right = visit(ctx.operand()); // second operand
+        AbstractPart right = visit(ctx.unaryExpression()); // second operand
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.L_SHIFT);
     }
@@ -396,7 +442,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitIntRShiftExpression(ConditionParser.IntRShiftExpressionContext ctx) {
         AbstractPart left = visit(ctx.shiftExpression()); // first operand
-        AbstractPart right = visit(ctx.operand()); // second operand
+        AbstractPart right = visit(ctx.unaryExpression()); // second operand
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.R_SHIFT);
     }
@@ -404,7 +450,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitIntLogicalRShiftExpression(ConditionParser.IntLogicalRShiftExpressionContext ctx) {
         AbstractPart left = visit(ctx.shiftExpression()); // first operand
-        AbstractPart right = visit(ctx.operand()); // second operand
+        AbstractPart right = visit(ctx.unaryExpression()); // second operand
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.LOGICAL_R_SHIFT);
     }
@@ -565,44 +611,41 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new IntOperand(parseIntLiteral(text));
     }
 
+    /**
+     * Parses an unsigned INT literal which may be decimal, hexadecimal (0x/0X), or binary (0b/0B).
+     * Signs are handled at the parser level by the unaryExpression rule.
+     */
     private static long parseIntLiteral(String text) {
-        // Strip optional sign (+/-)
-        int sign = 1;
-        int startIdx = 0;
-        if (text.charAt(0) == '-') {
-            sign = -1;
-            startIdx = 1;
-        } else if (text.charAt(0) == '+') {
-            startIdx = 1;
-        }
-
-        String digits = text.substring(startIdx);
-
-        if (digits.length() > 2 && digits.charAt(0) == '0') {
-            char prefix = digits.charAt(1);
-            if (prefix == 'x' || prefix == 'X') {
-                return sign * Long.parseLong(digits.substring(2), 16);
-            } else if (prefix == 'b' || prefix == 'B') {
-                return sign * Long.parseLong(digits.substring(2), 2);
+        try {
+            if (text.length() > 2 && text.charAt(0) == '0') {
+                char prefix = text.charAt(1);
+                if (prefix == 'x' || prefix == 'X') {
+                    return Long.parseLong(text.substring(2), 16);
+                } else if (prefix == 'b' || prefix == 'B') {
+                    return Long.parseLong(text.substring(2), 2);
+                }
             }
+            return Long.parseLong(text);
+        } catch (NumberFormatException e) {
+            throw new DslParseException("Invalid integer literal: " + text, e);
         }
-
-        // Decimal
-        return Long.parseLong(text);
     }
 
+    /**
+     * Parses unsigned FLOAT literals and leading-dot floats (e.g., ".37").
+     * Signs are handled at the parser level by the unaryExpression rule.
+     */
     @Override
     public AbstractPart visitFloatOperand(ConditionParser.FloatOperandContext ctx) {
-        if (ctx.FLOAT() != null) {
-            return new FloatOperand(Double.parseDouble(ctx.FLOAT().getText()));
+        try {
+            if (ctx.FLOAT() != null) {
+                return new FloatOperand(Double.parseDouble(ctx.FLOAT().getText()));
+            }
+            // Leading-dot float: ".37" → 0.37
+            return new FloatOperand(Double.parseDouble("0." + ctx.INT().getText()));
+        } catch (NumberFormatException e) {
+            throw new DslParseException("Invalid float literal: " + ctx.getText(), e);
         }
-        // Leading-dot float: ".37" → 0.37, "-.37" → -0.37, "+.37" → 0.37
-        StringBuilder sb = new StringBuilder();
-        if (ctx.getChild(0).getText().equals("-")) {
-            sb.append('-');
-        }
-        sb.append("0.").append(ctx.INT().getText());
-        return new FloatOperand(Double.parseDouble(sb.toString()));
     }
 
     @Override

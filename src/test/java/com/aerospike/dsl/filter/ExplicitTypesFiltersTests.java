@@ -58,7 +58,7 @@ public class ExplicitTypesFiltersTests {
         // A String constant must be quoted
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.stringBin1.get(type: STRING) == yes")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Unable to parse right operand");
+                .hasMessageContaining("Unexpected identifier");
     }
 
     @Test
@@ -104,7 +104,7 @@ public class ExplicitTypesFiltersTests {
     void listComparison_constantOnRightSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.listBin1.get(type: LIST) == [yes, of course]")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Unable to parse list operand");
+                .hasMessageContaining("Unexpected identifier");
     }
 
     @Test

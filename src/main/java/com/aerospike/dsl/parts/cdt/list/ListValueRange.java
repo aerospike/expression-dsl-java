@@ -8,6 +8,8 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
+
 public class ListValueRange extends ListPart {
     private final boolean inverted;
     private final Integer start;
@@ -29,12 +31,12 @@ public class ListValueRange extends ListPart {
                     valueRange != null ? valueRange.valueRangeIdentifier() : invertedValueRange.valueRangeIdentifier();
             boolean isInverted = valueRange == null;
 
-            Integer startValue = Integer.parseInt(range.valueIdentifier(0).INT().getText());
+            Integer startValue = parseSignedInt(range.valueIdentifier(0).signedInt());
 
             Integer endValue = null;
 
-            if (range.valueIdentifier(1) != null && range.valueIdentifier(1).INT() != null) {
-                endValue = Integer.parseInt(range.valueIdentifier(1).INT().getText());
+            if (range.valueIdentifier(1) != null && range.valueIdentifier(1).signedInt() != null) {
+                endValue = parseSignedInt(range.valueIdentifier(1).signedInt());
             }
 
             return new ListValueRange(isInverted, startValue, endValue);

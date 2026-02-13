@@ -10,6 +10,7 @@ import com.aerospike.dsl.parts.path.BasePath;
 
 import java.util.List;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class ListValueList extends ListPart {
@@ -38,7 +39,7 @@ public class ListValueList extends ListPart {
                         } else if (listValue.QUOTED_STRING() != null) {
                             return unquote(listValue.QUOTED_STRING().getText());
                         }
-                        return Integer.parseInt(listValue.INT().getText());
+                        return parseSignedInt(listValue.signedInt());
                     }
             ).toList();
 

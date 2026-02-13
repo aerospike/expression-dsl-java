@@ -48,7 +48,7 @@ public class ExplicitTypesTests {
                 TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.stringBin1.get(type: STRING) == yes"),
                 Exp.eq(Exp.stringBin("stringBin1"), Exp.val("yes"))))
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Unable to parse right operand");
+                .hasMessageContaining("Unexpected identifier");
     }
 
     @Test
@@ -127,7 +127,7 @@ public class ExplicitTypesTests {
                         Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of("yes", "of course"))))
         )
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Unable to parse list operand");
+                .hasMessageContaining("Unexpected identifier");
     }
 
     @Test

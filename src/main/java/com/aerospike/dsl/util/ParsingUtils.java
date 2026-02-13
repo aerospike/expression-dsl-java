@@ -1,11 +1,25 @@
 package com.aerospike.dsl.util;
 
+import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class ParsingUtils {
+
+    /**
+     * Extracts a signed integer value from a {@code signedInt} parser rule context.
+     * The grammar rule is {@code signedInt: '-'? INT;}, so the context contains
+     * either just an INT token or a '-' followed by an INT token.
+     *
+     * @param ctx The signedInt context from the parser
+     * @return The parsed integer value, negated if a '-' prefix is present
+     */
+    public static int parseSignedInt(ConditionParser.SignedIntContext ctx) {
+        int value = Integer.parseInt(ctx.INT().getText());
+        return ctx.getChildCount() > 1 ? -value : value;
+    }
 
     /**
      * Get the string inside the quotes.

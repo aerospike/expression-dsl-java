@@ -64,10 +64,16 @@ bitwiseExpression
     ;
 
 shiftExpression
+    : unaryExpression                                                           # UnaryExpressionWrapper
+    | shiftExpression '<<' unaryExpression                                      # IntLShiftExpression
+    | shiftExpression '>>' unaryExpression                                      # IntRShiftExpression
+    | shiftExpression '>>>' unaryExpression                                     # IntLogicalRShiftExpression
+    ;
+
+unaryExpression
     : operand                                                                   # OperandExpression
-    | shiftExpression '<<' operand                                              # IntLShiftExpression
-    | shiftExpression '>>' operand                                              # IntRShiftExpression
-    | shiftExpression '>>>' operand                                             # IntLogicalRShiftExpression
+    | '-' unaryExpression                                                       # UnaryMinusExpression
+    | '+' unaryExpression                                                       # UnaryPlusExpression
     ;
 
 variableDefinition
@@ -103,10 +109,10 @@ operandCast
 numberOperand: intOperand | floatOperand;
 
 intOperand: INT;
-floatOperand: FLOAT | ('+' | '-')? '.' INT;
+floatOperand: FLOAT | '.' INT;
 
-INT: [+-]? ('0' [xX] [0-9a-fA-F]+ | '0' [bB] [01]+ | [0-9]+);
-FLOAT: [+-]? [0-9]+ '.' [0-9]+;
+INT: ('0' [xX] [0-9a-fA-F]+ | '0' [bB] [01]+ | [0-9]+);
+FLOAT: [0-9]+ '.' [0-9]+;
 
 booleanOperand: TRUE | FALSE;
 
@@ -230,9 +236,9 @@ mapKey
 
 mapValue: '{=' valueIdentifier '}';
 
-mapRank: '{#' INT '}';
+mapRank: '{#' signedInt '}';
 
-mapIndex: '{' INT '}';
+mapIndex: '{' signedInt '}';
 
 mapKeyRange
     : standardMapKeyRange
@@ -287,8 +293,10 @@ indexRangeIdentifier
     | start ':'
     ;
 
-start: INT | '-' INT;
-end: INT | '-' INT;
+signedInt: '-'? INT;
+
+start: signedInt;
+end: signedInt;
 
 mapValueList
     : standardMapValueList
@@ -401,11 +409,11 @@ listPart
 
 LIST_TYPE_DESIGNATOR: '[]';
 
-listIndex: '[' INT ']';
+listIndex: '[' signedInt ']';
 
 listValue: '[=' valueIdentifier ']';
 
-listRank: '[#' INT ']';
+listRank: '[#' signedInt ']';
 
 listIndexRange
     : standardListIndexRange
@@ -475,8 +483,7 @@ invertedListRankRangeRelative
 valueIdentifier
     : NAME_IDENTIFIER
     | QUOTED_STRING
-    | INT
-    | '-' INT
+    | signedInt
     ;
 
 valueListIdentifier: valueIdentifier ',' valueIdentifier (',' valueIdentifier)*;

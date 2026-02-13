@@ -8,6 +8,7 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
 public class MapIndexRange extends MapPart {
@@ -31,10 +32,10 @@ public class MapIndexRange extends MapPart {
                     indexRange != null ? indexRange.indexRangeIdentifier() : invertedIndexRange.indexRangeIdentifier();
             boolean isInverted = indexRange == null;
 
-            Integer start = Integer.parseInt(range.start().INT().getText());
+            Integer start = parseSignedInt(range.start().signedInt());
             Integer end = null;
             if (range.end() != null) {
-                end = Integer.parseInt(range.end().INT().getText());
+                end = parseSignedInt(range.end().signedInt());
             }
 
             return new MapIndexRange(isInverted, start, end);

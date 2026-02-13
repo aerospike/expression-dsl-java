@@ -8,6 +8,7 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
 public class ListRankRange extends ListPart {
@@ -31,10 +32,10 @@ public class ListRankRange extends ListPart {
                     rankRange != null ? rankRange.rankRangeIdentifier() : invertedRankRange.rankRangeIdentifier();
             boolean isInverted = rankRange == null;
 
-            Integer start = Integer.parseInt(range.start().INT().getText());
+            Integer start = parseSignedInt(range.start().signedInt());
             Integer end = null;
             if (range.end() != null) {
-                end = Integer.parseInt(range.end().INT().getText());
+                end = parseSignedInt(range.end().signedInt());
             }
 
             return new ListRankRange(isInverted, start, end);

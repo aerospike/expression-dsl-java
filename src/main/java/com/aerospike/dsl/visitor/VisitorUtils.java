@@ -1195,7 +1195,7 @@ public class VisitorUtils {
             case EXCLUSIVE_STRUCTURE -> exclStructureToExp(expr);
             case MIN_FUNC -> variadicToExp(expr, Exp::min);
             case MAX_FUNC -> variadicToExp(expr, Exp::max);
-            case LOG, POW, FIND_BIT_LEFT, FIND_BIT_RIGHT -> binaryFunctionToExp(expr);
+            case FIND_BIT_LEFT, FIND_BIT_RIGHT -> binaryFunctionToExp(expr);
             default -> processExpression(expr);
         };
     }
@@ -1216,8 +1216,8 @@ public class VisitorUtils {
 
     /**
      * Converts a binary function expression to Exp, bypassing BIN_PART type validation.
-     * Used for function-like operations where operand types may intentionally differ
-     * (e.g., findBitLeft takes an integer and a boolean).
+     * Used only for findBitLeft/findBitRight, which take (int, bool) operands that
+     * intentionally fail standard {@code validateComparableTypes} validation.
      */
     private static Exp binaryFunctionToExp(ExpressionContainer expr) {
         Exp leftExp = getExp(expr.getLeft());
@@ -1656,6 +1656,11 @@ public class VisitorUtils {
         if (part.getPartType() == AbstractPart.PartType.AND_STRUCTURE && depth > 0) {
             List<ExpressionContainer> containerList = ((AndStructure) part).getOperands();
             containerList.forEach(container -> traverseTree(container, visitor, depth - 1, stopCondition));
+        }
+
+        if (part.getPartType() == AbstractPart.PartType.FUNCTION_ARGS && depth > 0) {
+            List<AbstractPart> operands = ((FunctionArgs) part).getOperands();
+            operands.forEach(operand -> traverseTree(operand, visitor, depth - 1, stopCondition));
         }
     }
 }

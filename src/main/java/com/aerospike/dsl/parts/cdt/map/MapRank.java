@@ -6,6 +6,8 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
+
 public class MapRank extends MapPart {
     private final int rank;
 
@@ -15,7 +17,7 @@ public class MapRank extends MapPart {
     }
 
     public static MapRank from(ConditionParser.MapRankContext ctx) {
-        return new MapRank(Integer.parseInt(ctx.INT().getText()));
+        return new MapRank(parseSignedInt(ctx.signedInt()));
     }
 
     @Override
