@@ -8,14 +8,12 @@ import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-
 /**
  * Comprehensive tests for numeric literal parsing: INT (decimal, hex, binary) and FLOAT.
  * <p>
  * INT spec: optional sign (+/-), hex (0x/0X), binary (0b/0B), decimal digits.
- * FLOAT spec: optional sign (+/-), digits, exactly one decimal separator (not the last char).
- * Leading-dot floats (.37) are a documented limitation -- not supported.
+ * FLOAT spec: optional sign (+/-), sequence of digits and exactly one decimal separator
+ * (not the last char). Leading-dot floats (.37, -.37, +.37) are supported.
  */
 public class NumericLiteralsTests {
 
@@ -170,29 +168,55 @@ public class NumericLiteralsTests {
     void invalidHexDigits() {
         // 0xGG is not valid hex -- lexer produces INT(0) + NAME_IDENTIFIER(xGG)
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0xGG == 0")))
-                .isInstanceOf(DslParseException.class);
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
     void invalidBinaryDigits() {
         // 0b2 is not valid binary -- lexer produces INT(0) + NAME_IDENTIFIER(b2)
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0b2 == 0")))
-                .isInstanceOf(DslParseException.class);
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
     void trailingDotFloat() {
         // "10." is not valid FLOAT -- requires digits after dot
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("10. == 10.0")))
-                .isInstanceOf(DslParseException.class);
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
+
+    // ==================== FLOAT: leading-dot ====================
 
     @Test
     void leadingDotFloat() {
-        // Leading-dot floats (.37) are a documented limitation.
-        // The '.' is consumed as a dot token, not as part of FLOAT.
-        // ANTLR's error recovery silently drops it, parsing ".37" as INT(37).
-        // Users must write "0.37" instead of ".37".
-        assertDoesNotThrow(() -> parseFilterExp(ExpressionContext.of(".37 == 0.37")));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of(".37 == 0.37"),
+                Exp.eq(Exp.val(0.37), Exp.val(0.37)));
+    }
+
+    @Test
+    void leadingDotFloatZero() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of(".0 == 0.0"),
+                Exp.eq(Exp.val(0.0), Exp.val(0.0)));
+    }
+
+    @Test
+    void leadingDotFloatNegative() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("-.37 == -0.37"),
+                Exp.eq(Exp.val(-0.37), Exp.val(-0.37)));
+    }
+
+    @Test
+    void leadingDotFloatPlusSign() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("+.37 == 0.37"),
+                Exp.eq(Exp.val(0.37), Exp.val(0.37)));
+    }
+
+    @Test
+    void leadingDotFloatInExpression() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(.5 + .5) == 1.0"),
+                Exp.eq(Exp.add(Exp.val(0.5), Exp.val(0.5)), Exp.val(1.0)));
     }
 }

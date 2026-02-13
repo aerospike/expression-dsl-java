@@ -103,7 +103,7 @@ operandCast
 numberOperand: intOperand | floatOperand;
 
 intOperand: INT;
-floatOperand: FLOAT;
+floatOperand: FLOAT | ('+' | '-')? '.' INT;
 
 INT: [+-]? ('0' [xX] [0-9a-fA-F]+ | '0' [bB] [01]+ | [0-9]+);
 FLOAT: [+-]? [0-9]+ '.' [0-9]+;

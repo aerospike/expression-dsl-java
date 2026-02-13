@@ -593,8 +593,16 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitFloatOperand(ConditionParser.FloatOperandContext ctx) {
-        String text = ctx.FLOAT().getText();
-        return new FloatOperand(Double.parseDouble(text));
+        if (ctx.FLOAT() != null) {
+            return new FloatOperand(Double.parseDouble(ctx.FLOAT().getText()));
+        }
+        // Leading-dot float: ".37" → 0.37, "-.37" → -0.37, "+.37" → 0.37
+        StringBuilder sb = new StringBuilder();
+        if (ctx.getChild(0).getText().equals("-")) {
+            sb.append('-');
+        }
+        sb.append("0.").append(ctx.INT().getText());
+        return new FloatOperand(Double.parseDouble(sb.toString()));
     }
 
     @Override

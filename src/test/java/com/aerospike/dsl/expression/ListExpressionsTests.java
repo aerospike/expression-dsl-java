@@ -240,9 +240,9 @@ class ListExpressionsTests {
 
     @Test
     void negativeSyntaxList() {
-        // TODO: throw meaningful exception (by ANTLR?)
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[stringValue] == 100")))
-                .isInstanceOf(DslParseException.class);
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     //@Test
