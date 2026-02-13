@@ -44,10 +44,15 @@ additiveExpression
     ;
 
 multiplicativeExpression
+    : powerExpression                                                           # PowerExpressionWrapper
+    | multiplicativeExpression '*' powerExpression                              # MulExpression
+    | multiplicativeExpression '/' powerExpression                              # DivExpression
+    | multiplicativeExpression '%' powerExpression                              # ModExpression
+    ;
+
+powerExpression
     : bitwiseExpression                                                         # BitwiseExpressionWrapper
-    | multiplicativeExpression '*' bitwiseExpression                            # MulExpression
-    | multiplicativeExpression '/' bitwiseExpression                            # DivExpression
-    | multiplicativeExpression '%' bitwiseExpression                            # ModExpression
+    | <assoc=right> powerExpression '**' powerExpression                        # PowExpression
     ;
 
 bitwiseExpression
@@ -62,6 +67,7 @@ shiftExpression
     : operand                                                                   # OperandExpression
     | shiftExpression '<<' operand                                              # IntLShiftExpression
     | shiftExpression '>>' operand                                              # IntRShiftExpression
+    | shiftExpression '>>>' operand                                             # IntLogicalRShiftExpression
     ;
 
 variableDefinition
@@ -73,7 +79,9 @@ expressionMapping
     ;
 
 operand
-    : numberOperand
+    : operandCast
+    | functionCall
+    | numberOperand
     | booleanOperand
     | stringOperand
     | listConstant
@@ -84,13 +92,21 @@ operand
     | '(' expression ')'
     ;
 
+functionCall
+    : NAME_IDENTIFIER '(' expression (',' expression)* ')'
+    ;
+
+operandCast
+    : numberOperand '.' pathFunctionCast
+    ;
+
 numberOperand: intOperand | floatOperand;
 
 intOperand: INT;
 floatOperand: FLOAT;
 
-INT: '-'?[0-9]+;
-FLOAT: '-'? [0-9]+ '.' [0-9]+;
+INT: [+-]? ('0' [xX] [0-9a-fA-F]+ | '0' [bB] [01]+ | [0-9]+);
+FLOAT: [+-]? [0-9]+ '.' [0-9]+;
 
 booleanOperand: TRUE | FALSE;
 

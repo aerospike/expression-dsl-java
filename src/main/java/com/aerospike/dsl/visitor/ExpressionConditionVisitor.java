@@ -241,7 +241,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitMulExpression(ConditionParser.MulExpressionContext ctx) {
         AbstractPart left = visit(ctx.multiplicativeExpression());
-        AbstractPart right = visit(ctx.bitwiseExpression());
+        AbstractPart right = visit(ctx.powerExpression());
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.MUL);
     }
@@ -249,7 +249,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitDivExpression(ConditionParser.DivExpressionContext ctx) {
         AbstractPart left = visit(ctx.multiplicativeExpression());
-        AbstractPart right = visit(ctx.bitwiseExpression());
+        AbstractPart right = visit(ctx.powerExpression());
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.DIV);
     }
@@ -257,9 +257,101 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitModExpression(ConditionParser.ModExpressionContext ctx) {
         AbstractPart left = visit(ctx.multiplicativeExpression()); // first operand
-        AbstractPart right = visit(ctx.bitwiseExpression()); // second operand
+        AbstractPart right = visit(ctx.powerExpression()); // second operand
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.MOD);
+    }
+
+    @Override
+    public AbstractPart visitPowerExpressionWrapper(ConditionParser.PowerExpressionWrapperContext ctx) {
+        // Pass through the wrapper
+        return visit(ctx.powerExpression());
+    }
+
+    @Override
+    public AbstractPart visitPowExpression(ConditionParser.PowExpressionContext ctx) {
+        AbstractPart left = visit(ctx.powerExpression(0));
+        AbstractPart right = visit(ctx.powerExpression(1));
+
+        return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.POW);
+    }
+
+    @Override
+    public AbstractPart visitFunctionCall(ConditionParser.FunctionCallContext ctx) {
+        // If error recovery created this node without actual parentheses, bail out
+        if (ctx.getChildCount() < 3 || !ctx.getChild(1).getText().equals("(")) {
+            return null;
+        }
+
+        String funcName = ctx.NAME_IDENTIFIER().getText();
+        List<AbstractPart> args = new ArrayList<>();
+        for (ConditionParser.ExpressionContext ec : ctx.expression()) {
+            args.add(visit(ec));
+        }
+
+        return switch (funcName) {
+            // Unary arithmetic functions
+            case "abs" -> {
+                validateFunctionArgCount(funcName, args, 1);
+                yield new ExpressionContainer(args.get(0), ExpressionContainer.ExprPartsOperation.ABS);
+            }
+            case "ceil" -> {
+                validateFunctionArgCount(funcName, args, 1);
+                yield new ExpressionContainer(args.get(0), ExpressionContainer.ExprPartsOperation.CEIL);
+            }
+            case "floor" -> {
+                validateFunctionArgCount(funcName, args, 1);
+                yield new ExpressionContainer(args.get(0), ExpressionContainer.ExprPartsOperation.FLOOR);
+            }
+            // Binary arithmetic functions
+            case "log" -> {
+                validateFunctionArgCount(funcName, args, 2);
+                yield new ExpressionContainer(args.get(0), args.get(1),
+                        ExpressionContainer.ExprPartsOperation.LOG);
+            }
+            // Variadic arithmetic functions
+            case "min" -> {
+                validateFunctionArgCountAtLeast(funcName, args, 2);
+                yield new ExpressionContainer(new FunctionArgs(args),
+                        ExpressionContainer.ExprPartsOperation.MIN_FUNC);
+            }
+            case "max" -> {
+                validateFunctionArgCountAtLeast(funcName, args, 2);
+                yield new ExpressionContainer(new FunctionArgs(args),
+                        ExpressionContainer.ExprPartsOperation.MAX_FUNC);
+            }
+            // Bit-scanning functions
+            case "countOneBits" -> {
+                validateFunctionArgCount(funcName, args, 1);
+                yield new ExpressionContainer(args.get(0),
+                        ExpressionContainer.ExprPartsOperation.COUNT_ONE_BITS);
+            }
+            case "findBitLeft" -> {
+                validateFunctionArgCount(funcName, args, 2);
+                yield new ExpressionContainer(args.get(0), args.get(1),
+                        ExpressionContainer.ExprPartsOperation.FIND_BIT_LEFT);
+            }
+            case "findBitRight" -> {
+                validateFunctionArgCount(funcName, args, 2);
+                yield new ExpressionContainer(args.get(0), args.get(1),
+                        ExpressionContainer.ExprPartsOperation.FIND_BIT_RIGHT);
+            }
+            default -> throw new DslParseException("Unknown function: " + funcName);
+        };
+    }
+
+    private void validateFunctionArgCount(String funcName, List<AbstractPart> args, int expected) {
+        if (args.size() != expected) {
+            throw new DslParseException(
+                    "Function '%s' expects %d argument(s), got %d".formatted(funcName, expected, args.size()));
+        }
+    }
+
+    private void validateFunctionArgCountAtLeast(String funcName, List<AbstractPart> args, int minCount) {
+        if (args.size() < minCount) {
+            throw new DslParseException(
+                    "Function '%s' expects at least %d arguments, got %d".formatted(funcName, minCount, args.size()));
+        }
     }
 
     @Override
@@ -310,6 +402,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
+    public AbstractPart visitIntLogicalRShiftExpression(ConditionParser.IntLogicalRShiftExpressionContext ctx) {
+        AbstractPart left = visit(ctx.shiftExpression()); // first operand
+        AbstractPart right = visit(ctx.operand()); // second operand
+
+        return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.LOGICAL_R_SHIFT);
+    }
+
+    @Override
     public AbstractPart visitPathFunctionGet(ConditionParser.PathFunctionGetContext ctx) {
         PathFunction.ReturnParam returnParam = null;
         Exp.Type binType = null;
@@ -337,6 +437,22 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Exp.Type binType = PathFunction.castTypeToExpType(castType);
 
         return new PathFunction(PathFunction.PathFunctionType.CAST, null, binType);
+    }
+
+    @Override
+    public AbstractPart visitOperandCast(ConditionParser.OperandCastContext ctx) {
+        AbstractPart numberOperand = visit(ctx.numberOperand());
+
+        String castText = ctx.pathFunctionCast().PATH_FUNCTION_CAST().getText();
+        String typeVal = extractTypeFromMethod(castText);
+        PathFunction.CastType castType = PathFunction.CastType.valueOf(typeVal.toUpperCase());
+
+        ExpressionContainer.ExprPartsOperation op = switch (castType) {
+            case INT -> ExpressionContainer.ExprPartsOperation.TO_INT;
+            case FLOAT -> ExpressionContainer.ExprPartsOperation.TO_FLOAT;
+        };
+
+        return new ExpressionContainer(numberOperand, op);
     }
 
     @Override
@@ -446,7 +562,33 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitIntOperand(ConditionParser.IntOperandContext ctx) {
         String text = ctx.INT().getText();
-        return new IntOperand(Long.parseLong(text));
+        return new IntOperand(parseIntLiteral(text));
+    }
+
+    private static long parseIntLiteral(String text) {
+        // Strip optional sign (+/-)
+        int sign = 1;
+        int startIdx = 0;
+        if (text.charAt(0) == '-') {
+            sign = -1;
+            startIdx = 1;
+        } else if (text.charAt(0) == '+') {
+            startIdx = 1;
+        }
+
+        String digits = text.substring(startIdx);
+
+        if (digits.length() > 2 && digits.charAt(0) == '0') {
+            char prefix = digits.charAt(1);
+            if (prefix == 'x' || prefix == 'X') {
+                return sign * Long.parseLong(digits.substring(2), 16);
+            } else if (prefix == 'b' || prefix == 'B') {
+                return sign * Long.parseLong(digits.substring(2), 2);
+            }
+        }
+
+        // Decimal
+        return Long.parseLong(text);
     }
 
     @Override

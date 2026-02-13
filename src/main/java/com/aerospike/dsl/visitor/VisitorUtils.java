@@ -16,6 +16,7 @@ import com.aerospike.dsl.parts.controlstructure.ExclusiveStructure;
 import com.aerospike.dsl.parts.controlstructure.OrStructure;
 import com.aerospike.dsl.parts.controlstructure.WhenStructure;
 import com.aerospike.dsl.parts.controlstructure.WithStructure;
+import com.aerospike.dsl.parts.operand.FunctionArgs;
 import com.aerospike.dsl.parts.operand.IntOperand;
 import com.aerospike.dsl.parts.operand.MetadataOperand;
 import com.aerospike.dsl.parts.operand.PlaceholderOperand;
@@ -114,9 +115,14 @@ public class VisitorUtils {
             case MUL -> Exp::mul;
             case DIV -> Exp::div;
             case MOD -> Exp::mod;
+            case POW -> Exp::pow;
+            case LOG -> Exp::log;
+            case FIND_BIT_LEFT -> Exp::lscan;
+            case FIND_BIT_RIGHT -> Exp::rscan;
             case INT_XOR -> Exp::intXor;
             case L_SHIFT -> Exp::lshift;
-            case R_SHIFT -> Exp::rshift;
+            case R_SHIFT -> Exp::arshift;
+            case LOGICAL_R_SHIFT -> Exp::rshift;
             case INT_AND -> Exp::intAnd;
             case INT_OR -> Exp::intOr;
             case AND -> Exp::and;
@@ -142,6 +148,12 @@ public class VisitorUtils {
         return switch (exprPartsOperation) {
             case INT_NOT -> Exp::intNot;
             case NOT -> Exp::not;
+            case ABS -> Exp::abs;
+            case CEIL -> Exp::ceil;
+            case FLOOR -> Exp::floor;
+            case COUNT_ONE_BITS -> Exp::count;
+            case TO_INT -> Exp::toInt;
+            case TO_FLOAT -> Exp::toFloat;
             default -> throw new NoApplicableFilterException("ExprPartsOperation has no matching UnaryOperator<Exp>");
         };
     }
@@ -280,7 +292,6 @@ public class VisitorUtils {
      * @return {@code true} if the child should be visited as a list element, {@code false} otherwise
      */
     static boolean shouldVisitListElement(int i, int size, ParseTree child) {
-        //noinspection GrazieInspection
         return size > 0 // size is not 0
                 && i != 0 // not the first element ('[')
                 && i != size - 1 // not the last element (']')
@@ -297,7 +308,6 @@ public class VisitorUtils {
      * @return {@code true} if the child should be visited as a map element, {@code false} otherwise
      */
     static boolean shouldVisitMapElement(int i, int size, ParseTree child) {
-        //noinspection GrazieInspection
         return size > 0 // size is not 0
                 && i != 0 // not the first element ('{')
                 && i != size - 1 // not the last element ('}')
@@ -521,16 +531,11 @@ public class VisitorUtils {
             FilterOperationType operationType, long left, long right
     ) {
         return switch (operationType) {
-            case GT:
-                yield new Pair<>(Long.MIN_VALUE, left * right - 1);
-            case GTEQ:
-                yield new Pair<>(Long.MIN_VALUE, left * right);
-            case LT:
-                yield new Pair<>(left * right + 1, Long.MAX_VALUE);
-            case LTEQ:
-                yield new Pair<>(left * right, Long.MAX_VALUE);
-            default:
-                throw new DslParseException("OperationType not supported for division: " + operationType);
+            case GT -> new Pair<>(Long.MIN_VALUE, left * right - 1);
+            case GTEQ -> new Pair<>(Long.MIN_VALUE, left * right);
+            case LT -> new Pair<>(left * right + 1, Long.MAX_VALUE);
+            case LTEQ -> new Pair<>(left * right, Long.MAX_VALUE);
+            default -> throw new DslParseException("OperationType not supported for division: " + operationType);
         };
     }
 
@@ -547,16 +552,11 @@ public class VisitorUtils {
             FilterOperationType operationType, long left, long right
     ) {
         return switch (operationType) {
-            case GT:
-                yield new Pair<>(left * right + 1, Long.MAX_VALUE);
-            case GTEQ:
-                yield new Pair<>(left * right, Long.MAX_VALUE);
-            case LT:
-                yield new Pair<>(Long.MIN_VALUE, left * right - 1);
-            case LTEQ:
-                yield new Pair<>(Long.MIN_VALUE, left * right);
-            default:
-                throw new DslParseException("OperationType not supported for division: " + operationType);
+            case GT -> new Pair<>(left * right + 1, Long.MAX_VALUE);
+            case GTEQ -> new Pair<>(left * right, Long.MAX_VALUE);
+            case LT -> new Pair<>(Long.MIN_VALUE, left * right - 1);
+            case LTEQ -> new Pair<>(Long.MIN_VALUE, left * right);
+            default -> throw new DslParseException("OperationType not supported for division: " + operationType);
         };
     }
 
@@ -574,52 +574,36 @@ public class VisitorUtils {
         if (left > 0 && right > 0) {
             // both operands are positive
             return switch (operationType) {
-                case GT:
-                    yield new Pair<>(1L, getClosestLongToTheLeft((float) left / right));
-                case GTEQ:
-                    yield new Pair<>(1L, left / right);
-                case LT, LTEQ:
-                    yield new Pair<>(null, null);
-                default:
-                    throw new DslParseException("OperationType not supported for division: " + operationType);
+                case GT -> new Pair<>(1L, getClosestLongToTheLeft((float) left / right));
+                case GTEQ -> new Pair<>(1L, left / right);
+                case LT, LTEQ -> new Pair<>(null, null);
+                default -> throw new DslParseException("OperationType not supported for division: " + operationType);
             };
         } else if (left == 0 && right == 0) {
             throw new DslParseException("Cannot divide by zero");
         } else if (left < 0 && right < 0) {
             // both operands are negative
             return switch (operationType) {
-                case GT, GTEQ:
-                    yield new Pair<>(null, null);
-                case LT:
-                    yield new Pair<>(1L, getClosestLongToTheLeft((float) left / right));
-                case LTEQ:
-                    yield new Pair<>(1L, left / right);
-                default:
-                    throw new DslParseException("OperationType not supported for division: " + operationType);
+                case GT, GTEQ -> new Pair<>(null, null);
+                case LT -> new Pair<>(1L, getClosestLongToTheLeft((float) left / right));
+                case LTEQ -> new Pair<>(1L, left / right);
+                default -> throw new DslParseException("OperationType not supported for division: " + operationType);
             };
         } else if (left > 0 && right < 0) {
             // left positive, right negative
             return switch (operationType) {
-                case GT, GTEQ:
-                    yield new Pair<>(null, null);
-                case LT:
-                    yield new Pair<>(getClosestLongToTheRight((float) left / right), -1L);
-                case LTEQ:
-                    yield new Pair<>(left / right, -1L);
-                default:
-                    throw new DslParseException("OperationType not supported for division: " + operationType);
+                case GT, GTEQ -> new Pair<>(null, null);
+                case LT -> new Pair<>(getClosestLongToTheRight((float) left / right), -1L);
+                case LTEQ -> new Pair<>(left / right, -1L);
+                default -> throw new DslParseException("OperationType not supported for division: " + operationType);
             };
         } else if (right > 0 && left < 0) {
             // right positive, left negative
             return switch (operationType) {
-                case GT:
-                    yield new Pair<>(getClosestLongToTheRight((float) left / right), -1L);
-                case GTEQ:
-                    yield new Pair<>(left / right, -1L);
-                case LT, LTEQ:
-                    yield new Pair<>(null, null);
-                default:
-                    throw new DslParseException("OperationType not supported for division: " + operationType);
+                case GT -> new Pair<>(getClosestLongToTheRight((float) left / right), -1L);
+                case GTEQ -> new Pair<>(left / right, -1L);
+                case LT, LTEQ -> new Pair<>(null, null);
+                default -> throw new DslParseException("OperationType not supported for division: " + operationType);
             };
         } else if (left != 0) {
             throw new DslParseException("Division by zero is not allowed");
@@ -1209,8 +1193,37 @@ public class VisitorUtils {
             case WITH_STRUCTURE -> withStructureToExp(expr);
             case WHEN_STRUCTURE -> whenStructureToExp(expr);
             case EXCLUSIVE_STRUCTURE -> exclStructureToExp(expr);
+            case MIN_FUNC -> variadicToExp(expr, Exp::min);
+            case MAX_FUNC -> variadicToExp(expr, Exp::max);
+            case LOG, POW, FIND_BIT_LEFT, FIND_BIT_RIGHT -> binaryFunctionToExp(expr);
             default -> processExpression(expr);
         };
+    }
+
+    /**
+     * Converts a variadic function expression (e.g., min, max) to Exp.
+     * Extracts operands from the {@link FunctionArgs} wrapper and passes them as an array.
+     */
+    private static Exp variadicToExp(ExpressionContainer expr,
+                                      java.util.function.Function<Exp[], Exp> expFactory) {
+        FunctionArgs funcArgs = (FunctionArgs) expr.getLeft();
+        List<AbstractPart> operands = funcArgs.getOperands();
+        Exp[] exps = operands.stream()
+                .map(VisitorUtils::getExp)
+                .toArray(Exp[]::new);
+        return expFactory.apply(exps);
+    }
+
+    /**
+     * Converts a binary function expression to Exp, bypassing BIN_PART type validation.
+     * Used for function-like operations where operand types may intentionally differ
+     * (e.g., findBitLeft takes an integer and a boolean).
+     */
+    private static Exp binaryFunctionToExp(ExpressionContainer expr) {
+        Exp leftExp = getExp(expr.getLeft());
+        Exp rightExp = getExp(expr.getRight());
+        BinaryOperator<Exp> operator = getExpOperator(expr.getOperationType());
+        return operator.apply(leftExp, rightExp);
     }
 
     /**

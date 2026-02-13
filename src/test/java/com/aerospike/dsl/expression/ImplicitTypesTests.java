@@ -134,7 +134,7 @@ public class ImplicitTypesTests {
         );
 
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.a == (when($.b == 1 => $.a1, $.b == 2 => $.a2, " +
-                        "$.b == 3 => $.a3, default => $.a4+1))"), expected);
+                        "$.b == 3 => $.a3, default => $.a4 + 1))"), expected);
     }
 
     // TODO: FMWK-533 Implicit Type Detection for Control Structures
