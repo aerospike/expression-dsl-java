@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
@@ -1206,7 +1207,7 @@ public class VisitorUtils {
      * Extracts operands from the {@link FunctionArgs} wrapper and passes them as an array.
      */
     private static Exp variadicToExp(ExpressionContainer expr,
-                                      java.util.function.Function<Exp[], Exp> expFactory) {
+                                      Function<Exp[], Exp> expFactory) {
         FunctionArgs funcArgs = (FunctionArgs) expr.getLeft();
         List<AbstractPart> operands = funcArgs.getOperands();
         Exp[] exps = operands.stream()
@@ -1364,17 +1365,28 @@ public class VisitorUtils {
         return operator.apply(leftExp, rightExp);
     }
 
+    private static final EnumSet<ExprPartsOperation> FLOAT_RETURNING_OPERATIONS = EnumSet.of(
+            POW, LOG, CEIL, FLOOR, TO_FLOAT
+    );
+
     private static final EnumSet<ExprPartsOperation> NUMERIC_OPERATIONS = EnumSet.of(
             ADD, SUB, MUL, DIV, MOD, POW, INT_XOR, INT_NOT, INT_AND, INT_OR,
             L_SHIFT, R_SHIFT, LOGICAL_R_SHIFT, ABS, CEIL, FLOOR, LOG,
-            MIN_FUNC, MAX_FUNC, COUNT_ONE_BITS, FIND_BIT_LEFT, FIND_BIT_RIGHT
+            MIN_FUNC, MAX_FUNC, COUNT_ONE_BITS, FIND_BIT_LEFT, FIND_BIT_RIGHT,
+            TO_INT, TO_FLOAT
     );
 
     /**
      * Resolves the effective {@link Exp.Type} of an {@link AbstractPart}.
-     * Uses the part's explicit type if set, falls back to the {@code partTypeToExpType} map
-     * for literal operands, and infers {@link Exp.Type#INT} for {@link ExpressionContainer}
-     * nodes wrapping arithmetic/numeric operations.
+     * <ul>
+     *   <li>Uses the part's explicit type if set.</li>
+     *   <li>Falls back to the {@code partTypeToExpType} map for literal operands.</li>
+     *   <li>For arithmetic {@link ExpressionContainer} nodes, determines the result type based on
+     *       the operation: always-FLOAT operations (e.g. {@code POW}, {@code LOG}, {@code CEIL},
+     *       {@code FLOOR}, {@code TO_FLOAT}), always-INT operations (e.g. bitwise, {@code TO_INT}),
+     *       or type-propagating operations (e.g. {@code ABS}, {@code ADD}) where the type
+     *       is inferred from the left operand.</li>
+     * </ul>
      *
      * @param part The {@link AbstractPart} whose type to resolve
      * @return The resolved {@link Exp.Type}, or {@code null} if the type cannot be determined
@@ -1387,8 +1399,22 @@ public class VisitorUtils {
         if (mapped != null) {
             return mapped;
         }
-        if (isArithmeticExpressionContainer(part)) {
-            return Exp.Type.INT;
+        if (part instanceof ExpressionContainer container && container.getOperationType() != null) {
+            ExprPartsOperation op = container.getOperationType();
+            if (FLOAT_RETURNING_OPERATIONS.contains(op)) {
+                return Exp.Type.FLOAT;
+            }
+            if (isArithmeticExpressionContainer(part)) {
+                // For type-propagating operations (ABS, ADD, SUB, MUL, DIV, MOD, MIN, MAX, and
+                // always-INT ops), propagate FLOAT when the left operand is known to be FLOAT.
+                // Otherwise, fall back to INT: any arithmetic result is numeric (never STRING/BOOL),
+                // so returning INT conservatively ensures string comparisons are rejected.
+                if (container.getLeft() != null
+                        && resolveExpType(container.getLeft()) == Exp.Type.FLOAT) {
+                    return Exp.Type.FLOAT;
+                }
+                return Exp.Type.INT;
+            }
         }
         return null;
     }

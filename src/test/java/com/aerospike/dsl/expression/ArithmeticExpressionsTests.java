@@ -2,7 +2,11 @@ package com.aerospike.dsl.expression;
 
 import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.ExpressionContext;
+import com.aerospike.dsl.client.cdt.ListReturnType;
+import com.aerospike.dsl.client.cdt.MapReturnType;
 import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.exp.ListExp;
+import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -93,6 +97,34 @@ public class ArithmeticExpressionsTests {
                 Exp.eq(
                         Exp.mul(Exp.val(2.0), Exp.pow(Exp.val(3.0), Exp.val(2.0))),
                         Exp.val(18.0)));
+    }
+
+    @Test
+    void powPrecedenceWithBitwiseAnd() {
+        // 2 ** 3 & 5 must parse as (2 ** 3) & 5 = 8 & 5 = 0, not 2 ** (3 & 5)
+        TestUtils.parseFilterExpressionAndCompare(
+                ExpressionContext.of("(2 ** 3 & 5) == 0"),
+                Exp.eq(
+                        Exp.intAnd(Exp.pow(Exp.val(2), Exp.val(3)), Exp.val(5)),
+                        Exp.val(0)));
+    }
+
+    @Test
+    void additionPrecedenceWithShift() {
+        // 1 << 2 + 1 must parse as 1 << (2 + 1) = 8, not (1 << 2) + 1 = 5
+        TestUtils.parseFilterExpressionAndCompare(
+                ExpressionContext.of("(1 << 2 + 1) == 8"),
+                Exp.eq(
+                        Exp.lshift(Exp.val(1), Exp.add(Exp.val(2), Exp.val(1))),
+                        Exp.val(8)));
+    }
+
+    @Test
+    void intNotAtUnaryLevel() {
+        // ~-5 must parse as ~(-5), not -(~5)
+        TestUtils.parseFilterExpressionAndCompare(
+                ExpressionContext.of("(~-5) == 4"),
+                Exp.eq(Exp.intNot(Exp.val(-5L)), Exp.val(4)));
     }
 
     @Test
@@ -236,6 +268,24 @@ public class ArithmeticExpressionsTests {
     void spacelessFloatArithmetic() {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(5.2+$.bananas) > 10.2"),
                 Exp.gt(Exp.add(Exp.val(5.2), Exp.floatBin("bananas")), Exp.val(10.2)));
+    }
+
+    @Test
+    void arithmeticWithChainedMapAndListElements() {
+        Exp mapValue = MapExp.getByKey(MapReturnType.VALUE, Exp.Type.INT, Exp.val("a"), Exp.mapBin("mapBin1"));
+        Exp listValue = ListExp.getByIndex(ListReturnType.VALUE, Exp.Type.INT, Exp.val(0), Exp.listBin("listBin1"));
+
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("($.apples + $.mapBin1.a.get(type: INT)) > 10"),
+                Exp.gt(Exp.add(Exp.intBin("apples"), mapValue), Exp.val(10)));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("($.listBin1.[0].get(type: INT) - $.bananas) >= 0"),
+                Exp.ge(Exp.sub(listValue, Exp.intBin("bananas")), Exp.val(0)));
+        TestUtils.parseFilterExpressionAndCompare(
+                ExpressionContext.of("($.mapBin1.a.get(type: INT) * $.listBin1.[0].get(type: INT)) != 0"),
+                Exp.ne(Exp.mul(mapValue, listValue), Exp.val(0)));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("($.apples / $.listBin1.[0].get(type: INT)) <= 10"),
+                Exp.le(Exp.div(Exp.intBin("apples"), listValue), Exp.val(10)));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("($.mapBin1.a.get(type: INT) % $.bananas) != 1"),
+                Exp.ne(Exp.mod(mapValue, Exp.intBin("bananas")), Exp.val(1)));
     }
 
     // --- Function-style arithmetic operations ---
@@ -477,5 +527,40 @@ public class ArithmeticExpressionsTests {
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("($.apples * $.bananas) != \"stringVal\"")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Cannot compare INT to STRING");
+    }
+
+    @Test
+    void negativeFloatOpComparedToString() {
+        // Float-producing operations compared to STRING must be rejected at parse time.
+        // (Message order varies: binary ops detect the mismatch at the bin-type check level,
+        // unary ops detect it at the comparison-level validation.)
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("($.a ** 2.0) == \"hello\"")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("STRING")
+                .hasMessageContaining("FLOAT");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("log($.a, 2.0) == \"hello\"")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("STRING")
+                .hasMessageContaining("FLOAT");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("ceil($.price) == \"hello\"")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Cannot compare FLOAT to STRING");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("floor($.price) == \"hello\"")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Cannot compare FLOAT to STRING");
+    }
+
+    @Test
+    void negativeArithmeticInvalidLeftAndRightOperands() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("(0xGG + $.apples) > 10")))
+                .isInstanceOf(DslParseException.class);
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("($.apples + 0b2) > 10")))
+                .isInstanceOf(DslParseException.class);
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("(--9223372036854775808 + $.apples) > 10")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("out of range");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("($.apples + ++9223372036854775808) > 10")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("out of range");
     }
 }

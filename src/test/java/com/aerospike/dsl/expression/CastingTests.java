@@ -77,4 +77,26 @@ public class CastingTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of(".37.asInt() == 0"),
                 Exp.eq(Exp.toInt(Exp.val(0.37)), Exp.val(0)));
     }
+
+    @Test
+    void longMinIntLiteralToFloat() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("-9223372036854775808.asFloat() < 0.0"),
+                Exp.lt(Exp.toFloat(Exp.val(Long.MIN_VALUE)), Exp.val(0.0)));
+    }
+
+    // --- Type-validation for cast expressions ---
+
+    @Test
+    void castToFloatComparedToStringThrows() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("28.asFloat() == \"hello\"")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Cannot compare");
+    }
+
+    @Test
+    void castToIntComparedToStringThrows() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("28.0.asInt() == \"hello\"")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Cannot compare");
+    }
 }

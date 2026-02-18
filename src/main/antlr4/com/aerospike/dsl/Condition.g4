@@ -27,13 +27,13 @@ basicExpression
     ;
 
 comparisonExpression
-    : additiveExpression '>' additiveExpression                                 # GreaterThanExpression
-    | additiveExpression '>=' additiveExpression                                # GreaterThanOrEqualExpression
-    | additiveExpression '<' additiveExpression                                 # LessThanExpression
-    | additiveExpression '<=' additiveExpression                                # LessThanOrEqualExpression
-    | additiveExpression '==' additiveExpression                                # EqualityExpression
-    | additiveExpression '!=' additiveExpression                                # InequalityExpression
-    | additiveExpression                                                        # AdditiveExpressionWrapper
+    : bitwiseExpression '>' bitwiseExpression                                   # GreaterThanExpression
+    | bitwiseExpression '>=' bitwiseExpression                                  # GreaterThanOrEqualExpression
+    | bitwiseExpression '<' bitwiseExpression                                   # LessThanExpression
+    | bitwiseExpression '<=' bitwiseExpression                                  # LessThanOrEqualExpression
+    | bitwiseExpression '==' bitwiseExpression                                  # EqualityExpression
+    | bitwiseExpression '!=' bitwiseExpression                                  # InequalityExpression
+    | bitwiseExpression                                                         # BitwiseExpressionWrapper
     ;
 
 // Rest of the grammar rules remain the same
@@ -51,7 +51,7 @@ multiplicativeExpression
     ;
 
 powerExpression
-    : bitwiseExpression                                                         # BitwiseExpressionWrapper
+    : unaryExpression                                                           # UnaryExpressionWrapper
     | <assoc=right> powerExpression '**' powerExpression                        # PowExpression
     ;
 
@@ -60,20 +60,20 @@ bitwiseExpression
     | bitwiseExpression '&' shiftExpression                                     # IntAndExpression
     | bitwiseExpression '|' shiftExpression                                     # IntOrExpression
     | bitwiseExpression '^' shiftExpression                                     # IntXorExpression
-    | '~' shiftExpression                                                       # IntNotExpression
     ;
 
 shiftExpression
-    : unaryExpression                                                           # UnaryExpressionWrapper
-    | shiftExpression '<<' unaryExpression                                      # IntLShiftExpression
-    | shiftExpression '>>' unaryExpression                                      # IntRShiftExpression
-    | shiftExpression '>>>' unaryExpression                                     # IntLogicalRShiftExpression
+    : additiveExpression                                                        # AdditiveExpressionWrapper
+    | shiftExpression '<<' additiveExpression                                   # IntLShiftExpression
+    | shiftExpression '>>' additiveExpression                                   # IntRShiftExpression
+    | shiftExpression '>>>' additiveExpression                                  # IntLogicalRShiftExpression
     ;
 
 unaryExpression
     : operand                                                                   # OperandExpression
     | '-' unaryExpression                                                       # UnaryMinusExpression
     | '+' unaryExpression                                                       # UnaryPlusExpression
+    | '~' unaryExpression                                                       # IntNotExpression
     ;
 
 variableDefinition
@@ -109,10 +109,13 @@ operandCast
 numberOperand: intOperand | floatOperand;
 
 intOperand: INT;
-floatOperand: FLOAT | '.' INT;
+floatOperand: FLOAT | LEADING_DOT_FLOAT;
 
 INT: ('0' [xX] [0-9a-fA-F]+ | '0' [bB] [01]+ | [0-9]+);
 FLOAT: [0-9]+ '.' [0-9]+;
+
+// Exists to support .N syntax safely and keep tokenization predictable
+LEADING_DOT_FLOAT: '.' [0-9]+;
 
 booleanOperand: TRUE | FALSE;
 
@@ -123,11 +126,11 @@ stringOperand: QUOTED_STRING;
 
 QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
-listConstant: '[' operand? (',' operand)* ']';
+listConstant: '[' unaryExpression? (',' unaryExpression)* ']';
 
 orderedMapConstant: '{' mapPairConstant? (',' mapPairConstant)* '}';
 
-mapPairConstant: mapKeyOperand ':' operand;
+mapPairConstant: mapKeyOperand ':' unaryExpression;
 
 mapKeyOperand: intOperand | stringOperand;
 
