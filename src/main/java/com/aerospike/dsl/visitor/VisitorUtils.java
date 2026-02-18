@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1348,9 +1349,54 @@ public class VisitorUtils {
             if (rightExp == null) return leftExp;
         }
 
+        // Validate operand type compatibility for non-BIN_PART operands.
+        // Arithmetic operations should not involve STRING operands, and comparison
+        // results of arithmetic expressions should be type-compatible.
+        ExprPartsOperation opType = expr.getOperationType();
+        if (NUMERIC_OPERATIONS.contains(opType)
+                || isArithmeticExpressionContainer(left)
+                || isArithmeticExpressionContainer(right)) {
+            validateComparableTypes(resolveExpType(left), resolveExpType(right));
+        }
+
         // Apply binary operator
         BinaryOperator<Exp> operator = getExpOperator(expr.getOperationType());
         return operator.apply(leftExp, rightExp);
+    }
+
+    private static final EnumSet<ExprPartsOperation> NUMERIC_OPERATIONS = EnumSet.of(
+            ADD, SUB, MUL, DIV, MOD, POW, INT_XOR, INT_NOT, INT_AND, INT_OR,
+            L_SHIFT, R_SHIFT, LOGICAL_R_SHIFT, ABS, CEIL, FLOOR, LOG,
+            MIN_FUNC, MAX_FUNC, COUNT_ONE_BITS, FIND_BIT_LEFT, FIND_BIT_RIGHT
+    );
+
+    /**
+     * Resolves the effective {@link Exp.Type} of an {@link AbstractPart}.
+     * Uses the part's explicit type if set, falls back to the {@code partTypeToExpType} map
+     * for literal operands, and infers {@link Exp.Type#INT} for {@link ExpressionContainer}
+     * nodes wrapping arithmetic/numeric operations.
+     *
+     * @param part The {@link AbstractPart} whose type to resolve
+     * @return The resolved {@link Exp.Type}, or {@code null} if the type cannot be determined
+     */
+    private static Exp.Type resolveExpType(AbstractPart part) {
+        if (part.getExpType() != null) {
+            return part.getExpType();
+        }
+        Exp.Type mapped = partTypeToExpType.get(part.getPartType());
+        if (mapped != null) {
+            return mapped;
+        }
+        if (isArithmeticExpressionContainer(part)) {
+            return Exp.Type.INT;
+        }
+        return null;
+    }
+
+    private static boolean isArithmeticExpressionContainer(AbstractPart part) {
+        return part instanceof ExpressionContainer container
+                && container.getOperationType() != null
+                && NUMERIC_OPERATIONS.contains(container.getOperationType());
     }
 
     /**

@@ -468,14 +468,14 @@ public class ArithmeticExpressionsTests {
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Cannot compare STRING to INT");
 
-        // TODO: should throw an exception (cannot use arithmetic operations on Strings)
-        //assertThatThrownBy(() -> translate("$.apples + \"stringVal\""))
-        //                .isInstanceOf(AerospikeDSLException.class)
-        //        .hasMessageContaining("Cannot compare STRING to INT");
+        // Cannot use arithmetic operations on Strings
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.apples + \"stringVal\"")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Cannot compare INT to STRING");
 
-        // TODO: should throw an exception (result of an arithmetic operation is not a String)
-        //assertThatThrownBy(() -> translate("($.apples * $.bananas) != \"stringVal\""))
-        //        .isInstanceOf(AerospikeDSLException.class)
-        //        .hasMessageContaining("Cannot compare STRING to INT");
+        // Result of an arithmetic operation is not a String
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("($.apples * $.bananas) != \"stringVal\"")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Cannot compare INT to STRING");
     }
 }
