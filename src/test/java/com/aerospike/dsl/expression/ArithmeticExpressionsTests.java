@@ -443,7 +443,7 @@ public class ArithmeticExpressionsTests {
         // abs expects 1 arg, given 2
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("abs($.a, $.b) == 5")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("expects 1 argument");
+                .hasMessageContaining("expects 1 argument(s)");
     }
 
     @Test
@@ -451,7 +451,7 @@ public class ArithmeticExpressionsTests {
         // log expects 2 args, given 1
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("log(2.0) == 0.0")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("expects 2 argument");
+                .hasMessageContaining("expects 2 argument(s)");
     }
 
     @Test
