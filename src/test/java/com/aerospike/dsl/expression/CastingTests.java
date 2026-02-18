@@ -69,4 +69,12 @@ public class CastingTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("0.0.asInt() == 0"),
                 Exp.eq(Exp.toInt(Exp.val(0.0)), Exp.val(0)));
     }
+
+    @Test
+    void leadingDotFloatToInt() {
+        // Leading-dot float literal (.37) with cast - tests grammar ambiguity
+        // between floatOperand ('.' INT) and operandCast (numberOperand '.' pathFunctionCast)
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of(".37.asInt() == 0"),
+                Exp.eq(Exp.toInt(Exp.val(0.37)), Exp.val(0)));
+    }
 }
