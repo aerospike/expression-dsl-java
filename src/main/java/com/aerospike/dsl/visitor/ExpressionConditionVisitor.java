@@ -194,12 +194,10 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                     || op == ExpressionContainer.ExprPartsOperation.TO_FLOAT) {
                 AbstractPart inner = container.getLeft();
                 if (inner instanceof IntOperand intOp) {
-                    container.setLeft(new IntOperand(-intOp.getValue()));
-                    return container;
+                    return new ExpressionContainer(new IntOperand(-intOp.getValue()), op);
                 }
                 if (inner instanceof FloatOperand floatOp) {
-                    container.setLeft(new FloatOperand(-floatOp.getValue()));
-                    return container;
+                    return new ExpressionContainer(new FloatOperand(-floatOp.getValue()), op);
                 }
             }
         }
