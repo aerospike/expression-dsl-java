@@ -11,13 +11,13 @@ import com.aerospike.dsl.parts.path.BasePath;
 import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 
 public class MapValueRange extends MapPart {
-    private final boolean inverted;
+    private final boolean isInverted;
     private final Integer start;
     private final Integer end;
 
-    public MapValueRange(boolean inverted, Integer start, Integer end) {
+    public MapValueRange(boolean isInverted, Integer start, Integer end) {
         super(MapPartType.VALUE_RANGE);
-        this.inverted = inverted;
+        this.isInverted = isInverted;
         this.start = start;
         this.end = end;
     }
@@ -45,7 +45,7 @@ public class MapValueRange extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (inverted) {
+        if (isInverted) {
             cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
         }
 

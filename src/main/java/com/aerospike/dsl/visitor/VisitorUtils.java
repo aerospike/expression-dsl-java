@@ -323,12 +323,12 @@ public class VisitorUtils {
      * @param binPart     The bin part
      * @param anotherPart The other operand to compare with
      * @param operator    The binary operator to apply
-     * @param binIsLeft   Whether the bin is on the left side of the comparison
+     * @param isBinLeft   Whether the bin is on the left side of the comparison
      * @return The resulting expression
      * @throws DslParseException if the operand type is not supported
      */
     private static Exp getExpBinComparison(BinPart binPart, AbstractPart anotherPart,
-                                           BinaryOperator<Exp> operator, boolean binIsLeft) {
+                                           BinaryOperator<Exp> operator, boolean isBinLeft) {
         Exp binExp = Exp.bin(binPart.getBinName(), binPart.getExpType());
         Exp anotherExp = switch (anotherPart.getPartType()) {
             case INT_OPERAND -> {
@@ -370,7 +370,7 @@ public class VisitorUtils {
                     throw new DslParseException("Operand type not supported: %s".formatted(anotherPart.getPartType()));
         };
 
-        return binIsLeft ? operator.apply(binExp, anotherExp) : operator.apply(anotherExp, binExp);
+        return isBinLeft ? operator.apply(binExp, anotherExp) : operator.apply(anotherExp, binExp);
     }
 
     /**
@@ -826,7 +826,7 @@ public class VisitorUtils {
      * @param externalOperand The operand from the overall filter condition (expected to be an integer)
      * @param operation       The type of the arithmetic operation
      * @param type            The type of the overall filter operation
-     * @param binOnLeft       {@code true} if the bin is on the left side of the arithmetic operation, {@code false} otherwise
+     * @param isBinOnLeft       {@code true} if the bin is on the left side of the arithmetic operation, {@code false} otherwise
      * @return A {@link Filter} for the arithmetic condition
      * @throws NoApplicableFilterException if operands are not integers or if the operation is not supported
      * @throws DslParseException           if type validation fails
@@ -834,7 +834,7 @@ public class VisitorUtils {
     private static Filter handleBinArithmeticExpression(BinPart bin, AbstractPart operand,
                                                         AbstractPart externalOperand,
                                                         ExprPartsOperation operation,
-                                                        FilterOperationType type, boolean binOnLeft) {
+                                                        FilterOperationType type, boolean isBinOnLeft) {
         // Only support integer arithmetic in filters
         if (operand.getPartType() != AbstractPart.PartType.INT_OPERAND || externalOperand.getPartType() != AbstractPart.PartType.INT_OPERAND) {
             throw new NoApplicableFilterException(
@@ -847,7 +847,7 @@ public class VisitorUtils {
         IntOperand secondOperand = (IntOperand) externalOperand;
 
         return applyFilterOperator(bin.getBinName(), firstOperand, secondOperand,
-                operation, type, getFilterTermType(operation, binOnLeft));
+                operation, type, getFilterTermType(operation, isBinOnLeft));
     }
 
     /**
@@ -1365,10 +1365,25 @@ public class VisitorUtils {
         return operator.apply(leftExp, rightExp);
     }
 
+    // Operations that always produce a FLOAT result. Used by resolveExpType.
     private static final EnumSet<ExprPartsOperation> FLOAT_RETURNING_OPERATIONS = EnumSet.of(
             POW, LOG, CEIL, FLOOR, TO_FLOAT
     );
 
+    // Operations that always produce an INT result regardless of input operand type.
+    // Used by resolveExpType. All members are also present in NUMERIC_OPERATIONS.
+    private static final EnumSet<ExprPartsOperation> INT_RETURNING_OPERATIONS = EnumSet.of(
+            TO_INT,
+            INT_AND, INT_OR, INT_XOR, INT_NOT,
+            L_SHIFT, R_SHIFT, LOGICAL_R_SHIFT,
+            COUNT_ONE_BITS, FIND_BIT_LEFT, FIND_BIT_RIGHT
+    );
+
+    // All arithmetic/bitwise/cast operations. Used by isArithmeticExpressionContainer to decide
+    // whether to trigger type-compatibility validation on comparison operands (e.g. detecting
+    // "28.asFloat() == \"hello\"" as invalid). FLOAT_RETURNING_OPERATIONS and
+    // INT_RETURNING_OPERATIONS are intentional subsets — members that appear in both sets are
+    // caught first by the more-specific checks inside resolveExpType.
     private static final EnumSet<ExprPartsOperation> NUMERIC_OPERATIONS = EnumSet.of(
             ADD, SUB, MUL, DIV, MOD, POW, INT_XOR, INT_NOT, INT_AND, INT_OR,
             L_SHIFT, R_SHIFT, LOGICAL_R_SHIFT, ABS, CEIL, FLOOR, LOG,
@@ -1382,10 +1397,17 @@ public class VisitorUtils {
      *   <li>Uses the part's explicit type if set.</li>
      *   <li>Falls back to the {@code partTypeToExpType} map for literal operands.</li>
      *   <li>For arithmetic {@link ExpressionContainer} nodes, determines the result type based on
-     *       the operation: always-FLOAT operations (e.g. {@code POW}, {@code LOG}, {@code CEIL},
-     *       {@code FLOOR}, {@code TO_FLOAT}), always-INT operations (e.g. bitwise, {@code TO_INT}),
-     *       or type-propagating operations (e.g. {@code ABS}, {@code ADD}) where the type
-     *       is inferred from the left operand.</li>
+     *       the operation:
+     *       <ul>
+     *         <li>Always-FLOAT: {@code POW}, {@code LOG}, {@code CEIL}, {@code FLOOR},
+     *             {@code TO_FLOAT}</li>
+     *         <li>Always-INT: bitwise ops, shift ops, {@code TO_INT}, {@code COUNT_ONE_BITS},
+     *             {@code FIND_BIT_LEFT}, {@code FIND_BIT_RIGHT}</li>
+     *         <li>Type-propagating: {@code ABS}, {@code ADD}, {@code SUB}, {@code MUL},
+     *             {@code DIV}, {@code MOD}, {@code MIN_FUNC}, {@code MAX_FUNC} — result type
+     *             follows the left operand; falls back to {@code INT} when unknown.</li>
+     *       </ul>
+     *   </li>
      * </ul>
      *
      * @param part The {@link AbstractPart} whose type to resolve
@@ -1404,10 +1426,13 @@ public class VisitorUtils {
             if (FLOAT_RETURNING_OPERATIONS.contains(op)) {
                 return Exp.Type.FLOAT;
             }
+            if (INT_RETURNING_OPERATIONS.contains(op)) {
+                return Exp.Type.INT;
+            }
             if (isArithmeticExpressionContainer(part)) {
-                // For type-propagating operations (ABS, ADD, SUB, MUL, DIV, MOD, MIN, MAX, and
-                // always-INT ops), propagate FLOAT when the left operand is known to be FLOAT.
-                // Otherwise, fall back to INT: any arithmetic result is numeric (never STRING/BOOL),
+                // Type-propagating operations (ABS, ADD, SUB, MUL, DIV, MOD, MIN_FUNC, MAX_FUNC):
+                // propagate FLOAT when the left operand is known to be FLOAT.
+                // Otherwise fall back to INT: any arithmetic result is numeric (never STRING/BOOL),
                 // so returning INT conservatively ensures string comparisons are rejected.
                 if (container.getLeft() != null
                         && resolveExpType(container.getLeft()) == Exp.Type.FLOAT) {

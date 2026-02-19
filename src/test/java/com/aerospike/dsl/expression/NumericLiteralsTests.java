@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 /**
  * Comprehensive tests for numeric literal parsing: INT (decimal, hex, binary) and FLOAT.
  * <p>
@@ -41,6 +42,13 @@ public class NumericLiteralsTests {
     void intDecimalZero() {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("0 == 0"),
                 Exp.eq(Exp.val(0), Exp.val(0)));
+    }
+
+    @Test
+    void intDecimalLongMinViaUnaryMinus() {
+        TestUtils.parseFilterExpressionAndCompare(
+                ExpressionContext.of("-9223372036854775808 == -9223372036854775808"),
+                Exp.eq(Exp.val(Long.MIN_VALUE), Exp.val(Long.MIN_VALUE)));
     }
 
     // ==================== INT: hexadecimal ====================
@@ -82,6 +90,13 @@ public class NumericLiteralsTests {
                 Exp.eq(Exp.val(255), Exp.val(255)));
     }
 
+    @Test
+    void intHexLongMinViaUnaryMinus() {
+        TestUtils.parseFilterExpressionAndCompare(
+                ExpressionContext.of("-0x8000000000000000 == -9223372036854775808"),
+                Exp.eq(Exp.val(Long.MIN_VALUE), Exp.val(Long.MIN_VALUE)));
+    }
+
     // ==================== INT: binary ====================
 
     @Test
@@ -112,6 +127,15 @@ public class NumericLiteralsTests {
     void intBinaryZero() {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("0b0 == 0"),
                 Exp.eq(Exp.val(0), Exp.val(0)));
+    }
+
+    @Test
+    void intBinaryLongMinViaUnaryMinus() {
+        TestUtils.parseFilterExpressionAndCompare(
+                ExpressionContext.of(
+                        "-0b1000000000000000000000000000000000000000000000000000000000000000 == -9223372036854775808"
+                ),
+                Exp.eq(Exp.val(Long.MIN_VALUE), Exp.val(Long.MIN_VALUE)));
     }
 
     // ==================== FLOAT ====================
@@ -204,6 +228,19 @@ public class NumericLiteralsTests {
                 Exp.eq(Exp.val(5), Exp.val(5)));
     }
 
+    @Test
+    void doubleUnaryPlusInt() {
+        // '++5' should parse as two unary plus operators, resulting in 5
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("++5 == 5"),
+                Exp.eq(Exp.val(5), Exp.val(5)));
+    }
+
+    @Test
+    void doubleUnaryPlusIntOnRightOperand() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("5 == ++5"),
+                Exp.eq(Exp.val(5), Exp.val(5)));
+    }
+
     // ==================== Negative / error tests ====================
 
     @Test
@@ -228,6 +265,181 @@ public class NumericLiteralsTests {
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("10. == 10.0")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input");
+    }
+
+    @Test
+    void leadingDotHexIsRejected() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of(".0x10 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotHexIsRejectedOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == .0x10")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotHexWithMinusSignIsRejected() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("-.0x10 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotHexWithMinusSignIsRejectedOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == -.0x10")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotHexWithPlusSignIsRejected() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("+.0x10 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotHexWithPlusSignIsRejectedOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == +.0x10")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotHexWithDoubleMinusSignIsRejected() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("--.0x10 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotHexWithDoubleMinusSignIsRejectedOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == --.0x10")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotHexWithDoublePlusSignIsRejected() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("++.0x10 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotHexWithDoublePlusSignIsRejectedOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == ++.0x10")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotBinaryIsRejected() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of(".0b11 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotBinaryIsRejectedOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == .0b11")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotBinaryWithMinusSignIsRejected() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("-.0b11 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotBinaryWithMinusSignIsRejectedOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == -.0b11")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotBinaryWithPlusSignIsRejected() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("+.0b11 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotBinaryWithPlusSignIsRejectedOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == +.0b11")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotBinaryWithDoubleMinusSignIsRejected() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("--.0b11 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotBinaryWithDoubleMinusSignIsRejectedOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == --.0b11")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotBinaryWithDoublePlusSignIsRejected() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("++.0b11 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void leadingDotBinaryWithDoublePlusSignIsRejectedOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == ++.0b11")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void decimalIntOverflowPositive() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("9223372036854775808 == 0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("out of range");
+    }
+
+    @Test
+    void decimalIntOverflowNegative() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("-9223372036854775809 == 0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("out of range");
+    }
+
+    @Test
+    void decimalIntOverflowDoubleUnaryMinusLongMin() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("--9223372036854775808 == 0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("out of range");
+    }
+
+    @Test
+    void decimalIntOverflowDoubleUnaryMinusLongMinCast() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("--9223372036854775808.asFloat() == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("out of range");
+    }
+
+    @Test
+    void hexIntOverflowPositive() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0x8000000000000001 == 0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("out of range");
     }
 
     // ==================== FLOAT: leading-dot ====================
@@ -260,5 +472,37 @@ public class NumericLiteralsTests {
     void leadingDotFloatInExpression() {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("(.5 + .5) == 1.0"),
                 Exp.eq(Exp.add(Exp.val(0.5), Exp.val(0.5)), Exp.val(1.0)));
+    }
+
+    // ==================== FLOAT: multiple-dot (invalid) ====================
+
+    @Test
+    void doubleDotFloat() {
+        // "..37" has an extraneous leading dot before a valid leading-dot float
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("..37 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void doubleDotFloatOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == ..37")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void embeddedDotFloat() {
+        // ".3.7" has digits both before and after an extra dot
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of(".3.7 == 0.0")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
+    }
+
+    @Test
+    void embeddedDotFloatOnRight() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0.0 == .3.7")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Invalid float literal");
     }
 }

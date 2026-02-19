@@ -12,13 +12,13 @@ import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
 public class ListIndexRange extends ListPart {
-    private final boolean inverted;
+    private final boolean isInverted;
     private final Integer start;
     private final Integer count;
 
-    public ListIndexRange(boolean inverted, Integer start, Integer end) {
+    public ListIndexRange(boolean isInverted, Integer start, Integer end) {
         super(ListPartType.INDEX_RANGE);
-        this.inverted = inverted;
+        this.isInverted = isInverted;
         this.start = start;
         this.count = subtractNullable(end, start);
     }
@@ -45,7 +45,7 @@ public class ListIndexRange extends ListPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (inverted) {
+        if (isInverted) {
             cdtReturnType = cdtReturnType | ListReturnType.INVERTED;
         }
 

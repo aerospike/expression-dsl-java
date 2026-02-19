@@ -47,7 +47,8 @@ public class LogicalExpressionsTests {
         assertThatThrownBy(
                 () -> TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("($.intBin1 > 100 and" +
                         " ($.intBin2 > 100 or $.intBin3 < 100))"), expected2)
-        ).isInstanceOf(AssertionFailedError.class);
+        ).isInstanceOf(AssertionFailedError.class)
+                .hasMessageContaining("expected:");
     }
 
     @Test

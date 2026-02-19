@@ -14,12 +14,12 @@ import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class MapValueList extends MapPart {
-    private final boolean inverted;
+    private final boolean isInverted;
     private final List<?> valueList;
 
-    public MapValueList(boolean inverted, List<?> valueList) {
+    public MapValueList(boolean isInverted, List<?> valueList) {
         super(MapPartType.VALUE_LIST);
-        this.inverted = inverted;
+        this.isInverted = isInverted;
         this.valueList = valueList;
     }
 
@@ -50,7 +50,7 @@ public class MapValueList extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (inverted) {
+        if (isInverted) {
             cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
         }
 

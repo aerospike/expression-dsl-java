@@ -1,5 +1,6 @@
 package com.aerospike.dsl.expression;
 
+import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.client.Value;
 import com.aerospike.dsl.client.cdt.CTX;
@@ -12,6 +13,9 @@ import com.aerospike.dsl.util.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+
+import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class MapExpressionsTests {
 
@@ -247,6 +251,34 @@ public class MapExpressionsTests {
     }
 
     @Test
+    void mapByValueHexAndBinarySelectorsAreUnsupported() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.mapBin1.{=0xff} == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.mapBin1.{=0b10} == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.mapBin1.{=-0xff} == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.mapBin1.{=-0b10} == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+    }
+
+    @Test
+    void mapByValueIntegerMinDecimal() {
+        Exp expected = Exp.eq(
+                MapExp.getByValue(
+                        MapReturnType.VALUE,
+                        Exp.val(Integer.MIN_VALUE),
+                        Exp.mapBin("mapBin1")
+                ),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{=-2147483648} == 100"), expected);
+    }
+
+    @Test
     void mapByValueCount() {
         Exp expected = Exp.gt(
                 MapExp.getByValue(MapReturnType.COUNT,
@@ -273,6 +305,35 @@ public class MapExpressionsTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{#-1}.get(type: INT, return: VALUE) == 100"),
                 expected);
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{#-1}.asInt() == 100"), expected);
+    }
+
+    @Test
+    void mapByRankHexAndBinarySelectorsAreUnsupported() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.mapBin1.{#0xff} == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.mapBin1.{#0b10} == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.mapBin1.{#-0xff} == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.mapBin1.{#-0b10} == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+    }
+
+    @Test
+    void mapByRankIntegerMinDecimal() {
+        Exp expected = Exp.eq(
+                MapExp.getByRank(
+                        MapReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val(Integer.MIN_VALUE),
+                        Exp.mapBin("mapBin1")
+                ),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{#-2147483648} == 100"), expected);
     }
 
     @Test

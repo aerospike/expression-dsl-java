@@ -12,13 +12,13 @@ import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 
 public class MapRankRange extends MapPart {
-    private final boolean inverted;
+    private final boolean isInverted;
     private final Integer start;
     private final Integer count;
 
-    public MapRankRange(boolean inverted, Integer start, Integer end) {
+    public MapRankRange(boolean isInverted, Integer start, Integer end) {
         super(MapPartType.RANK_RANGE);
-        this.inverted = inverted;
+        this.isInverted = isInverted;
         this.start = start;
         this.count = subtractNullable(end, start);
     }
@@ -45,7 +45,7 @@ public class MapRankRange extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (inverted) {
+        if (isInverted) {
             cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
         }
 

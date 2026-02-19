@@ -12,6 +12,6 @@ public class FunctionArgs extends AbstractPart {
 
     public FunctionArgs(List<AbstractPart> operands) {
         super(PartType.FUNCTION_ARGS);
-        this.operands = operands;
+        this.operands = List.copyOf(operands);
     }
 }

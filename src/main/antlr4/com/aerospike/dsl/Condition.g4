@@ -4,7 +4,7 @@ grammar Condition;
     package com.aerospike.dsl;
 }
 
-parse: expression;
+parse: expression EOF;
 
 expression
     : logicalOrExpression
@@ -114,7 +114,10 @@ floatOperand: FLOAT | LEADING_DOT_FLOAT;
 INT: ('0' [xX] [0-9a-fA-F]+ | '0' [bB] [01]+ | [0-9]+);
 FLOAT: [0-9]+ '.' [0-9]+;
 
-// Exists to support .N syntax safely and keep tokenization predictable
+// Precedes LEADING_DOT_FLOAT so the lexer greedily captures .0xff and .0b101 as one token
+LEADING_DOT_FLOAT_HEX_OR_BINARY: '.' '0' ([xX] [0-9a-fA-F]+ | [bB] [01]+);
+
+// To support .N syntax safely and keep tokenization predictable
 LEADING_DOT_FLOAT: '.' [0-9]+;
 
 booleanOperand: TRUE | FALSE;

@@ -83,6 +83,34 @@ class ListExpressionsTests {
     }
 
     @Test
+    void listByValueHexAndBinarySelectorsAreUnsupported() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[=0xff] == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[=0b10] == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[=-0xff] == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[=-0b10] == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+    }
+
+    @Test
+    void listByValueIntegerMinDecimal() {
+        Exp expected = Exp.eq(
+                ListExp.getByValue(
+                        ListReturnType.VALUE,
+                        Exp.val(Integer.MIN_VALUE),
+                        Exp.listBin("listBin1")
+                ),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=-2147483648] == 100"), expected);
+    }
+
+    @Test
     void listByValueCount() {
         Exp expected = Exp.gt(
                 ListExp.getByValue(ListReturnType.COUNT,
@@ -109,6 +137,42 @@ class ListExpressionsTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-1].get(type: INT, return: VALUE) == 100"),
                 expected);
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-1].asInt() == 100"), expected);
+    }
+
+    @Test
+    void listByRankHexAndBinarySelectorsAreUnsupported() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[#0xff] == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[#0b10] == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[#-0xff] == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[#-0b10] == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Only decimal integer literals are supported in this element");
+    }
+
+    @Test
+    void listByRankIntegerMinDecimal() {
+        Exp expected = Exp.eq(
+                ListExp.getByRank(
+                        ListReturnType.VALUE,
+                        Exp.Type.INT,
+                        Exp.val(Integer.MIN_VALUE),
+                        Exp.listBin("listBin1")
+                ),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-2147483648] == 100"), expected);
+    }
+
+    @Test
+    void listByRankOutOfRangeSignedLiteral() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[#-2147483649] == 100")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("out of range");
     }
 
     @Test
@@ -249,7 +313,8 @@ class ListExpressionsTests {
     void negativeTypeComparisonList() {
         // TODO: should fail? Exp is successfully created but comparing int to a string value (validations on List)
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[#-1].get(type: INT) == \"stringValue\"")))
-                .isInstanceOf(NullPointerException.class);
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("Cannot invoke");
     }
 
     @Test

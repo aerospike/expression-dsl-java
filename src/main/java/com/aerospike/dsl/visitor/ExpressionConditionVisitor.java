@@ -377,7 +377,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     public AbstractPart visitFunctionCall(ConditionParser.FunctionCallContext ctx) {
         // If error recovery created this node without actual parentheses, fail fast
         if (ctx.getChildCount() < 3 || !ctx.getChild(1).getText().equals("(")) {
-            throw new DslParseException("Unexpected identifier: " + ctx.getChild(0).getText());
+            String name = ctx.getChildCount() > 0 ? ctx.getChild(0).getText() : "<unknown>";
+            throw new DslParseException("Unexpected identifier: " + name);
         }
 
         String funcName = ctx.NAME_IDENTIFIER().getText();

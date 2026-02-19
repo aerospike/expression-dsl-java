@@ -81,12 +81,18 @@ public class ArithmeticExpressionsTests {
 
     @Test
     void powRightAssociativity() {
-        // 4.0 ** 3.0 ** 2.0 must parse as 4.0 ** (3.0 ** 2.0), NOT (4.0 ** 3.0) ** 2.0
+        Exp expToCompare = Exp.eq(
+                Exp.pow(Exp.floatBin("base"), Exp.pow(Exp.val(3.0), Exp.val(2.0))),
+                Exp.val(1.0));
+
+        // $.base ** 3.0 ** 2.0 must parse as $.base ** (3.0 ** 2.0), NOT ($.base ** 3.0) ** 2.0
         TestUtils.parseFilterExpressionAndCompare(
-                ExpressionContext.of("(4.0 ** 3.0 ** 2.0) == 0.0"),
-                Exp.eq(
-                        Exp.pow(Exp.val(4.0), Exp.pow(Exp.val(3.0), Exp.val(2.0))),
-                        Exp.val(0.0)));
+                ExpressionContext.of("$.base ** 3.0 ** 2.0 == 1.0"),
+                expToCompare);
+
+        TestUtils.parseFilterExpressionAndCompare(
+                ExpressionContext.of("$.base ** (3.0 ** 2.0) == 1.0"),
+                expToCompare);
     }
 
     @Test

@@ -59,7 +59,9 @@ public class DSLParserImpl implements DSLParser {
 
     private ParseTree getParseTree(String input) {
         ConditionLexer lexer = new ConditionLexer(CharStreams.fromString(input));
-        ConditionParser parser = new ConditionParser(new CommonTokenStream(lexer));
+        CommonTokenStream tokenStream = new CommonTokenStream(lexer);
+        ConditionParser parser = new ConditionParser(tokenStream);
+        parser.addErrorListener(new DSLParserErrorListener());
         return parser.parse();
     }
 
