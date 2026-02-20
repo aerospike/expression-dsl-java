@@ -40,11 +40,28 @@ public class IndexContext {
      * @return A new instance of {@code IndexContext}
      */
     public static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse) {
-        List<Index> matchingIndexes = indexes.stream().filter(idx -> areNamesEqual(idx, indexToUse)).toList();
+        List<Index> matchingIndexes = indexes.stream()
+                .filter(idx -> indexMatches(idx, namespace, indexToUse))
+                .toList();
         return new IndexContext(namespace, matchingIndexes.isEmpty() ? indexes : matchingIndexes);
     }
 
-    private static boolean areNamesEqual(Index idx, String indexToUse) {
-        return idx != null && idx.getName() != null && idx.getName().equals(indexToUse);
+    private static boolean indexMatches(Index idx, String namespace, String indexToUse) {
+        if (idx == null || indexToUse == null) {
+            return false;
+        }
+
+        String indexName = idx.getName();
+        if (indexName == null || !indexName.equals(indexToUse)) {
+            return false;
+        }
+
+        // If no namespace is specified, match by name only (preserves existing behavior for null namespace).
+        if (namespace == null) {
+            return true;
+        }
+
+        String indexNamespace = idx.getNamespace();
+        return namespace.equals(indexNamespace);
     }
 }
