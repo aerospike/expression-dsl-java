@@ -173,6 +173,129 @@ public class LogicalParsedExpressionTests {
     }
 
     @Test
+    void binLogical_AND_AND_explicitly_given_index() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin3").bin("intBin3")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+        );
+        Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE); // The index has been chosen manually
+        Exp exp = Exp.and(
+                Exp.gt(Exp.intBin("intBin2"), Exp.val(100)),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
+        );
+        parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100"), filter, exp,
+                // Manually selecting the index by its name
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_bin1"));
+    }
+
+    @Test
+    void binLogical_AND_AND_explicitly_given_index_unavailable() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin2").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+        );
+        // Fallback to the default automatic choosing of the index
+        Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
+        );
+        parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100"), filter, exp,
+                // There is no index with the name "intBin10"
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "intBin10"));
+    }
+
+    @Test
+    void binLogical_AND_AND_explicitly_given_index_null() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin2").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin3").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+        );
+        // Null falls back to automatic selection (highest cardinality)
+        Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
+        );
+        parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100"), filter, exp,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, null));
+    }
+
+    @Test
+    void binLogical_AND_AND_explicitly_given_index_empty_string() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin2").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin3").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+        );
+        // Empty string falls back to automatic selection (highest cardinality)
+        Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
+        );
+        parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100"), filter, exp,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, ""));
+    }
+
+    @Test
+    void binLogical_AND_AND_explicitly_given_index_overrides_alphabetical() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(100).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin2").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(100).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin3").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(100).build()
+        );
+        // Without hint intBin1 would be chosen alphabetically (same cardinality). With hint, intBin2 is selected.
+        Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
+        );
+        parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > 100 and $.intBin2 > 100 and $.intBin3 > 100"), filter, exp,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_bin2"));
+    }
+
+    @Test
+    void binLogical_AND_AND_with_OR_subexpression_explicitly_given_index() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin2").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin3").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin4").bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+        );
+        // Without hint, intBin2 is chosen (highest cardinality). Bins in the OR are not eligible for SI filter.
+        // With hint, intBin1 is selected despite lower cardinality.
+        Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                Exp.gt(Exp.intBin("intBin2"), Exp.val(100)),
+                Exp.or(
+                        Exp.gt(Exp.intBin("intBin3"), Exp.val(100)),
+                        Exp.gt(Exp.intBin("intBin4"), Exp.val(100))
+                )
+        );
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 > 100 and $.intBin2 > 100 and ($.intBin3 > 100 or $.intBin4 > 100)"),
+                filter, exp,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_bin1"));
+    }
+
+    @Test
+    void binLogical_single_bin_explicitly_given_index() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+        );
+        Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
+        parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > 100"), filter, null,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_bin1"));
+    }
+
+    @Test
     void binLogical_AND_AND_two_indexes() {
         List<Index> indexes = List.of(
                 Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
@@ -256,6 +379,24 @@ public class LogicalParsedExpressionTests {
         );
         parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > 100 or $.intBin2 > 100 or $.intBin3 > 100"), filter, exp,
                 IndexContext.of(TestUtils.NAMESPACE, indexes));
+    }
+
+    @Test
+    void binLogical_OR_OR_provided_index_no_filter_created() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin2").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin3").bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+        );
+        // SI filter is never produced for a top-level OR expression, even when an explicit index is requested
+        Filter filter = null;
+        Exp exp = Exp.or(
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                Exp.gt(Exp.intBin("intBin2"), Exp.val(100)),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(100))
+        );
+        parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > 100 or $.intBin2 > 100 or $.intBin3 > 100"), filter, exp,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_bin1"));
     }
 
     @Test
