@@ -82,7 +82,7 @@ public class ControlStructuresTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("with (x = 1, y = ${x} + 1) do (${x} + ${y})"),
                 expected);
         // different spacing style
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("with(x = 1, y = ${x}+1) do(${x}+${y})"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("with(x = 1, y = ${x} + 1) do(${x} + ${y})"),
                 expected);
     }
 }

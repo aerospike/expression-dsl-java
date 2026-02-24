@@ -50,12 +50,25 @@ public class ExpressionContainer extends AbstractPart {
         DIV,
         MUL,
         MOD,
+        POW,
         INT_XOR,
         INT_NOT, // unary
         INT_AND,
         INT_OR,
         L_SHIFT,
         R_SHIFT,
+        LOGICAL_R_SHIFT,
+        ABS, // unary
+        CEIL, // unary
+        FLOOR, // unary
+        LOG,
+        MIN_FUNC,
+        MAX_FUNC,
+        COUNT_ONE_BITS, // unary
+        FIND_BIT_LEFT,
+        FIND_BIT_RIGHT,
+        TO_INT, // unary
+        TO_FLOAT, // unary
         AND,
         OR,
         NOT, // unary

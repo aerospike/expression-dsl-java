@@ -8,14 +8,16 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
+
 public class MapValueRange extends MapPart {
-    private final boolean inverted;
+    private final boolean isInverted;
     private final Integer start;
     private final Integer end;
 
-    public MapValueRange(boolean inverted, Integer start, Integer end) {
+    public MapValueRange(boolean isInverted, Integer start, Integer end) {
         super(MapPartType.VALUE_RANGE);
-        this.inverted = inverted;
+        this.isInverted = isInverted;
         this.start = start;
         this.end = end;
     }
@@ -29,11 +31,11 @@ public class MapValueRange extends MapPart {
                     valueRange != null ? valueRange.valueRangeIdentifier() : invertedValueRange.valueRangeIdentifier();
             boolean isInverted = valueRange == null;
 
-            Integer startValue = Integer.parseInt(range.valueIdentifier(0).INT().getText());
+            Integer startValue = parseSignedInt(range.valueIdentifier(0).signedInt());
 
             Integer endValue = null;
-            if (range.valueIdentifier(1) != null && range.valueIdentifier(1).INT() != null) {
-                endValue = Integer.parseInt(range.valueIdentifier(1).INT().getText());
+            if (range.valueIdentifier(1) != null && range.valueIdentifier(1).signedInt() != null) {
+                endValue = parseSignedInt(range.valueIdentifier(1).signedInt());
             }
 
             return new MapValueRange(isInverted, startValue, endValue);
@@ -43,7 +45,7 @@ public class MapValueRange extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (inverted) {
+        if (isInverted) {
             cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
         }
 

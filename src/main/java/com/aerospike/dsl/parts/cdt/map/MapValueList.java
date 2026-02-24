@@ -10,15 +10,16 @@ import com.aerospike.dsl.parts.path.BasePath;
 
 import java.util.List;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class MapValueList extends MapPart {
-    private final boolean inverted;
+    private final boolean isInverted;
     private final List<?> valueList;
 
-    public MapValueList(boolean inverted, List<?> valueList) {
+    public MapValueList(boolean isInverted, List<?> valueList) {
         super(MapPartType.VALUE_LIST);
-        this.inverted = inverted;
+        this.isInverted = isInverted;
         this.valueList = valueList;
     }
 
@@ -38,7 +39,7 @@ public class MapValueList extends MapPart {
                         } else if (listValue.QUOTED_STRING() != null) {
                             return unquote(listValue.QUOTED_STRING().getText());
                         }
-                        return Integer.parseInt(listValue.INT().getText());
+                        return parseSignedInt(listValue.signedInt());
                     }
             ).toList();
 
@@ -49,7 +50,7 @@ public class MapValueList extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (inverted) {
+        if (isInverted) {
             cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
         }
 

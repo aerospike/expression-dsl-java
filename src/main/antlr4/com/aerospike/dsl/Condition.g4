@@ -4,7 +4,7 @@ grammar Condition;
     package com.aerospike.dsl;
 }
 
-parse: expression;
+parse: expression EOF;
 
 expression
     : logicalOrExpression
@@ -27,13 +27,13 @@ basicExpression
     ;
 
 comparisonExpression
-    : additiveExpression '>' additiveExpression                                 # GreaterThanExpression
-    | additiveExpression '>=' additiveExpression                                # GreaterThanOrEqualExpression
-    | additiveExpression '<' additiveExpression                                 # LessThanExpression
-    | additiveExpression '<=' additiveExpression                                # LessThanOrEqualExpression
-    | additiveExpression '==' additiveExpression                                # EqualityExpression
-    | additiveExpression '!=' additiveExpression                                # InequalityExpression
-    | additiveExpression                                                        # AdditiveExpressionWrapper
+    : bitwiseExpression '>' bitwiseExpression                                   # GreaterThanExpression
+    | bitwiseExpression '>=' bitwiseExpression                                  # GreaterThanOrEqualExpression
+    | bitwiseExpression '<' bitwiseExpression                                   # LessThanExpression
+    | bitwiseExpression '<=' bitwiseExpression                                  # LessThanOrEqualExpression
+    | bitwiseExpression '==' bitwiseExpression                                  # EqualityExpression
+    | bitwiseExpression '!=' bitwiseExpression                                  # InequalityExpression
+    | bitwiseExpression                                                         # BitwiseExpressionWrapper
     ;
 
 // Rest of the grammar rules remain the same
@@ -44,10 +44,15 @@ additiveExpression
     ;
 
 multiplicativeExpression
-    : bitwiseExpression                                                         # BitwiseExpressionWrapper
-    | multiplicativeExpression '*' bitwiseExpression                            # MulExpression
-    | multiplicativeExpression '/' bitwiseExpression                            # DivExpression
-    | multiplicativeExpression '%' bitwiseExpression                            # ModExpression
+    : powerExpression                                                           # PowerExpressionWrapper
+    | multiplicativeExpression '*' powerExpression                              # MulExpression
+    | multiplicativeExpression '/' powerExpression                              # DivExpression
+    | multiplicativeExpression '%' powerExpression                              # ModExpression
+    ;
+
+powerExpression
+    : unaryExpression                                                           # UnaryExpressionWrapper
+    | <assoc=right> powerExpression '**' powerExpression                        # PowExpression
     ;
 
 bitwiseExpression
@@ -55,13 +60,20 @@ bitwiseExpression
     | bitwiseExpression '&' shiftExpression                                     # IntAndExpression
     | bitwiseExpression '|' shiftExpression                                     # IntOrExpression
     | bitwiseExpression '^' shiftExpression                                     # IntXorExpression
-    | '~' shiftExpression                                                       # IntNotExpression
     ;
 
 shiftExpression
+    : additiveExpression                                                        # AdditiveExpressionWrapper
+    | shiftExpression '<<' additiveExpression                                   # IntLShiftExpression
+    | shiftExpression '>>' additiveExpression                                   # IntRShiftExpression
+    | shiftExpression '>>>' additiveExpression                                  # IntLogicalRShiftExpression
+    ;
+
+unaryExpression
     : operand                                                                   # OperandExpression
-    | shiftExpression '<<' operand                                              # IntLShiftExpression
-    | shiftExpression '>>' operand                                              # IntRShiftExpression
+    | '-' unaryExpression                                                       # UnaryMinusExpression
+    | '+' unaryExpression                                                       # UnaryPlusExpression
+    | '~' unaryExpression                                                       # IntNotExpression
     ;
 
 variableDefinition
@@ -73,7 +85,9 @@ expressionMapping
     ;
 
 operand
-    : numberOperand
+    : operandCast
+    | functionCall
+    | numberOperand
     | booleanOperand
     | stringOperand
     | listConstant
@@ -84,13 +98,27 @@ operand
     | '(' expression ')'
     ;
 
+functionCall
+    : NAME_IDENTIFIER '(' expression (',' expression)* ')'
+    ;
+
+operandCast
+    : numberOperand '.' pathFunctionCast
+    ;
+
 numberOperand: intOperand | floatOperand;
 
 intOperand: INT;
-floatOperand: FLOAT;
+floatOperand: FLOAT | LEADING_DOT_FLOAT;
 
-INT: '-'?[0-9]+;
-FLOAT: '-'? [0-9]+ '.' [0-9]+;
+INT: ('0' [xX] [0-9a-fA-F]+ | '0' [bB] [01]+ | [0-9]+);
+FLOAT: [0-9]+ '.' [0-9]+;
+
+// Precedes LEADING_DOT_FLOAT so the lexer greedily captures .0xff and .0b101 as one token
+LEADING_DOT_FLOAT_HEX_OR_BINARY: '.' '0' ([xX] [0-9a-fA-F]+ | [bB] [01]+);
+
+// To support .N syntax safely and keep tokenization predictable
+LEADING_DOT_FLOAT: '.' [0-9]+;
 
 booleanOperand: TRUE | FALSE;
 
@@ -101,11 +129,11 @@ stringOperand: QUOTED_STRING;
 
 QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
-listConstant: '[' operand? (',' operand)* ']';
+listConstant: '[' unaryExpression? (',' unaryExpression)* ']';
 
 orderedMapConstant: '{' mapPairConstant? (',' mapPairConstant)* '}';
 
-mapPairConstant: mapKeyOperand ':' operand;
+mapPairConstant: mapKeyOperand ':' unaryExpression;
 
 mapKeyOperand: intOperand | stringOperand;
 
@@ -214,9 +242,9 @@ mapKey
 
 mapValue: '{=' valueIdentifier '}';
 
-mapRank: '{#' INT '}';
+mapRank: '{#' signedInt '}';
 
-mapIndex: '{' INT '}';
+mapIndex: '{' signedInt '}';
 
 mapKeyRange
     : standardMapKeyRange
@@ -271,8 +299,10 @@ indexRangeIdentifier
     | start ':'
     ;
 
-start: INT | '-' INT;
-end: INT | '-' INT;
+signedInt: '-'? INT;
+
+start: signedInt;
+end: signedInt;
 
 mapValueList
     : standardMapValueList
@@ -385,11 +415,11 @@ listPart
 
 LIST_TYPE_DESIGNATOR: '[]';
 
-listIndex: '[' INT ']';
+listIndex: '[' signedInt ']';
 
 listValue: '[=' valueIdentifier ']';
 
-listRank: '[#' INT ']';
+listRank: '[#' signedInt ']';
 
 listIndexRange
     : standardListIndexRange
@@ -459,8 +489,7 @@ invertedListRankRangeRelative
 valueIdentifier
     : NAME_IDENTIFIER
     | QUOTED_STRING
-    | INT
-    | '-' INT
+    | signedInt
     ;
 
 valueListIdentifier: valueIdentifier ',' valueIdentifier (',' valueIdentifier)*;

@@ -1,11 +1,95 @@
 package com.aerospike.dsl.util;
 
+import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
+import java.math.BigInteger;
+
 @UtilityClass
 public class ParsingUtils {
+
+    private static final BigInteger LONG_MIN_ABS = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
+    private static final BigInteger INT_MIN_VALUE = BigInteger.valueOf(Integer.MIN_VALUE);
+    private static final BigInteger INT_MAX_VALUE = BigInteger.valueOf(Integer.MAX_VALUE);
+
+    /**
+     * Extracts a signed integer value from a {@code signedInt} parser rule context.
+     * The grammar rule is {@code signedInt: '-'? INT;}, so the context contains
+     * either just an INT token or a '-' followed by an INT token.
+     *
+     * @param ctx The signedInt context from the parser
+     * @return The parsed integer value, negated if a '-' prefix is present
+     */
+    public static int parseSignedInt(ConditionParser.SignedIntContext ctx) {
+        String intText = ctx.INT().getText();
+        boolean isNegative = ctx.getText().startsWith("-");
+        if (isHexOrBinaryIntToken(intText)) {
+            throw new DslParseException("Only decimal integer literals are supported in this element: " + ctx.getText());
+        }
+
+        BigInteger signedValue = getBigInteger(ctx, intText, isNegative);
+
+        return signedValue.intValue();
+    }
+
+    private static BigInteger getBigInteger(ConditionParser.SignedIntContext ctx, String intText, boolean isNegative) {
+        BigInteger value;
+        try {
+            value = new BigInteger(intText, 10);
+        } catch (NumberFormatException e) {
+            throw new DslParseException("Invalid integer literal: " + ctx.getText(), e);
+        }
+        BigInteger signedValue = isNegative ? value.negate() : value;
+
+        if (signedValue.compareTo(INT_MIN_VALUE) < 0 || signedValue.compareTo(INT_MAX_VALUE) > 0) {
+            throw new DslParseException("Signed integer literal out of range for INT: " + ctx.getText());
+        }
+        return signedValue;
+    }
+
+    private static boolean isHexOrBinaryIntToken(String intText) {
+        return intText.length() > 2
+                && intText.charAt(0) == '0'
+                && (intText.charAt(1) == 'x' || intText.charAt(1) == 'X'
+                || intText.charAt(1) == 'b' || intText.charAt(1) == 'B');
+    }
+
+    /**
+     * Parses an unsigned INT token (decimal, hex or binary) into a long value.
+     * The value range is [0, 2^63], where 2^63 is represented as {@link Long#MIN_VALUE}.
+     *
+     * @param text INT token text
+     * @return Parsed long value (unsigned 2^63 maps to {@link Long#MIN_VALUE})
+     */
+    public static long parseUnsignedLongLiteral(String text) {
+        BigInteger value = parseUnsignedIntegerLiteral(text);
+        if (value.compareTo(LONG_MIN_ABS) > 0) {
+            throw new DslParseException("Integer literal out of range: " + text);
+        }
+        return value.longValue();
+    }
+
+    private static BigInteger parseUnsignedIntegerLiteral(String text) {
+        try {
+            int radix = 10;
+            String digits = text;
+            if (text.length() > 2 && text.charAt(0) == '0') {
+                char prefix = text.charAt(1);
+                if (prefix == 'x' || prefix == 'X') {
+                    radix = 16;
+                    digits = text.substring(2);
+                } else if (prefix == 'b' || prefix == 'B') {
+                    radix = 2;
+                    digits = text.substring(2);
+                }
+            }
+            return new BigInteger(digits, radix);
+        } catch (NumberFormatException e) {
+            throw new DslParseException("Invalid integer literal: " + text, e);
+        }
+    }
 
     /**
      * Get the string inside the quotes.

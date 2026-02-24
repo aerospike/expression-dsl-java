@@ -139,9 +139,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
-    public AbstractPart visitAdditiveExpressionWrapper(ConditionParser.AdditiveExpressionWrapperContext ctx) {
+    public AbstractPart visitBitwiseExpressionWrapper(ConditionParser.BitwiseExpressionWrapperContext ctx) {
         // Pass through the wrapper
-        return visit(ctx.additiveExpression());
+        return visit(ctx.bitwiseExpression());
     }
 
     @Override
@@ -151,9 +151,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
-    public AbstractPart visitBitwiseExpressionWrapper(ConditionParser.BitwiseExpressionWrapperContext ctx) {
+    public AbstractPart visitUnaryExpressionWrapper(ConditionParser.UnaryExpressionWrapperContext ctx) {
         // Pass through the wrapper
-        return visit(ctx.bitwiseExpression());
+        return visit(ctx.unaryExpression());
     }
 
     @Override
@@ -163,9 +163,106 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
+    public AbstractPart visitAdditiveExpressionWrapper(ConditionParser.AdditiveExpressionWrapperContext ctx) {
+        // Pass through the wrapper
+        return visit(ctx.additiveExpression());
+    }
+
+    @Override
+    public AbstractPart visitUnaryPlusExpression(ConditionParser.UnaryPlusExpressionContext ctx) {
+        // Unary '+' is a no-op, delegate to the inner expression
+        return visit(ctx.unaryExpression());
+    }
+
+    @Override
+    public AbstractPart visitUnaryMinusExpression(ConditionParser.UnaryMinusExpressionContext ctx) {
+        // Pre-inspect the parse tree (no visitor dispatch) to detect the Long.MIN_VALUE literal
+        // (9223372036854775808), which cannot be parsed by visitIntOperand as a positive long.
+        // If detected, we construct IntOperand(Long.MIN_VALUE) directly without visiting.
+        AbstractPart longMinLiteral = tryParseLongMinLiteral(ctx.unaryExpression());
+        if (longMinLiteral != null) {
+            return longMinLiteral;
+        }
+
+        AbstractPart operand = visit(ctx.unaryExpression());
+
+        // Negate literal operands directly
+        if (operand instanceof IntOperand intOp) {
+            return new IntOperand(negateLongLiteral(intOp.getValue(), ctx.getText()));
+        }
+        if (operand instanceof FloatOperand floatOp) {
+            return new FloatOperand(-floatOp.getValue());
+        }
+
+        // For type-cast expressions (TO_INT, TO_FLOAT) with a literal operand,
+        // push negation into the literal to preserve Exp tree equivalence (e.g., -5.asFloat())
+        if (operand instanceof ExpressionContainer container && container.isUnary()) {
+            ExpressionContainer.ExprPartsOperation op = container.getOperationType();
+            if (op == ExpressionContainer.ExprPartsOperation.TO_INT
+                    || op == ExpressionContainer.ExprPartsOperation.TO_FLOAT) {
+                AbstractPart inner = container.getLeft();
+                if (inner instanceof IntOperand intOp) {
+                    return new ExpressionContainer(new IntOperand(negateLongLiteral(intOp.getValue(), ctx.getText())), op);
+                }
+                if (inner instanceof FloatOperand floatOp) {
+                    return new ExpressionContainer(new FloatOperand(-floatOp.getValue()), op);
+                }
+            }
+        }
+
+        // General case: negate via 0 - operand
+        return new ExpressionContainer(new IntOperand(0L), operand, ExpressionContainer.ExprPartsOperation.SUB);
+    }
+
+    private AbstractPart tryParseLongMinLiteral(ConditionParser.UnaryExpressionContext unaryCtx) {
+        if (!(unaryCtx instanceof ConditionParser.OperandExpressionContext operandExpressionCtx)) {
+            return null;
+        }
+        ConditionParser.OperandContext operandCtx = operandExpressionCtx.operand();
+
+        ConditionParser.NumberOperandContext numberOperandCtx = null;
+        ConditionParser.PathFunctionCastContext castCtx = null;
+        if (operandCtx.numberOperand() != null) {
+            numberOperandCtx = operandCtx.numberOperand();
+        } else if (operandCtx.operandCast() != null) {
+            numberOperandCtx = operandCtx.operandCast().numberOperand();
+            castCtx = operandCtx.operandCast().pathFunctionCast();
+        }
+
+        if (numberOperandCtx == null || numberOperandCtx.intOperand() == null) {
+            return null;
+        }
+
+        long parsed = parseUnsignedLongLiteral(numberOperandCtx.intOperand().INT().getText());
+        if (parsed != Long.MIN_VALUE) {
+            return null;
+        }
+
+        if (castCtx == null) {
+            return new IntOperand(Long.MIN_VALUE);
+        }
+
+        String castText = castCtx.PATH_FUNCTION_CAST().getText();
+        String typeVal = extractTypeFromMethod(castText);
+        PathFunction.CastType castType = PathFunction.CastType.valueOf(typeVal.toUpperCase());
+        ExpressionContainer.ExprPartsOperation op = switch (castType) {
+            case INT -> ExpressionContainer.ExprPartsOperation.TO_INT;
+            case FLOAT -> ExpressionContainer.ExprPartsOperation.TO_FLOAT;
+        };
+        return new ExpressionContainer(new IntOperand(Long.MIN_VALUE), op);
+    }
+
+    private static long negateLongLiteral(long value, String input) {
+        if (value == Long.MIN_VALUE) {
+            throw new DslParseException("Integer literal out of range: " + input);
+        }
+        return -value;
+    }
+
+    @Override
     public AbstractPart visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {
-        AbstractPart left = visit(ctx.additiveExpression(0));
-        AbstractPart right = visit(ctx.additiveExpression(1));
+        AbstractPart left = visit(ctx.bitwiseExpression(0));
+        AbstractPart right = visit(ctx.bitwiseExpression(1));
 
         overrideTypeInfo(left, right);
 
@@ -174,8 +271,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitGreaterThanOrEqualExpression(ConditionParser.GreaterThanOrEqualExpressionContext ctx) {
-        AbstractPart left = visit(ctx.additiveExpression(0));
-        AbstractPart right = visit(ctx.additiveExpression(1));
+        AbstractPart left = visit(ctx.bitwiseExpression(0));
+        AbstractPart right = visit(ctx.bitwiseExpression(1));
 
         overrideTypeInfo(left, right);
 
@@ -184,8 +281,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitLessThanExpression(ConditionParser.LessThanExpressionContext ctx) {
-        AbstractPart left = visit(ctx.additiveExpression(0));
-        AbstractPart right = visit(ctx.additiveExpression(1));
+        AbstractPart left = visit(ctx.bitwiseExpression(0));
+        AbstractPart right = visit(ctx.bitwiseExpression(1));
 
         overrideTypeInfo(left, right);
 
@@ -194,8 +291,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitLessThanOrEqualExpression(ConditionParser.LessThanOrEqualExpressionContext ctx) {
-        AbstractPart left = visit(ctx.additiveExpression(0));
-        AbstractPart right = visit(ctx.additiveExpression(1));
+        AbstractPart left = visit(ctx.bitwiseExpression(0));
+        AbstractPart right = visit(ctx.bitwiseExpression(1));
 
         overrideTypeInfo(left, right);
 
@@ -204,8 +301,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitEqualityExpression(ConditionParser.EqualityExpressionContext ctx) {
-        AbstractPart left = visit(ctx.additiveExpression(0));
-        AbstractPart right = visit(ctx.additiveExpression(1));
+        AbstractPart left = visit(ctx.bitwiseExpression(0));
+        AbstractPart right = visit(ctx.bitwiseExpression(1));
 
         overrideTypeInfo(left, right);
 
@@ -214,8 +311,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitInequalityExpression(ConditionParser.InequalityExpressionContext ctx) {
-        AbstractPart left = visit(ctx.additiveExpression(0));
-        AbstractPart right = visit(ctx.additiveExpression(1));
+        AbstractPart left = visit(ctx.bitwiseExpression(0));
+        AbstractPart right = visit(ctx.bitwiseExpression(1));
 
         overrideTypeInfo(left, right);
 
@@ -241,7 +338,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitMulExpression(ConditionParser.MulExpressionContext ctx) {
         AbstractPart left = visit(ctx.multiplicativeExpression());
-        AbstractPart right = visit(ctx.bitwiseExpression());
+        AbstractPart right = visit(ctx.powerExpression());
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.MUL);
     }
@@ -249,7 +346,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitDivExpression(ConditionParser.DivExpressionContext ctx) {
         AbstractPart left = visit(ctx.multiplicativeExpression());
-        AbstractPart right = visit(ctx.bitwiseExpression());
+        AbstractPart right = visit(ctx.powerExpression());
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.DIV);
     }
@@ -257,9 +354,102 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitModExpression(ConditionParser.ModExpressionContext ctx) {
         AbstractPart left = visit(ctx.multiplicativeExpression()); // first operand
-        AbstractPart right = visit(ctx.bitwiseExpression()); // second operand
+        AbstractPart right = visit(ctx.powerExpression()); // second operand
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.MOD);
+    }
+
+    @Override
+    public AbstractPart visitPowerExpressionWrapper(ConditionParser.PowerExpressionWrapperContext ctx) {
+        // Pass through the wrapper
+        return visit(ctx.powerExpression());
+    }
+
+    @Override
+    public AbstractPart visitPowExpression(ConditionParser.PowExpressionContext ctx) {
+        AbstractPart left = visit(ctx.powerExpression(0));
+        AbstractPart right = visit(ctx.powerExpression(1));
+
+        return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.POW);
+    }
+
+    @Override
+    public AbstractPart visitFunctionCall(ConditionParser.FunctionCallContext ctx) {
+        // If error recovery created this node without actual parentheses, fail fast
+        if (ctx.getChildCount() < 3 || !ctx.getChild(1).getText().equals("(")) {
+            String name = ctx.getChildCount() > 0 ? ctx.getChild(0).getText() : "<unknown>";
+            throw new DslParseException("Unexpected identifier: " + name);
+        }
+
+        String funcName = ctx.NAME_IDENTIFIER().getText();
+        List<AbstractPart> args = new ArrayList<>();
+        for (ConditionParser.ExpressionContext ec : ctx.expression()) {
+            args.add(visit(ec));
+        }
+
+        return switch (funcName) {
+            // Unary arithmetic functions
+            case "abs" -> {
+                validateFunctionArgCount(funcName, args, 1);
+                yield new ExpressionContainer(args.get(0), ExpressionContainer.ExprPartsOperation.ABS);
+            }
+            case "ceil" -> {
+                validateFunctionArgCount(funcName, args, 1);
+                yield new ExpressionContainer(args.get(0), ExpressionContainer.ExprPartsOperation.CEIL);
+            }
+            case "floor" -> {
+                validateFunctionArgCount(funcName, args, 1);
+                yield new ExpressionContainer(args.get(0), ExpressionContainer.ExprPartsOperation.FLOOR);
+            }
+            // Binary arithmetic functions
+            case "log" -> {
+                validateFunctionArgCount(funcName, args, 2);
+                yield new ExpressionContainer(args.get(0), args.get(1),
+                        ExpressionContainer.ExprPartsOperation.LOG);
+            }
+            // Variadic arithmetic functions
+            case "min" -> {
+                validateFunctionArgCountAtLeast(funcName, args, 2);
+                yield new ExpressionContainer(new FunctionArgs(args),
+                        ExpressionContainer.ExprPartsOperation.MIN_FUNC);
+            }
+            case "max" -> {
+                validateFunctionArgCountAtLeast(funcName, args, 2);
+                yield new ExpressionContainer(new FunctionArgs(args),
+                        ExpressionContainer.ExprPartsOperation.MAX_FUNC);
+            }
+            // Bit-scanning functions
+            case "countOneBits" -> {
+                validateFunctionArgCount(funcName, args, 1);
+                yield new ExpressionContainer(args.get(0),
+                        ExpressionContainer.ExprPartsOperation.COUNT_ONE_BITS);
+            }
+            case "findBitLeft" -> {
+                validateFunctionArgCount(funcName, args, 2);
+                yield new ExpressionContainer(args.get(0), args.get(1),
+                        ExpressionContainer.ExprPartsOperation.FIND_BIT_LEFT);
+            }
+            case "findBitRight" -> {
+                validateFunctionArgCount(funcName, args, 2);
+                yield new ExpressionContainer(args.get(0), args.get(1),
+                        ExpressionContainer.ExprPartsOperation.FIND_BIT_RIGHT);
+            }
+            default -> throw new DslParseException("Unknown function: " + funcName);
+        };
+    }
+
+    private void validateFunctionArgCount(String funcName, List<AbstractPart> args, int expected) {
+        if (args.size() != expected) {
+            throw new DslParseException(
+                    "Function '%s' expects %d argument(s), got %d".formatted(funcName, expected, args.size()));
+        }
+    }
+
+    private void validateFunctionArgCountAtLeast(String funcName, List<AbstractPart> args, int minCount) {
+        if (args.size() < minCount) {
+            throw new DslParseException(
+                    "Function '%s' expects at least %d arguments, got %d".formatted(funcName, minCount, args.size()));
+        }
     }
 
     @Override
@@ -288,7 +478,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitIntNotExpression(ConditionParser.IntNotExpressionContext ctx) {
-        AbstractPart operand = visit(ctx.shiftExpression());
+        AbstractPart operand = visit(ctx.unaryExpression());
 
         return new ExpressionContainer(operand, ExpressionContainer.ExprPartsOperation.INT_NOT);
     }
@@ -296,7 +486,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitIntLShiftExpression(ConditionParser.IntLShiftExpressionContext ctx) {
         AbstractPart left = visit(ctx.shiftExpression()); // first operand
-        AbstractPart right = visit(ctx.operand()); // second operand
+        AbstractPart right = visit(ctx.additiveExpression()); // second operand
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.L_SHIFT);
     }
@@ -304,9 +494,17 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitIntRShiftExpression(ConditionParser.IntRShiftExpressionContext ctx) {
         AbstractPart left = visit(ctx.shiftExpression()); // first operand
-        AbstractPart right = visit(ctx.operand()); // second operand
+        AbstractPart right = visit(ctx.additiveExpression()); // second operand
 
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.R_SHIFT);
+    }
+
+    @Override
+    public AbstractPart visitIntLogicalRShiftExpression(ConditionParser.IntLogicalRShiftExpressionContext ctx) {
+        AbstractPart left = visit(ctx.shiftExpression()); // first operand
+        AbstractPart right = visit(ctx.additiveExpression()); // second operand
+
+        return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.LOGICAL_R_SHIFT);
     }
 
     @Override
@@ -337,6 +535,22 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         Exp.Type binType = PathFunction.castTypeToExpType(castType);
 
         return new PathFunction(PathFunction.PathFunctionType.CAST, null, binType);
+    }
+
+    @Override
+    public AbstractPart visitOperandCast(ConditionParser.OperandCastContext ctx) {
+        AbstractPart numberOperand = visit(ctx.numberOperand());
+
+        String castText = ctx.pathFunctionCast().PATH_FUNCTION_CAST().getText();
+        String typeVal = extractTypeFromMethod(castText);
+        PathFunction.CastType castType = PathFunction.CastType.valueOf(typeVal.toUpperCase());
+
+        ExpressionContainer.ExprPartsOperation op = switch (castType) {
+            case INT -> ExpressionContainer.ExprPartsOperation.TO_INT;
+            case FLOAT -> ExpressionContainer.ExprPartsOperation.TO_FLOAT;
+        };
+
+        return new ExpressionContainer(numberOperand, op);
     }
 
     @Override
@@ -446,13 +660,36 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitIntOperand(ConditionParser.IntOperandContext ctx) {
         String text = ctx.INT().getText();
-        return new IntOperand(Long.parseLong(text));
+        return new IntOperand(parseIntLiteral(text));
     }
 
+    /**
+     * Parses an unsigned INT literal which may be decimal, hexadecimal (0x/0X), or binary (0b/0B).
+     * Signs are handled at the parser level by the unaryExpression rule.
+     */
+    private static long parseIntLiteral(String text) {
+        long parsed = parseUnsignedLongLiteral(text);
+        if (parsed == Long.MIN_VALUE) {
+            throw new DslParseException("Integer literal out of range: " + text);
+        }
+        return parsed;
+    }
+
+    /**
+     * Parses unsigned FLOAT literals and leading-dot floats (e.g., ".37").
+     * Signs are handled at the parser level by the unaryExpression rule.
+     */
     @Override
     public AbstractPart visitFloatOperand(ConditionParser.FloatOperandContext ctx) {
-        String text = ctx.FLOAT().getText();
-        return new FloatOperand(Double.parseDouble(text));
+        try {
+            if (ctx.FLOAT() != null) {
+                return new FloatOperand(Double.parseDouble(ctx.FLOAT().getText()));
+            }
+            String leadingDotFloat = ctx.LEADING_DOT_FLOAT().getText();
+            return new FloatOperand(Double.parseDouble("0" + leadingDotFloat));
+        } catch (NumberFormatException e) {
+            throw new DslParseException("Invalid float literal: " + ctx.getText(), e);
+        }
     }
 
     @Override

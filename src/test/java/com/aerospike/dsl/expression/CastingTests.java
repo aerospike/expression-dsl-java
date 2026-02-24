@@ -31,4 +31,72 @@ public class CastingTests {
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Cannot compare STRING to FLOAT");
     }
+
+    // --- Literal casting tests ---
+
+    @Test
+    void intLiteralToFloat() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("28.asFloat() == 28.0"),
+                Exp.eq(Exp.toFloat(Exp.val(28)), Exp.val(28.0)));
+    }
+
+    @Test
+    void floatLiteralToInt() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("27.0.asInt() == 27"),
+                Exp.eq(Exp.toInt(Exp.val(27.0)), Exp.val(27)));
+    }
+
+    @Test
+    void negativeIntToFloat() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("-5.asFloat() == -5.0"),
+                Exp.eq(Exp.toFloat(Exp.val(-5)), Exp.val(-5.0)));
+    }
+
+    @Test
+    void negativeFloatToInt() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("-5.5.asInt() == -5"),
+                Exp.eq(Exp.toInt(Exp.val(-5.5)), Exp.val(-5)));
+    }
+
+    @Test
+    void zeroIntToFloat() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("0.asFloat() == 0.0"),
+                Exp.eq(Exp.toFloat(Exp.val(0)), Exp.val(0.0)));
+    }
+
+    @Test
+    void zeroFloatToInt() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("0.0.asInt() == 0"),
+                Exp.eq(Exp.toInt(Exp.val(0.0)), Exp.val(0)));
+    }
+
+    @Test
+    void leadingDotFloatToInt() {
+        // Leading-dot float literal (.37) with cast - tests grammar ambiguity
+        // between floatOperand ('.' INT) and operandCast (numberOperand '.' pathFunctionCast)
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of(".37.asInt() == 0"),
+                Exp.eq(Exp.toInt(Exp.val(0.37)), Exp.val(0)));
+    }
+
+    @Test
+    void longMinIntLiteralToFloat() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("-9223372036854775808.asFloat() < 0.0"),
+                Exp.lt(Exp.toFloat(Exp.val(Long.MIN_VALUE)), Exp.val(0.0)));
+    }
+
+    // --- Type-validation for cast expressions ---
+
+    @Test
+    void castToFloatComparedToStringThrows() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("28.asFloat() == \"hello\"")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Cannot compare");
+    }
+
+    @Test
+    void castToIntComparedToStringThrows() {
+        assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("28.0.asInt() == \"hello\"")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Cannot compare");
+    }
 }

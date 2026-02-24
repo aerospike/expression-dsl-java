@@ -13,12 +13,12 @@ import java.util.List;
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class MapKeyList extends MapPart {
-    private final boolean inverted;
+    private final boolean isInverted;
     private final List<String> keyList;
 
-    public MapKeyList(boolean inverted, List<String> keyList) {
+    public MapKeyList(boolean isInverted, List<String> keyList) {
         super(MapPartType.KEY_LIST);
-        this.inverted = inverted;
+        this.isInverted = isInverted;
         this.keyList = keyList;
     }
 
@@ -48,7 +48,7 @@ public class MapKeyList extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (inverted) {
+        if (isInverted) {
             cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
         }
 

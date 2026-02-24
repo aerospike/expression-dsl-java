@@ -6,6 +6,8 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
+
 public class ListRank extends ListPart {
     private final int rank;
 
@@ -15,7 +17,7 @@ public class ListRank extends ListPart {
     }
 
     public static ListRank from(ConditionParser.ListRankContext ctx) {
-        return new ListRank(Integer.parseInt(ctx.INT().getText()));
+        return new ListRank(parseSignedInt(ctx.signedInt()));
     }
 
     @Override

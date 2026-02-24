@@ -8,18 +8,19 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class MapIndexRangeRelative extends MapPart {
-    private final boolean inverted;
+    private final boolean isInverted;
     private final Integer start;
     private final Integer count;
     private final String relative;
 
-    public MapIndexRangeRelative(boolean inverted, Integer start, Integer end, String relative) {
+    public MapIndexRangeRelative(boolean isInverted, Integer start, Integer end, String relative) {
         super(MapPartType.INDEX_RANGE_RELATIVE);
-        this.inverted = inverted;
+        this.isInverted = isInverted;
         this.start = start;
         this.count = subtractNullable(end, start);
         this.relative = relative;
@@ -35,10 +36,10 @@ public class MapIndexRangeRelative extends MapPart {
                             : invertedIndexRangeRelative.indexRangeRelativeIdentifier();
             boolean isInverted = indexRangeRelative == null;
 
-            Integer start = Integer.parseInt(range.start().INT().getText());
+            Integer start = parseSignedInt(range.start().signedInt());
             Integer end = null;
             if (range.relativeKeyEnd().end() != null) {
-                end = Integer.parseInt(range.relativeKeyEnd().end().INT().getText());
+                end = parseSignedInt(range.relativeKeyEnd().end().signedInt());
             }
 
             String relativeKey = null;
@@ -57,7 +58,7 @@ public class MapIndexRangeRelative extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (inverted) {
+        if (isInverted) {
             cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
         }
 

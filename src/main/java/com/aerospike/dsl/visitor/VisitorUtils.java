@@ -16,6 +16,7 @@ import com.aerospike.dsl.parts.controlstructure.ExclusiveStructure;
 import com.aerospike.dsl.parts.controlstructure.OrStructure;
 import com.aerospike.dsl.parts.controlstructure.WhenStructure;
 import com.aerospike.dsl.parts.controlstructure.WithStructure;
+import com.aerospike.dsl.parts.operand.FunctionArgs;
 import com.aerospike.dsl.parts.operand.IntOperand;
 import com.aerospike.dsl.parts.operand.MetadataOperand;
 import com.aerospike.dsl.parts.operand.PlaceholderOperand;
@@ -32,12 +33,14 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
@@ -114,9 +117,14 @@ public class VisitorUtils {
             case MUL -> Exp::mul;
             case DIV -> Exp::div;
             case MOD -> Exp::mod;
+            case POW -> Exp::pow;
+            case LOG -> Exp::log;
+            case FIND_BIT_LEFT -> Exp::lscan;
+            case FIND_BIT_RIGHT -> Exp::rscan;
             case INT_XOR -> Exp::intXor;
             case L_SHIFT -> Exp::lshift;
-            case R_SHIFT -> Exp::rshift;
+            case R_SHIFT -> Exp::arshift;
+            case LOGICAL_R_SHIFT -> Exp::rshift;
             case INT_AND -> Exp::intAnd;
             case INT_OR -> Exp::intOr;
             case AND -> Exp::and;
@@ -142,6 +150,12 @@ public class VisitorUtils {
         return switch (exprPartsOperation) {
             case INT_NOT -> Exp::intNot;
             case NOT -> Exp::not;
+            case ABS -> Exp::abs;
+            case CEIL -> Exp::ceil;
+            case FLOOR -> Exp::floor;
+            case COUNT_ONE_BITS -> Exp::count;
+            case TO_INT -> Exp::toInt;
+            case TO_FLOAT -> Exp::toFloat;
             default -> throw new NoApplicableFilterException("ExprPartsOperation has no matching UnaryOperator<Exp>");
         };
     }
@@ -280,7 +294,6 @@ public class VisitorUtils {
      * @return {@code true} if the child should be visited as a list element, {@code false} otherwise
      */
     static boolean shouldVisitListElement(int i, int size, ParseTree child) {
-        //noinspection GrazieInspection
         return size > 0 // size is not 0
                 && i != 0 // not the first element ('[')
                 && i != size - 1 // not the last element (']')
@@ -297,7 +310,6 @@ public class VisitorUtils {
      * @return {@code true} if the child should be visited as a map element, {@code false} otherwise
      */
     static boolean shouldVisitMapElement(int i, int size, ParseTree child) {
-        //noinspection GrazieInspection
         return size > 0 // size is not 0
                 && i != 0 // not the first element ('{')
                 && i != size - 1 // not the last element ('}')
@@ -311,12 +323,12 @@ public class VisitorUtils {
      * @param binPart     The bin part
      * @param anotherPart The other operand to compare with
      * @param operator    The binary operator to apply
-     * @param binIsLeft   Whether the bin is on the left side of the comparison
+     * @param isBinLeft   Whether the bin is on the left side of the comparison
      * @return The resulting expression
      * @throws DslParseException if the operand type is not supported
      */
     private static Exp getExpBinComparison(BinPart binPart, AbstractPart anotherPart,
-                                           BinaryOperator<Exp> operator, boolean binIsLeft) {
+                                           BinaryOperator<Exp> operator, boolean isBinLeft) {
         Exp binExp = Exp.bin(binPart.getBinName(), binPart.getExpType());
         Exp anotherExp = switch (anotherPart.getPartType()) {
             case INT_OPERAND -> {
@@ -358,7 +370,7 @@ public class VisitorUtils {
                     throw new DslParseException("Operand type not supported: %s".formatted(anotherPart.getPartType()));
         };
 
-        return binIsLeft ? operator.apply(binExp, anotherExp) : operator.apply(anotherExp, binExp);
+        return isBinLeft ? operator.apply(binExp, anotherExp) : operator.apply(anotherExp, binExp);
     }
 
     /**
@@ -521,16 +533,11 @@ public class VisitorUtils {
             FilterOperationType operationType, long left, long right
     ) {
         return switch (operationType) {
-            case GT:
-                yield new Pair<>(Long.MIN_VALUE, left * right - 1);
-            case GTEQ:
-                yield new Pair<>(Long.MIN_VALUE, left * right);
-            case LT:
-                yield new Pair<>(left * right + 1, Long.MAX_VALUE);
-            case LTEQ:
-                yield new Pair<>(left * right, Long.MAX_VALUE);
-            default:
-                throw new DslParseException("OperationType not supported for division: " + operationType);
+            case GT -> new Pair<>(Long.MIN_VALUE, left * right - 1);
+            case GTEQ -> new Pair<>(Long.MIN_VALUE, left * right);
+            case LT -> new Pair<>(left * right + 1, Long.MAX_VALUE);
+            case LTEQ -> new Pair<>(left * right, Long.MAX_VALUE);
+            default -> throw new DslParseException("OperationType not supported for division: " + operationType);
         };
     }
 
@@ -547,16 +554,11 @@ public class VisitorUtils {
             FilterOperationType operationType, long left, long right
     ) {
         return switch (operationType) {
-            case GT:
-                yield new Pair<>(left * right + 1, Long.MAX_VALUE);
-            case GTEQ:
-                yield new Pair<>(left * right, Long.MAX_VALUE);
-            case LT:
-                yield new Pair<>(Long.MIN_VALUE, left * right - 1);
-            case LTEQ:
-                yield new Pair<>(Long.MIN_VALUE, left * right);
-            default:
-                throw new DslParseException("OperationType not supported for division: " + operationType);
+            case GT -> new Pair<>(left * right + 1, Long.MAX_VALUE);
+            case GTEQ -> new Pair<>(left * right, Long.MAX_VALUE);
+            case LT -> new Pair<>(Long.MIN_VALUE, left * right - 1);
+            case LTEQ -> new Pair<>(Long.MIN_VALUE, left * right);
+            default -> throw new DslParseException("OperationType not supported for division: " + operationType);
         };
     }
 
@@ -574,52 +576,36 @@ public class VisitorUtils {
         if (left > 0 && right > 0) {
             // both operands are positive
             return switch (operationType) {
-                case GT:
-                    yield new Pair<>(1L, getClosestLongToTheLeft((float) left / right));
-                case GTEQ:
-                    yield new Pair<>(1L, left / right);
-                case LT, LTEQ:
-                    yield new Pair<>(null, null);
-                default:
-                    throw new DslParseException("OperationType not supported for division: " + operationType);
+                case GT -> new Pair<>(1L, getClosestLongToTheLeft((float) left / right));
+                case GTEQ -> new Pair<>(1L, left / right);
+                case LT, LTEQ -> new Pair<>(null, null);
+                default -> throw new DslParseException("OperationType not supported for division: " + operationType);
             };
         } else if (left == 0 && right == 0) {
             throw new DslParseException("Cannot divide by zero");
         } else if (left < 0 && right < 0) {
             // both operands are negative
             return switch (operationType) {
-                case GT, GTEQ:
-                    yield new Pair<>(null, null);
-                case LT:
-                    yield new Pair<>(1L, getClosestLongToTheLeft((float) left / right));
-                case LTEQ:
-                    yield new Pair<>(1L, left / right);
-                default:
-                    throw new DslParseException("OperationType not supported for division: " + operationType);
+                case GT, GTEQ -> new Pair<>(null, null);
+                case LT -> new Pair<>(1L, getClosestLongToTheLeft((float) left / right));
+                case LTEQ -> new Pair<>(1L, left / right);
+                default -> throw new DslParseException("OperationType not supported for division: " + operationType);
             };
         } else if (left > 0 && right < 0) {
             // left positive, right negative
             return switch (operationType) {
-                case GT, GTEQ:
-                    yield new Pair<>(null, null);
-                case LT:
-                    yield new Pair<>(getClosestLongToTheRight((float) left / right), -1L);
-                case LTEQ:
-                    yield new Pair<>(left / right, -1L);
-                default:
-                    throw new DslParseException("OperationType not supported for division: " + operationType);
+                case GT, GTEQ -> new Pair<>(null, null);
+                case LT -> new Pair<>(getClosestLongToTheRight((float) left / right), -1L);
+                case LTEQ -> new Pair<>(left / right, -1L);
+                default -> throw new DslParseException("OperationType not supported for division: " + operationType);
             };
         } else if (right > 0 && left < 0) {
             // right positive, left negative
             return switch (operationType) {
-                case GT:
-                    yield new Pair<>(getClosestLongToTheRight((float) left / right), -1L);
-                case GTEQ:
-                    yield new Pair<>(left / right, -1L);
-                case LT, LTEQ:
-                    yield new Pair<>(null, null);
-                default:
-                    throw new DslParseException("OperationType not supported for division: " + operationType);
+                case GT -> new Pair<>(getClosestLongToTheRight((float) left / right), -1L);
+                case GTEQ -> new Pair<>(left / right, -1L);
+                case LT, LTEQ -> new Pair<>(null, null);
+                default -> throw new DslParseException("OperationType not supported for division: " + operationType);
             };
         } else if (left != 0) {
             throw new DslParseException("Division by zero is not allowed");
@@ -840,7 +826,7 @@ public class VisitorUtils {
      * @param externalOperand The operand from the overall filter condition (expected to be an integer)
      * @param operation       The type of the arithmetic operation
      * @param type            The type of the overall filter operation
-     * @param binOnLeft       {@code true} if the bin is on the left side of the arithmetic operation, {@code false} otherwise
+     * @param isBinOnLeft       {@code true} if the bin is on the left side of the arithmetic operation, {@code false} otherwise
      * @return A {@link Filter} for the arithmetic condition
      * @throws NoApplicableFilterException if operands are not integers or if the operation is not supported
      * @throws DslParseException           if type validation fails
@@ -848,7 +834,7 @@ public class VisitorUtils {
     private static Filter handleBinArithmeticExpression(BinPart bin, AbstractPart operand,
                                                         AbstractPart externalOperand,
                                                         ExprPartsOperation operation,
-                                                        FilterOperationType type, boolean binOnLeft) {
+                                                        FilterOperationType type, boolean isBinOnLeft) {
         // Only support integer arithmetic in filters
         if (operand.getPartType() != AbstractPart.PartType.INT_OPERAND || externalOperand.getPartType() != AbstractPart.PartType.INT_OPERAND) {
             throw new NoApplicableFilterException(
@@ -861,7 +847,7 @@ public class VisitorUtils {
         IntOperand secondOperand = (IntOperand) externalOperand;
 
         return applyFilterOperator(bin.getBinName(), firstOperand, secondOperand,
-                operation, type, getFilterTermType(operation, binOnLeft));
+                operation, type, getFilterTermType(operation, isBinOnLeft));
     }
 
     /**
@@ -1209,8 +1195,37 @@ public class VisitorUtils {
             case WITH_STRUCTURE -> withStructureToExp(expr);
             case WHEN_STRUCTURE -> whenStructureToExp(expr);
             case EXCLUSIVE_STRUCTURE -> exclStructureToExp(expr);
+            case MIN_FUNC -> variadicToExp(expr, Exp::min);
+            case MAX_FUNC -> variadicToExp(expr, Exp::max);
+            case FIND_BIT_LEFT, FIND_BIT_RIGHT -> binaryFunctionToExp(expr);
             default -> processExpression(expr);
         };
+    }
+
+    /**
+     * Converts a variadic function expression (e.g., min, max) to Exp.
+     * Extracts operands from the {@link FunctionArgs} wrapper and passes them as an array.
+     */
+    private static Exp variadicToExp(ExpressionContainer expr,
+                                      Function<Exp[], Exp> expFactory) {
+        FunctionArgs funcArgs = (FunctionArgs) expr.getLeft();
+        List<AbstractPart> operands = funcArgs.getOperands();
+        Exp[] exps = operands.stream()
+                .map(VisitorUtils::getExp)
+                .toArray(Exp[]::new);
+        return expFactory.apply(exps);
+    }
+
+    /**
+     * Converts a binary function expression to Exp, bypassing BIN_PART type validation.
+     * Used only for findBitLeft/findBitRight, which take (int, bool) operands that
+     * intentionally fail standard {@code validateComparableTypes} validation.
+     */
+    private static Exp binaryFunctionToExp(ExpressionContainer expr) {
+        Exp leftExp = getExp(expr.getLeft());
+        Exp rightExp = getExp(expr.getRight());
+        BinaryOperator<Exp> operator = getExpOperator(expr.getOperationType());
+        return operator.apply(leftExp, rightExp);
     }
 
     /**
@@ -1335,9 +1350,104 @@ public class VisitorUtils {
             if (rightExp == null) return leftExp;
         }
 
+        // Validate operand type compatibility for non-BIN_PART operands.
+        // Arithmetic operations should not involve STRING operands, and comparison
+        // results of arithmetic expressions should be type-compatible.
+        ExprPartsOperation opType = expr.getOperationType();
+        if (NUMERIC_OPERATIONS.contains(opType)
+                || isArithmeticExpressionContainer(left)
+                || isArithmeticExpressionContainer(right)) {
+            validateComparableTypes(resolveExpType(left), resolveExpType(right));
+        }
+
         // Apply binary operator
         BinaryOperator<Exp> operator = getExpOperator(expr.getOperationType());
         return operator.apply(leftExp, rightExp);
+    }
+
+    // Operations that always produce a FLOAT result. Used by resolveExpType.
+    private static final EnumSet<ExprPartsOperation> FLOAT_RETURNING_OPERATIONS = EnumSet.of(
+            POW, LOG, CEIL, FLOOR, TO_FLOAT
+    );
+
+    // Operations that always produce an INT result regardless of input operand type.
+    // Used by resolveExpType. All members are also present in NUMERIC_OPERATIONS.
+    private static final EnumSet<ExprPartsOperation> INT_RETURNING_OPERATIONS = EnumSet.of(
+            TO_INT,
+            INT_AND, INT_OR, INT_XOR, INT_NOT,
+            L_SHIFT, R_SHIFT, LOGICAL_R_SHIFT,
+            COUNT_ONE_BITS, FIND_BIT_LEFT, FIND_BIT_RIGHT
+    );
+
+    // All arithmetic/bitwise/cast operations. Used by isArithmeticExpressionContainer to decide
+    // whether to trigger type-compatibility validation on comparison operands (e.g. detecting
+    // "28.asFloat() == \"hello\"" as invalid). FLOAT_RETURNING_OPERATIONS and
+    // INT_RETURNING_OPERATIONS are intentional subsets — members that appear in both sets are
+    // caught first by the more-specific checks inside resolveExpType.
+    private static final EnumSet<ExprPartsOperation> NUMERIC_OPERATIONS = EnumSet.of(
+            ADD, SUB, MUL, DIV, MOD, POW, INT_XOR, INT_NOT, INT_AND, INT_OR,
+            L_SHIFT, R_SHIFT, LOGICAL_R_SHIFT, ABS, CEIL, FLOOR, LOG,
+            MIN_FUNC, MAX_FUNC, COUNT_ONE_BITS, FIND_BIT_LEFT, FIND_BIT_RIGHT,
+            TO_INT, TO_FLOAT
+    );
+
+    /**
+     * Resolves the effective {@link Exp.Type} of an {@link AbstractPart}.
+     * <ul>
+     *   <li>Uses the part's explicit type if set.</li>
+     *   <li>Falls back to the {@code partTypeToExpType} map for literal operands.</li>
+     *   <li>For arithmetic {@link ExpressionContainer} nodes, determines the result type based on
+     *       the operation:
+     *       <ul>
+     *         <li>Always-FLOAT: {@code POW}, {@code LOG}, {@code CEIL}, {@code FLOOR},
+     *             {@code TO_FLOAT}</li>
+     *         <li>Always-INT: bitwise ops, shift ops, {@code TO_INT}, {@code COUNT_ONE_BITS},
+     *             {@code FIND_BIT_LEFT}, {@code FIND_BIT_RIGHT}</li>
+     *         <li>Type-propagating: {@code ABS}, {@code ADD}, {@code SUB}, {@code MUL},
+     *             {@code DIV}, {@code MOD}, {@code MIN_FUNC}, {@code MAX_FUNC} — result type
+     *             follows the left operand; falls back to {@code INT} when unknown.</li>
+     *       </ul>
+     *   </li>
+     * </ul>
+     *
+     * @param part The {@link AbstractPart} whose type to resolve
+     * @return The resolved {@link Exp.Type}, or {@code null} if the type cannot be determined
+     */
+    private static Exp.Type resolveExpType(AbstractPart part) {
+        if (part.getExpType() != null) {
+            return part.getExpType();
+        }
+        Exp.Type mapped = partTypeToExpType.get(part.getPartType());
+        if (mapped != null) {
+            return mapped;
+        }
+        if (part instanceof ExpressionContainer container && container.getOperationType() != null) {
+            ExprPartsOperation op = container.getOperationType();
+            if (FLOAT_RETURNING_OPERATIONS.contains(op)) {
+                return Exp.Type.FLOAT;
+            }
+            if (INT_RETURNING_OPERATIONS.contains(op)) {
+                return Exp.Type.INT;
+            }
+            if (isArithmeticExpressionContainer(part)) {
+                // Type-propagating operations (ABS, ADD, SUB, MUL, DIV, MOD, MIN_FUNC, MAX_FUNC):
+                // propagate FLOAT when the left operand is known to be FLOAT.
+                // Otherwise fall back to INT: any arithmetic result is numeric (never STRING/BOOL),
+                // so returning INT conservatively ensures string comparisons are rejected.
+                if (container.getLeft() != null
+                        && resolveExpType(container.getLeft()) == Exp.Type.FLOAT) {
+                    return Exp.Type.FLOAT;
+                }
+                return Exp.Type.INT;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isArithmeticExpressionContainer(AbstractPart part) {
+        return part instanceof ExpressionContainer container
+                && container.getOperationType() != null
+                && NUMERIC_OPERATIONS.contains(container.getOperationType());
     }
 
     /**
@@ -1643,6 +1753,11 @@ public class VisitorUtils {
         if (part.getPartType() == AbstractPart.PartType.AND_STRUCTURE && depth > 0) {
             List<ExpressionContainer> containerList = ((AndStructure) part).getOperands();
             containerList.forEach(container -> traverseTree(container, visitor, depth - 1, stopCondition));
+        }
+
+        if (part.getPartType() == AbstractPart.PartType.FUNCTION_ARGS && depth > 0) {
+            List<AbstractPart> operands = ((FunctionArgs) part).getOperands();
+            operands.forEach(operand -> traverseTree(operand, visitor, depth - 1, stopCondition));
         }
     }
 }

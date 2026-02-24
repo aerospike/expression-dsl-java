@@ -231,15 +231,15 @@ public class PathOperandUtils {
      * This is used to build the context for nested CDT operations.
      *
      * @param parts       The list of {@link AbstractPart} objects representing path parts
-     * @param includeLast A boolean indicating whether the last part should be included in the context array
+     * @param includesLast A boolean indicating whether the last part should be included in the context array
      * @return An array of {@link CTX} objects
      */
-    public static CTX[] getContextArray(List<AbstractPart> parts, boolean includeLast) {
+    public static CTX[] getContextArray(List<AbstractPart> parts, boolean includesLast) {
         // Nested (Context) map key access
         List<CTX> context = new ArrayList<>();
 
         for (int i = 0; i < parts.size(); i++) {
-            if (!includeLast && i == parts.size() - 1) {
+            if (!includesLast && i == parts.size() - 1) {
                 // Skip last
                 continue;
             }
@@ -425,7 +425,7 @@ public class PathOperandUtils {
         } else if (pathFunctionType == COUNT) {
             return getValueTypeForCount(lastPathPart);
         }
-        return TypeUtils.getDefaultType(lastPathPart);
+        return lastPathPart != null ? TypeUtils.getDefaultType(lastPathPart) : Exp.Type.INT;
     }
 
     /**

@@ -13,13 +13,13 @@ import java.util.Optional;
 import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class MapKeyRange extends MapPart {
-    private final boolean inverted;
+    private final boolean isInverted;
     private final String start;
     private final String end;
 
-    public MapKeyRange(boolean inverted, String start, String end) {
+    public MapKeyRange(boolean isInverted, String start, String end) {
         super(MapPartType.KEY_RANGE);
-        this.inverted = inverted;
+        this.isInverted = isInverted;
         this.start = start;
         this.end = end;
     }
@@ -50,7 +50,7 @@ public class MapKeyRange extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        if (inverted) {
+        if (isInverted) {
             cdtReturnType = cdtReturnType | MapReturnType.INVERTED;
         }
 
