@@ -39,17 +39,17 @@ import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
 import java.util.List;
 
-// Describe the available secondary index
+// Describe the available secondary index (namespace, bin, indexType, binValuesRatio are required)
 Index cityIndex = Index.builder()
-    .name("idx_users_city")
     .namespace("test")
     .bin("city")
     .indexType(IndexType.STRING)
-    .binValuesRatio(1) // Cardinality can be retrieved from the Aerospike DB or set manually
+    .binValuesRatio(1) // Cardinality from Aerospike sindex-stat or set manually
+    .name("idx_users_city")
     .build();
 
-// Create index context
-IndexContext indexContext = IndexContext.of("namespace", List.of(cityIndex));
+// Create index context (namespace must not be null or blank)
+IndexContext indexContext = IndexContext.of("test", List.of(cityIndex));
 ```
 
 ### 2. Parse the Expression using IndexContext

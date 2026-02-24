@@ -73,9 +73,7 @@ public class DSLParserImpl implements DSLParser {
                 .orElse(Collections.emptyList());
 
         Map<String, List<Index>> indexesMap = indexes.stream()
-                // Filtering the indexes with the given namespace
-                .filter(idx -> idx.getNamespace() != null && idx.getNamespace().equals(namespace))
-                // Group the indexes by bin name
+                .filter(idx -> namespace != null && namespace.equals(idx.getNamespace()))
                 .collect(Collectors.groupingBy(Index::getBin));
 
         AbstractPart resultingPart = new ExpressionConditionVisitor().visit(parseTree);

@@ -156,13 +156,12 @@ public class LogicalParsedExpressionTests {
     @Test
     void binLogical_AND_AND_all_indexes_partial_data() {
         List<Index> indexes = List.of(
-                Index.builder().bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").binValuesRatio(1).build(),
+                Index.builder().namespace("other_ns").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace("other_ns").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
                 Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.STRING).binValuesRatio(0).build(),
-                // The only matching index with full data
                 Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
-        // The only matching index with full data is for intBin3
+        // intBin1/intBin2 in other namespace filtered out; intBin3 STRING wrong type; only intBin3 NUMERIC matches
         Filter filter = Filter.range("intBin3", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(
                 Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
@@ -217,20 +216,6 @@ public class LogicalParsedExpressionTests {
                 Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin2").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
         );
         // idx_bin1 name matches but belongs to a different namespace, so falls back to automatic selection
-        Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
-        Exp exp = Exp.gt(Exp.intBin("intBin1"), Exp.val(100));
-        parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > 100 and $.intBin2 > 100"), filter, exp,
-                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_bin1"));
-    }
-
-    @Test
-    void binLogical_AND_AND_explicitly_given_index_null_namespace_in_index() {
-        List<Index> indexes = List.of(
-                // idx_bin1 has no namespace set
-                Index.builder().name("idx_bin1").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_bin2").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
-        );
-        // idx_bin1 name matches but has no namespace, so falls back to automatic selection
         Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
         Exp exp = Exp.gt(Exp.intBin("intBin1"), Exp.val(100));
         parseDslExpressionAndCompare(ExpressionContext.of("$.intBin1 > 100 and $.intBin2 > 100"), filter, exp,

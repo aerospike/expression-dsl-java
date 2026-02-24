@@ -48,7 +48,7 @@ This class holds the final, concrete outputs of the parsing and substitution pro
 A container for the information required for automatic secondary index optimization.
 
 *   **`static IndexContext of(String namespace, Collection<Index> indexes)`**: Creates a context.
-    *   `namespace`: The namespace the query will be run against.
+    *   `namespace`: The namespace the query will be run against. Must not be null or blank.
     *   `indexes`: A collection of `Index` objects representing the available secondary indexes for that namespace.
 
 ## Example API Flow

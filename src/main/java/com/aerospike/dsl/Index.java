@@ -9,6 +9,9 @@ import lombok.Getter;
 
 /**
  * This class represents a secondary index created in the cluster.
+ * <p>
+ * Mandatory fields: {@code namespace}, {@code bin}, {@code indexType}, {@code binValuesRatio}.
+ * These are validated on build and must not be null/blank (for strings) or negative (for binValuesRatio).
  */
 @Builder
 @EqualsAndHashCode
@@ -35,13 +38,47 @@ public class Index {
      * Cardinality of the index calculated using "sindex-stat" command and looking at the ratio of entries
      * to unique bin values for the given secondary index on the node (entries_per_bval)
      */
-    private int binValuesRatio;
+    private final int binValuesRatio;
     /**
      * {@link IndexCollectionType} of the index
      */
-    private IndexCollectionType indexCollectionType;
+    private final IndexCollectionType indexCollectionType;
     /**
      * Array of {@link CTX} representing context of the index
      */
-    private CTX[] ctx;
+    private final CTX[] ctx;
+
+    public Index(String namespace, String bin, String name, IndexType indexType, int binValuesRatio,
+                 IndexCollectionType indexCollectionType, CTX[] ctx) {
+        validateMandatory(namespace, bin, indexType, binValuesRatio);
+        this.namespace = namespace;
+        this.bin = bin;
+        this.name = name;
+        this.indexType = indexType;
+        this.binValuesRatio = binValuesRatio;
+        this.indexCollectionType = indexCollectionType;
+        this.ctx = ctx;
+    }
+
+    private static void validateMandatory(String namespace, String bin, IndexType indexType, int binValuesRatio) {
+        requireNonBlank(namespace, "namespace");
+        requireNonBlank(bin, "bin");
+        requireNonNull(indexType, "indexType");
+        if (binValuesRatio < 0) {
+            throw new IllegalArgumentException("binValuesRatio must not be negative");
+        }
+    }
+
+    private static void requireNonBlank(String value, String fieldName) {
+        requireNonNull(value, fieldName);
+        if (value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+    }
+
+    private static void requireNonNull(Object value, String fieldName) {
+        if (value == null) {
+            throw new IllegalArgumentException(fieldName + " must not be null");
+        }
+    }
 }
