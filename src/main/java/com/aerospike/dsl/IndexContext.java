@@ -46,7 +46,7 @@ public class IndexContext {
      * @param namespace  Namespace to be used for creating {@link com.aerospike.dsl.client.query.Filter}.
      *                   Must not be null or blank
      * @param indexes    Collection of {@link Index} objects to be used for creating Filter
-     * @param indexToUse The name of an index to use. If not found or null, index is chosen by cardinality or alphabetically
+     * @param indexToUse The name of an index to use. If not found, null, or empty, index is chosen by cardinality or alphabetically
      * @return A new instance of {@code IndexContext}
      */
     public static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse) {
