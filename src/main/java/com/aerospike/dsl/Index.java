@@ -10,8 +10,9 @@ import lombok.Getter;
 /**
  * This class represents a secondary index created in the cluster.
  * <p>
- * Mandatory fields: {@code namespace}, {@code bin}, {@code indexType}, {@code binValuesRatio}.
- * These are validated on build and must not be null/blank (for strings) or negative (for binValuesRatio).
+ * Mandatory fields: {@code namespace}, {@code bin}, {@code indexType}.
+ * These are validated on build and must not be null/blank (for strings). {@code binValuesRatio} is optional,
+ * defaults to {@code 0} when omitted, and is validated to ensure it is not negative.
  */
 @Builder
 @EqualsAndHashCode
