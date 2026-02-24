@@ -10,9 +10,9 @@ import lombok.Getter;
 /**
  * This class represents a secondary index created in the cluster.
  * <p>
- * Mandatory fields: {@code namespace}, {@code bin}, {@code indexType}.
- * These are validated on build and must not be null/blank (for strings). {@code binValuesRatio} is optional,
- * defaults to {@code 0} when omitted, and is validated to ensure it is not negative.
+ * Mandatory fields: {@code namespace}, {@code bin}, {@code indexType}, {@code binValuesRatio}.
+ * These are validated on build and must not be null/blank (for strings).
+ * {@code binValuesRatio} must be provided and is validated to ensure it is not negative.
  */
 @Builder
 @EqualsAndHashCode
@@ -39,7 +39,7 @@ public class Index {
      * Cardinality of the index calculated using "sindex-stat" command and looking at the ratio of entries
      * to unique bin values for the given secondary index on the node (entries_per_bval)
      */
-    private final int binValuesRatio;
+    private final Integer binValuesRatio;
     /**
      * {@link IndexCollectionType} of the index
      */
@@ -49,7 +49,7 @@ public class Index {
      */
     private final CTX[] ctx;
 
-    public Index(String namespace, String bin, String name, IndexType indexType, int binValuesRatio,
+    public Index(String namespace, String bin, String name, IndexType indexType, Integer binValuesRatio,
                  IndexCollectionType indexCollectionType, CTX[] ctx) {
         validateMandatory(namespace, bin, indexType, binValuesRatio);
         this.namespace = namespace;
@@ -61,10 +61,11 @@ public class Index {
         this.ctx = ctx;
     }
 
-    private static void validateMandatory(String namespace, String bin, IndexType indexType, int binValuesRatio) {
+    private static void validateMandatory(String namespace, String bin, IndexType indexType, Integer binValuesRatio) {
         requireNonBlank(namespace, "namespace");
         requireNonBlank(bin, "bin");
         requireNonNull(indexType, "indexType");
+        requireNonNull(binValuesRatio, "binValuesRatio");
         if (binValuesRatio < 0) {
             throw new IllegalArgumentException("binValuesRatio must not be negative");
         }

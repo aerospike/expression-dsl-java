@@ -25,6 +25,38 @@ The parser then does the following:
 
 > **Note:** Only one secondary index can be used per query. The index will be chosen based on cardinality (preferring indexes with a higher `binValuesRatio`), otherwise alphabetically.
 
+## Choosing a Specific Index (Index Hint)
+
+When multiple indexes could satisfy your query, the parser selects one automatically. 
+If you need to force a specific index — for example, for query planning, testing, or when you know
+one index performs better for your data, you can use the three-parameter `IndexContext.of` overload 
+and pass the index name as the third argument:
+
+```java
+Index cityIndex = Index.builder()
+    .namespace("test") // is mandatory
+    .bin("city") // is mandatory
+    .indexType(IndexType.STRING) // is mandatory
+    .binValuesRatio(1) // is mandatory and must be non-negative
+    .name("idx_users_city")
+    .build();
+
+Index ageIndex = Index.builder()
+    .namespace("test")
+    .bin("age")
+    .indexType(IndexType.NUMERIC)
+    .binValuesRatio(10)
+    .name("idx_users_age")
+    .build();
+
+// Force use of the city index even though age has higher cardinality
+IndexContext indexContext = IndexContext.of("test", List.of(cityIndex, ageIndex), "idx_users_city");
+```
+
+If the named index is not found in the collection or does not match the namespace, 
+the parser falls back to automatic selection (cardinality, then alphabetically). 
+Passing `null` or an empty string as the third parameter also triggers automatic selection.
+
 ## Usage Example
 
 Let's assume you have a secondary index named `idx_users_city` on the `city` bin in the `users` set.

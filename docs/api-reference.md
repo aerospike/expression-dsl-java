@@ -50,6 +50,22 @@ A container for the information required for automatic secondary index optimizat
 *   **`static IndexContext of(String namespace, Collection<Index> indexes)`**: Creates a context.
     *   `namespace`: The namespace the query will be run against. Must not be null or blank.
     *   `indexes`: A collection of `Index` objects representing the available secondary indexes for that namespace.
+*   **`static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse)`**: 
+* Creates a context with an explicit index hint.
+    *   `namespace`: The namespace the query will be run against. Must not be null or blank.
+    *   `indexes`: A collection of `Index` objects representing the available secondary indexes for that namespace.
+    *   `indexToUse`: The name of the index to use for the secondary index filter. 
+    * If not found or `null`, the index is chosen automatically by cardinality (higher `binValuesRatio` preferred), 
+    * then alphabetically by bin name.
+
+### `com.aerospike.dsl.Index`
+
+Represents an available secondary index for optimization.
+
+*   **Mandatory fields**: `namespace`, `bin`, `indexType`, `binValuesRatio`.
+*   **`binValuesRatio` validation**:
+    * Must be explicitly provided.
+    * Must be non-negative (`>= 0`).
 
 ## Example API Flow
 

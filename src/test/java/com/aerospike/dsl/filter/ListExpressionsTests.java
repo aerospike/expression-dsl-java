@@ -18,13 +18,13 @@ class ListExpressionsTests {
 
     String NAMESPACE = "test1";
     List<Index> INDEXES = List.of(
-            Index.builder().namespace(NAMESPACE).bin("listBin1").indexType(IndexType.NUMERIC).build(),
+            Index.builder().namespace(NAMESPACE).bin("listBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
             Index.builder().namespace(NAMESPACE).bin("listBin1").indexType(IndexType.STRING)
-                    .indexCollectionType(LIST).build(),
+                    .binValuesRatio(0).indexCollectionType(LIST).build(),
             Index.builder().namespace(NAMESPACE).bin("listBin1").indexType(IndexType.STRING)
-                    .indexCollectionType(LIST).ctx(new CTX[]{CTX.listIndex(5)}).build(),
+                    .binValuesRatio(0).indexCollectionType(LIST).ctx(new CTX[]{CTX.listIndex(5)}).build(),
             Index.builder().namespace(NAMESPACE).bin("listBin1").indexType(IndexType.STRING)
-                    .indexCollectionType(LIST).ctx(new CTX[]{CTX.listValue(Value.get(5))}).build()
+                    .binValuesRatio(0).indexCollectionType(LIST).ctx(new CTX[]{CTX.listValue(Value.get(5))}).build()
     );
     IndexContext INDEX_FILTER_INPUT = IndexContext.of(NAMESPACE, INDEXES);
 

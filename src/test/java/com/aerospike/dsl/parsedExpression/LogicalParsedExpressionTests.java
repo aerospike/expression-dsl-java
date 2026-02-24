@@ -40,8 +40,8 @@ public class LogicalParsedExpressionTests {
     @Test
     void binLogical_AND_all_indexes_no_cardinality() {
         List<Index> indexes = List.of(
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).build()
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         // Filter is chosen alphabetically because no cardinality is given
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
@@ -139,9 +139,9 @@ public class LogicalParsedExpressionTests {
     @Test
     void binLogical_AND_AND_all_indexes_no_cardinality() {
         List<Index> indexes = List.of(
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).build()
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         // Filter is chosen alphabetically because no cardinality is given
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
@@ -472,9 +472,9 @@ public class LogicalParsedExpressionTests {
     @Test
     void binLogical_AND_prioritizedOR_indexed_no_cardinality() {
         List<Index> indexes = List.of(
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC).build()
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         // Cardinality is the same, is it correct that intBin3 is chosen because it is the only one filtered?
         Filter filter = Filter.range("intBin3", 101, Long.MAX_VALUE);
@@ -813,12 +813,12 @@ public class LogicalParsedExpressionTests {
     @Test
     void binLogical_OR2_OR1_AND2_AND_AND1_indexed_no_cardinality() {
         List<Index> indexes = List.of(
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin4").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin5").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin6").indexType(IndexType.NUMERIC).build()
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin5").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin6").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         Filter filter = Filter.range("intBin1", 101, Long.MAX_VALUE);
         Exp exp = Exp.and(
@@ -844,14 +844,14 @@ public class LogicalParsedExpressionTests {
     @Test
     void binLogical_OR2_OR1_AND2_AND_AND2_OR1_AND2_indexed_no_cardinality() {
         List<Index> indexes = List.of(
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin4").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin5").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin6").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin7").indexType(IndexType.NUMERIC).build(),
-                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin8").indexType(IndexType.NUMERIC).build()
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin4").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin5").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin6").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin7").indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).bin("intBin8").indexType(IndexType.NUMERIC).binValuesRatio(0).build()
         );
         // No Filter can be built as all expression parts participate in OR-combined queries
         Filter filter = null;
