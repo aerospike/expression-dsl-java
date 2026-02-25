@@ -27,10 +27,13 @@ The parser then does the following:
 
 ## Choosing a Specific Index (Index Hint)
 
-When multiple indexes could satisfy your query, the parser selects one automatically. 
-If you need to force a specific index — for example, for query planning, testing, or when you know
-one index performs better for your data, you can use the three-parameter `IndexContext.of` overload 
-and pass the index name as the third argument:
+When multiple indexes could satisfy your query, the parser selects one automatically.
+You can override this by providing an explicit hint in two ways:
+
+### Hint by Index Name
+
+If you know the exact name of the index you want to use, pass it as the third argument to
+the three-parameter `IndexContext.of` overload:
 
 ```java
 Index cityIndex = Index.builder()
@@ -53,9 +56,43 @@ Index ageIndex = Index.builder()
 IndexContext indexContext = IndexContext.of("test", List.of(cityIndex, ageIndex), "idx_users_city");
 ```
 
-If the named index is not found in the collection or does not match the namespace, 
-the parser falls back to automatic selection (cardinality, then alphabetically). 
+If the named index is not found in the collection or does not match the namespace,
+the parser falls back to automatic selection (cardinality, then alphabetically).
 Passing `null` or an empty string as the third parameter also triggers automatic selection.
+
+### Hint by Bin Name
+
+If you know which bin should be used for the secondary index filter but not the specific index name,
+use `IndexContext.withBinHint`:
+
+```java
+Index cityIndex = Index.builder()
+    .namespace("test")
+    .bin("city")
+    .indexType(IndexType.STRING)
+    .binValuesRatio(1)
+    .name("idx_users_city")
+    .build();
+
+Index ageIndex = Index.builder()
+    .namespace("test")
+    .bin("age")
+    .indexType(IndexType.NUMERIC)
+    .binValuesRatio(10)
+    .name("idx_users_age")
+    .build();
+
+// Force use of an index on the "city" bin even though age has higher cardinality
+IndexContext indexContext = IndexContext.withBinHint("test", List.of(cityIndex, ageIndex), "city");
+```
+
+The bin hint behaves as follows:
+
+- If exactly one index in the indexes collection matches the given bin name and namespace, that index is used.
+- If the bin name matches multiple indexes (for example, indexes of different types on the same bin),
+  or if there is no match, the hint is ignored and the parser falls back to fully automatic selection
+  (by cardinality, then alphabetically).
+- Passing `null` or a blank string bin name hint also triggers fallback to automatic selection.
 
 ## Usage Example
 

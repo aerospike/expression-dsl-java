@@ -50,13 +50,22 @@ A container for the information required for automatic secondary index optimizat
 *   **`static IndexContext of(String namespace, Collection<Index> indexes)`**: Creates a context.
     *   `namespace`: The namespace the query will be run against. Must not be null or blank.
     *   `indexes`: A collection of `Index` objects representing the available secondary indexes for that namespace.
-*   **`static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse)`**: 
-* Creates a context with an explicit index hint.
+*   **`static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse)`**:
+    Creates a context with an explicit index name hint.
     *   `namespace`: The namespace the query will be run against. Must not be null or blank.
     *   `indexes`: A collection of `Index` objects representing the available secondary indexes for that namespace.
-    *   `indexToUse`: The name of the index to use for the secondary index filter. 
-    * If not found or `null`, the index is chosen automatically by cardinality (higher `binValuesRatio` preferred), 
-    * then alphabetically by bin name.
+    *   `indexToUse`: The name of the index to use for the secondary index filter.
+    If not found, `null`, or empty, the index is chosen automatically by cardinality
+    (higher `binValuesRatio` preferred), then alphabetically by bin name.
+*   **`static IndexContext withBinHint(String namespace, Collection<Index> indexes, String binToUse)`**:
+    Creates a context with an explicit bin name hint. Use this when you want to direct the parser to
+    an index on a specific bin without knowing the index name.
+    *   `namespace`: The namespace the query will be run against. Must not be null or blank.
+    *   `indexes`: A collection of `Index` objects representing the available secondary indexes for that namespace.
+    *   `binToUse`: The name of the bin whose index should be used. If exactly one index in the collection
+    matches the given bin name and namespace, that index is used. If the bin matches multiple indexes,
+    no index matches, the value is `null`, or the value is blank, the parser falls back to fully automatic
+    selection (cardinality, then alphabetically).
 
 ### `com.aerospike.dsl.Index`
 

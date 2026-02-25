@@ -46,7 +46,8 @@ public class IndexContext {
      * @param namespace  Namespace to be used for creating {@link com.aerospike.dsl.client.query.Filter}.
      *                   Must not be null or blank
      * @param indexes    Collection of {@link Index} objects to be used for creating Filter
-     * @param indexToUse The name of an index to use. If not found, null, or empty, index is chosen by cardinality or alphabetically
+     * @param indexToUse The name of an index to use. If not found, null, or empty, index is chosen
+     *                   by cardinality or alphabetically
      * @return A new instance of {@code IndexContext}
      */
     public static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse) {
@@ -57,6 +58,30 @@ public class IndexContext {
         return new IndexContext(namespace, matchingIndexes.isEmpty() ? indexes : matchingIndexes);
     }
 
+    /**
+     * Create index context with a bin name hint specifying which bin's index to use.
+     * If exactly one index in the collection matches the given bin name and namespace,
+     * that index is used. Otherwise, all indexes are kept and selection falls back to
+     * the automatic cardinality / alphabetical strategy.
+     *
+     * @param namespace Namespace to be used for creating {@link com.aerospike.dsl.client.query.Filter}.
+     *                  Must not be null or blank
+     * @param indexes   Collection of {@link Index} objects to be used for creating Filter
+     * @param binToUse  The name of the bin whose index should be used. If not found, null,
+     *                  blank, or matches multiple indexes, index is chosen automatically
+     * @return A new instance of {@code IndexContext}
+     */
+    public static IndexContext withBinHint(String namespace, Collection<Index> indexes, String binToUse) {
+        validateNamespace(namespace);
+        if (binToUse == null || binToUse.isBlank()) {
+            return new IndexContext(namespace, indexes);
+        }
+        List<Index> matchingIndexes = indexes.stream()
+                .filter(idx -> binMatches(idx, namespace, binToUse))
+                .toList();
+        return new IndexContext(namespace, matchingIndexes.size() == 1 ? matchingIndexes : indexes);
+    }
+
     private static void validateNamespace(String namespace) {
         if (namespace == null) {
             throw new IllegalArgumentException("namespace must not be null");
@@ -64,6 +89,19 @@ public class IndexContext {
         if (namespace.isBlank()) {
             throw new IllegalArgumentException("namespace must not be blank");
         }
+    }
+
+    private static boolean binMatches(Index idx, String namespace, String binToUse) {
+        if (idx == null || binToUse == null) {
+            return false;
+        }
+
+        String binName = idx.getBin();
+        if (binName == null || !binName.equals(binToUse)) {
+            return false;
+        }
+
+        return namespace.equals(idx.getNamespace());
     }
 
     private static boolean indexMatches(Index idx, String namespace, String indexToUse) {
