@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class IndexContextTests {
@@ -16,6 +17,13 @@ class IndexContextTests {
     private static final Index VALID_INDEX = Index.builder()
             .namespace(NAMESPACE)
             .bin("bin1")
+            .indexType(IndexType.NUMERIC)
+            .binValuesRatio(0)
+            .build();
+    private static final Index VALID_NAMED_INDEX = Index.builder()
+            .namespace(NAMESPACE)
+            .bin("bin1")
+            .name("idx_bin1")
             .indexType(IndexType.NUMERIC)
             .binValuesRatio(0)
             .build();
@@ -54,6 +62,75 @@ class IndexContextTests {
         assertThatThrownBy(() -> IndexContext.of("", List.of(VALID_INDEX), "idx1"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("namespace must not be blank");
+    }
+
+    @Test
+    void of_3arg_null_index_name_returns_all_indexes() {
+        Collection<Index> indexes = List.of(VALID_NAMED_INDEX);
+        IndexContext ctx = IndexContext.of(NAMESPACE, indexes, null);
+
+        assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+    }
+
+    @Test
+    void of_3arg_empty_index_name_returns_all_indexes() {
+        Collection<Index> indexes = List.of(VALID_NAMED_INDEX);
+        IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "");
+
+        assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+    }
+
+    @Test
+    void of_3arg_single_match_returns_that_index() {
+        Index other = Index.builder().namespace(NAMESPACE).bin("bin2").name("idx_bin2")
+                .indexType(IndexType.NUMERIC).binValuesRatio(0).build();
+        Collection<Index> indexes = List.of(VALID_NAMED_INDEX, other);
+
+        IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "idx_bin1");
+
+        assertThat(ctx.getIndexes()).containsExactly(VALID_NAMED_INDEX);
+    }
+
+    @Test
+    void of_3arg_no_match_returns_all_indexes() {
+        Collection<Index> indexes = List.of(VALID_NAMED_INDEX);
+        IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "idx_nonExistent");
+
+        assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+    }
+
+    @Test
+    void of_3arg_blank_index_name_returns_all_indexes() {
+        Index blankNamedIndex = Index.builder().namespace(NAMESPACE).bin("bin1").name("  ")
+                .indexType(IndexType.NUMERIC).binValuesRatio(0).build();
+        Collection<Index> indexes = List.of(blankNamedIndex);
+
+        IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "  ");
+
+        assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+    }
+
+    @Test
+    void of_3arg_null_indexes_does_not_throw() {
+        assertThatCode(() -> IndexContext.of(NAMESPACE, null, "idx_bin1"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void of_3arg_namespace_mismatch_returns_all_indexes() {
+        Index wrongNs = Index.builder().namespace("other_ns").bin("bin1").name("idx_bin1")
+                .indexType(IndexType.NUMERIC).binValuesRatio(0).build();
+        Collection<Index> indexes = List.of(wrongNs);
+
+        IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "idx_bin1");
+
+        assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+    }
+
+    @Test
+    void withBinHint_null_indexes_does_not_throw() {
+        assertThatCode(() -> IndexContext.withBinHint(NAMESPACE, null, "bin1"))
+                .doesNotThrowAnyException();
     }
 
     @Test

@@ -52,6 +52,9 @@ public class IndexContext {
      */
     public static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse) {
         validateNamespace(namespace);
+        if (indexes == null || indexToUse == null || indexToUse.isBlank()) {
+            return new IndexContext(namespace, indexes);
+        }
         List<Index> matchingIndexes = indexes.stream()
                 .filter(idx -> indexMatches(idx, namespace, indexToUse))
                 .toList();
@@ -73,7 +76,7 @@ public class IndexContext {
      */
     public static IndexContext withBinHint(String namespace, Collection<Index> indexes, String binToUse) {
         validateNamespace(namespace);
-        if (binToUse == null || binToUse.isBlank()) {
+        if (indexes == null || binToUse == null || binToUse.isBlank()) {
             return new IndexContext(namespace, indexes);
         }
         List<Index> matchingIndexes = indexes.stream()
