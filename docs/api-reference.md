@@ -48,8 +48,35 @@ This class holds the final, concrete outputs of the parsing and substitution pro
 A container for the information required for automatic secondary index optimization.
 
 *   **`static IndexContext of(String namespace, Collection<Index> indexes)`**: Creates a context.
-    *   `namespace`: The namespace the query will be run against.
+    *   `namespace`: The namespace the query will be run against. Must not be null or blank.
     *   `indexes`: A collection of `Index` objects representing the available secondary indexes for that namespace.
+*   **`static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse)`**:
+    Creates a context with an explicit index name hint.
+    *   `namespace`: The namespace the query will be run against. Must not be null or blank.
+    *   `indexes`: A collection of `Index` objects representing the available secondary indexes for that namespace.
+    *   `indexToUse`: The name of the index to use for the secondary index filter.
+    If not found, `null`, or empty, the index is chosen automatically by cardinality
+    (higher `binValuesRatio` preferred), then alphabetically by bin name.
+*   **`static IndexContext withBinHint(String namespace, Collection<Index> indexes, String binToUse)`**:
+    Creates a context with an explicit bin name hint. Use this when you want to direct the parser to
+    an index on a specific bin without knowing the index name.
+    *   `namespace`: The namespace the query will be run against. Must not be null or blank.
+    *   `indexes`: A collection of `Index` objects representing the available secondary indexes for that namespace.
+    *   `binToUse`: The name of the bin whose index should be preferred. If one or more indexes in the collection
+    match the given bin name and namespace, the parser prefers that bin and selects a specific index among those
+    matches using the normal automatic rules (for example, index type and cardinality, then alphabetically).
+    If no index matches the bin and namespace, or `binToUse` is `null` or blank, the parser falls back to fully
+    automatic index selection.
+### `com.aerospike.dsl.Index`
+
+Represents an available secondary index for optimization.
+
+*   **Mandatory fields**: `namespace`, `bin`, `indexType`.
+*   **Optional field**: `binValuesRatio` — an estimate of the cardinality of values in the indexed bin.
+*   **`binValuesRatio` behavior and validation**:
+    * If omitted, it defaults to `0`.
+    * Must be non-negative (`>= 0`).
+    * Providing a realistic, non-negative cardinality value is recommended for better automatic index selection (indexes with higher `binValuesRatio` are preferred).
 
 ## Example API Flow
 
