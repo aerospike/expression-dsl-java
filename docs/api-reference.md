@@ -62,11 +62,11 @@ A container for the information required for automatic secondary index optimizat
     an index on a specific bin without knowing the index name.
     *   `namespace`: The namespace the query will be run against. Must not be null or blank.
     *   `indexes`: A collection of `Index` objects representing the available secondary indexes for that namespace.
-    *   `binToUse`: The name of the bin whose index should be used. If exactly one index in the collection
-    matches the given bin name and namespace, that index is used. If the bin matches multiple indexes,
-    no index matches, the value is `null`, or the value is blank, the parser falls back to fully automatic
-    selection (cardinality, then alphabetically).
-
+    *   `binToUse`: The name of the bin whose index should be preferred. If one or more indexes in the collection
+    match the given bin name and namespace, the parser prefers that bin and selects a specific index among those
+    matches using the normal automatic rules (for example, index type and cardinality, then alphabetically).
+    If no index matches the bin and namespace, or `binToUse` is `null` or blank, the parser falls back to fully
+    automatic index selection.
 ### `com.aerospike.dsl.Index`
 
 Represents an available secondary index for optimization.
