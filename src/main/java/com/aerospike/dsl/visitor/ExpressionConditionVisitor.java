@@ -35,6 +35,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static com.aerospike.dsl.util.ParsingUtils.*;
+import static com.aerospike.dsl.util.ValidationUtils.validateComparableTypes;
 import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
@@ -301,13 +302,19 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     static void inferLeftBinTypeFromList(AbstractPart left, AbstractPart right) {
-        if (left.getPartType() == AbstractPart.PartType.BIN_PART
-                && !((BinPart) left).isTypeExplicitlySet()
-                && right.getPartType() == AbstractPart.PartType.LIST_OPERAND) {
-            Exp.Type inferredType = inferTypeFromListElements((ListOperand) right);
-            if (inferredType != null) {
-                ((BinPart) left).updateExp(inferredType);
-            }
+        if (left.getPartType() != AbstractPart.PartType.BIN_PART
+                || right.getPartType() != AbstractPart.PartType.LIST_OPERAND) {
+            return;
+        }
+        BinPart leftBin = (BinPart) left;
+        Exp.Type inferredType = inferTypeFromListElements((ListOperand) right);
+        if (inferredType == null) {
+            return;
+        }
+        if (!leftBin.isTypeExplicitlySet()) {
+            leftBin.updateExp(inferredType);
+        } else {
+            validateComparableTypes(leftBin.getExpType(), inferredType);
         }
     }
 

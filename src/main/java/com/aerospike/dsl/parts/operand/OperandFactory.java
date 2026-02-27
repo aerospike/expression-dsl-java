@@ -1,5 +1,6 @@
 package com.aerospike.dsl.parts.operand;
 
+import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.parts.AbstractPart;
 
 import java.util.List;
@@ -59,7 +60,12 @@ public interface OperandFactory {
         } else if (value instanceof SortedMap) {
             return new MapOperand((SortedMap<Object, Object>) value);
         } else if (value instanceof Map) {
-            return new MapOperand(new TreeMap<>((Map<Object, Object>) value));
+            try {
+                return new MapOperand(new TreeMap<>((Map<Object, Object>) value));
+            } catch (ClassCastException e) {
+                throw new DslParseException(
+                        "Map keys must be mutually comparable for operand creation", e);
+            }
         } else {
             throw new UnsupportedOperationException(String.format("Cannot create operand from value of type %s",
                     value.getClass().getSimpleName()));
