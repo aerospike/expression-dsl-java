@@ -65,42 +65,42 @@ class IndexContextTests {
     }
 
     @Test
-    void of_3arg_null_index_name_returns_all_indexes() {
+    void of_3arg_null_index_name_no_preferred_bin() {
         Collection<Index> indexes = List.of(VALID_NAMED_INDEX);
         IndexContext ctx = IndexContext.of(NAMESPACE, indexes, null);
 
         assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
-        assertThat(ctx.getFallbackIndexes()).isNull();
+        assertThat(ctx.getPreferredBin()).isNull();
     }
 
     @Test
-    void of_3arg_empty_index_name_returns_all_indexes() {
+    void of_3arg_empty_index_name_no_preferred_bin() {
         Collection<Index> indexes = List.of(VALID_NAMED_INDEX);
         IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "");
 
         assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
-        assertThat(ctx.getFallbackIndexes()).isNull();
+        assertThat(ctx.getPreferredBin()).isNull();
     }
 
     @Test
-    void of_3arg_single_match_returns_that_index() {
+    void of_3arg_match_sets_preferred_bin() {
         Index other = Index.builder().namespace(NAMESPACE).bin("bin2").name("idx_bin2")
                 .indexType(IndexType.NUMERIC).binValuesRatio(0).build();
         Collection<Index> indexes = List.of(VALID_NAMED_INDEX, other);
 
         IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "idx_bin1");
 
-        assertThat(ctx.getIndexes()).containsExactly(VALID_NAMED_INDEX);
-        assertThat(ctx.getFallbackIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getPreferredBin()).isEqualTo("bin1");
     }
 
     @Test
-    void of_3arg_no_match_returns_all_indexes() {
+    void of_3arg_no_match_no_preferred_bin() {
         Collection<Index> indexes = List.of(VALID_NAMED_INDEX);
         IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "idx_nonExistent");
 
         assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
-        assertThat(ctx.getFallbackIndexes()).isNull();
+        assertThat(ctx.getPreferredBin()).isNull();
     }
 
     @Test
@@ -168,19 +168,19 @@ class IndexContextTests {
     }
 
     @Test
-    void withBinHint_single_match_returns_that_index() {
+    void withBinHint_match_sets_preferred_bin() {
         Index other = Index.builder().namespace(NAMESPACE).bin("bin2")
                 .indexType(IndexType.NUMERIC).binValuesRatio(0).build();
         Collection<Index> indexes = List.of(VALID_INDEX, other);
 
         IndexContext ctx = IndexContext.withBinHint(NAMESPACE, indexes, "bin1");
 
-        assertThat(ctx.getIndexes()).containsExactly(VALID_INDEX);
-        assertThat(ctx.getFallbackIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getPreferredBin()).isEqualTo("bin1");
     }
 
     @Test
-    void withBinHint_multiple_matches_returns_matching_bin_indexes() {
+    void withBinHint_multiple_matches_sets_preferred_bin() {
         Index second = Index.builder().namespace(NAMESPACE).bin("bin1")
                 .indexType(IndexType.STRING).binValuesRatio(5).build();
         Index other = Index.builder().namespace(NAMESPACE).bin("bin2")
@@ -189,17 +189,17 @@ class IndexContextTests {
 
         IndexContext ctx = IndexContext.withBinHint(NAMESPACE, indexes, "bin1");
 
-        assertThat(ctx.getIndexes()).containsExactly(VALID_INDEX, second);
-        assertThat(ctx.getFallbackIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getPreferredBin()).isEqualTo("bin1");
     }
 
     @Test
-    void withBinHint_no_match_returns_all_indexes() {
+    void withBinHint_no_match_no_preferred_bin() {
         Collection<Index> indexes = List.of(VALID_INDEX);
         IndexContext ctx = IndexContext.withBinHint(NAMESPACE, indexes, "nonExistentBin");
 
         assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
-        assertThat(ctx.getFallbackIndexes()).isNull();
+        assertThat(ctx.getPreferredBin()).isNull();
     }
 
     @Test

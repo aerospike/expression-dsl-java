@@ -25,7 +25,7 @@ public class ParsedExpression {
 
     private final AbstractPart expressionTree;
     private final Map<String, List<Index>> indexesMap;
-    private final Map<String, List<Index>> fallbackIndexesMap;
+    private final String preferredBin;
     private final PlaceholderValues placeholderValues;
     private ParseResult result;
 
@@ -35,12 +35,11 @@ public class ParsedExpression {
     }
 
     public ParsedExpression(AbstractPart exprTree, PlaceholderValues placeholderValues,
-                            Map<String, List<Index>> indexesMap,
-                            Map<String, List<Index>> fallbackIndexesMap) {
+                            Map<String, List<Index>> indexesMap, String preferredBin) {
         this.expressionTree = exprTree;
         this.placeholderValues = placeholderValues;
         this.indexesMap = indexesMap;
-        this.fallbackIndexesMap = fallbackIndexesMap;
+        this.preferredBin = preferredBin;
     }
 
     /**
@@ -66,10 +65,8 @@ public class ParsedExpression {
     public ParseResult getResult(PlaceholderValues placeholderValues) {
         if (expressionTree != null) {
             if (expressionTree.getPartType() == EXPRESSION_CONTAINER) {
-                AbstractPart resultPart = buildExpr((ExpressionContainer) expressionTree, placeholderValues, indexesMap);
-                if (resultPart.getFilter() == null && fallbackIndexesMap != null) {
-                    resultPart = buildExpr((ExpressionContainer) expressionTree, placeholderValues, fallbackIndexesMap);
-                }
+                AbstractPart resultPart = buildExpr(
+                        (ExpressionContainer) expressionTree, placeholderValues, indexesMap, preferredBin);
                 return new ParseResult(resultPart.getFilter(), resultPart.getExp());
             } else {
                 return new ParseResult(expressionTree.getFilter(), expressionTree.getExp());

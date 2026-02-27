@@ -3,7 +3,6 @@ package com.aerospike.dsl;
 import lombok.Getter;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * This class stores namespace and indexes required to build secondary index Filter
@@ -22,19 +21,17 @@ public class IndexContext {
      */
     private final Collection<Index> indexes;
     /**
-     * The original (un-narrowed) index collection, or {@code null} when no hint-based narrowing occurred.
-     * Used to fall back to automatic selection when the narrowed set cannot produce a filter.
+     * Preferred bin name derived from a user-supplied hint (index name or bin name).
+     * {@code null} when no hint was provided or the hint could not be resolved.
+     * Used by the filter selection algorithm to prefer an index on this bin before
+     * falling back to cardinality-based selection.
      */
-    private final Collection<Index> fallbackIndexes;
+    private final String preferredBin;
 
-    private IndexContext(String namespace, Collection<Index> indexes) {
-        this(namespace, indexes, null);
-    }
-
-    private IndexContext(String namespace, Collection<Index> indexes, Collection<Index> fallbackIndexes) {
+    private IndexContext(String namespace, Collection<Index> indexes, String preferredBin) {
         this.namespace = namespace;
         this.indexes = indexes;
-        this.fallbackIndexes = fallbackIndexes;
+        this.preferredBin = preferredBin;
     }
 
     /**
@@ -47,44 +44,41 @@ public class IndexContext {
      */
     public static IndexContext of(String namespace, Collection<Index> indexes) {
         validateNamespace(namespace);
-        return new IndexContext(namespace, indexes);
+        return new IndexContext(namespace, indexes, null);
     }
 
     /**
-     * Create index context specifying the index to be used
+     * Create index context specifying the index to be used.
+     * The named index's bin is stored as a preference hint; the full index collection
+     * is kept so the selection algorithm can fall back automatically when the hint
+     * cannot be applied (e.g. type mismatch).
      *
      * @param namespace  Namespace to be used for creating {@link com.aerospike.dsl.client.query.Filter}.
      *                   Must not be null or blank
      * @param indexes    Collection of {@link Index} objects to be used for creating Filter
      * @param indexToUse The name of an index to use. If null, blank, or not found in the collection,
-     *                   index is chosen automatically by cardinality then alphabetically.
-     *                   If found, that index is tried first; if it cannot be applied to the
-     *                   expression (e.g. type mismatch), selection falls back to all indexes
+     *                   index is chosen automatically by cardinality then alphabetically
      * @return A new instance of {@code IndexContext}
      */
     public static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse) {
         validateNamespace(namespace);
         if (indexes == null || indexToUse == null || indexToUse.isBlank()) {
-            return new IndexContext(namespace, indexes);
+            return new IndexContext(namespace, indexes, null);
         }
-        List<Index> matchingIndexes = indexes.stream()
+        String resolvedBin = indexes.stream()
                 .filter(idx -> indexMatches(idx, namespace, indexToUse))
-                .toList();
-        if (matchingIndexes.isEmpty()) {
-            return new IndexContext(namespace, indexes);
-        }
-        return new IndexContext(namespace, matchingIndexes, indexes);
+                .map(Index::getBin)
+                .findFirst()
+                .orElse(null);
+        return new IndexContext(namespace, indexes, resolvedBin);
     }
 
     /**
      * Create index context with a bin name hint specifying which bin's index to use.
-     * If one or more indexes in the collection match the given bin name and namespace, only those
-     * indexes are used for selection. When exactly one matches, it is used directly. When multiple
-     * match (e.g., a STRING index and a NUMERIC index on the same bin), automatic type-based and
-     * cardinality-based selection is applied within that narrowed set, allowing the correct index
-     * type to be inferred from the query (e.g., a numeric comparison picks the NUMERIC index).
-     * If there is no match, the hint is ignored and the parser falls back to fully automatic
-     * selection across all indexes.
+     * The full index collection is kept; the hint is stored as a preference so the
+     * selection algorithm can prefer an index on this bin. When the hint cannot be
+     * applied (e.g. type mismatch or hinted bin not in query), the algorithm falls
+     * back to cardinality-based selection across all indexes automatically.
      *
      * @param namespace Namespace to be used for creating {@link com.aerospike.dsl.client.query.Filter}.
      *                  Must not be null or blank
@@ -96,15 +90,10 @@ public class IndexContext {
     public static IndexContext withBinHint(String namespace, Collection<Index> indexes, String binToUse) {
         validateNamespace(namespace);
         if (indexes == null || binToUse == null || binToUse.isBlank()) {
-            return new IndexContext(namespace, indexes);
+            return new IndexContext(namespace, indexes, null);
         }
-        List<Index> matchingIndexes = indexes.stream()
-                .filter(idx -> binMatches(idx, namespace, binToUse))
-                .toList();
-        if (matchingIndexes.isEmpty()) {
-            return new IndexContext(namespace, indexes);
-        }
-        return new IndexContext(namespace, matchingIndexes, indexes);
+        boolean hasMatch = indexes.stream().anyMatch(idx -> binMatches(idx, namespace, binToUse));
+        return new IndexContext(namespace, indexes, hasMatch ? binToUse : null);
     }
 
     private static void validateNamespace(String namespace) {

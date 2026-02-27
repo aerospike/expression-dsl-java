@@ -42,7 +42,7 @@ Index cityIndex = Index.builder()
     .namespace("test") // is mandatory
     .bin("city") // is mandatory
     .indexType(IndexType.STRING) // is mandatory
-    .binValuesRatio(1) // is mandatory and must be non-negative
+    .binValuesRatio(1) // defaults to 0; must be non-negative
     .name("idx_users_city")
     .build();
 
@@ -95,14 +95,14 @@ IndexContext indexContext = IndexContext.withBinHint("test", List.of(cityIndex, 
 
 The bin hint behaves as follows:
 
-- If one or more indexes in the indexes collection match the given bin name and namespace, only those
-  indexes are considered first. When exactly one matches, it is used directly. When multiple
-  match (e.g., a STRING index and a NUMERIC index on the same bin), automatic type-based and
-  cardinality-based selection is applied within that narrowed set — for example, a numeric comparison
-  like `$.value == 19` will automatically pick the NUMERIC index on `value`.
-- If the matching indexes cannot be applied to the expression (e.g. the hinted bin is not referenced
-  in the query, or there is a type mismatch), the parser falls back to automatic selection across
-  all provided indexes. If no suitable index exists, no secondary index filter is produced.
+- If one or more indexes in the indexes collection match the given bin name and namespace,
+  the parser prefers an index on that bin. When multiple indexes exist on the same bin
+  (e.g., a STRING index and a NUMERIC index), automatic type-based and cardinality-based
+  selection takes place — for example, in a numeric expression like `$.value == 19` 
+  the NUMERIC index on `value` will be picked.
+- If the preferred bin's indexes cannot be applied to the expression (e.g. the hinted bin is not
+  referenced in the query, or there is a type mismatch), the parser falls back to automatic selection
+  across all provided indexes. If no suitable index exists, no secondary index filter is produced.
 - If the bin name matches no indexes in the collection, the hint is ignored and the parser falls back
   to fully automatic selection (by cardinality, then alphabetically) across all indexes.
 - Passing `null` or a blank string bin name hint also triggers fallback to automatic selection.

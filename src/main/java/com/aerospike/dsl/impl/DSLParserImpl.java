@@ -71,19 +71,17 @@ public class DSLParserImpl implements DSLParser {
 
         Map<String, List<Index>> indexesMap = buildIndexesMap(
                 Optional.ofNullable(indexContext).map(IndexContext::getIndexes).orElse(null), namespace);
-        Map<String, List<Index>> fallbackIndexesMap = Optional.ofNullable(indexContext)
-                .map(IndexContext::getFallbackIndexes)
-                .map(all -> buildIndexesMap(all, namespace))
+        String preferredBin = Optional.ofNullable(indexContext)
+                .map(IndexContext::getPreferredBin)
                 .orElse(null);
 
         AbstractPart resultingPart = new ExpressionConditionVisitor().visit(parseTree);
 
-        // When we can't identify a specific case of syntax error, we throw a generic DSL syntax error
         if (resultingPart == null) {
             throw new DslParseException("Could not parse given DSL expression input");
         }
 
-        return new ParsedExpression(resultingPart, placeholderValues, indexesMap, fallbackIndexesMap);
+        return new ParsedExpression(resultingPart, placeholderValues, indexesMap, preferredBin);
     }
 
     private Map<String, List<Index>> buildIndexesMap(Collection<Index> indexes, String namespace) {
