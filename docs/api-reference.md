@@ -71,10 +71,12 @@ A container for the information required for automatic secondary index optimizat
 
 Represents an available secondary index for optimization.
 
-*   **Mandatory fields**: `namespace`, `bin`, `indexType`, `binValuesRatio`.
-*   **`binValuesRatio` validation**:
-    * Must be explicitly provided.
+*   **Mandatory fields**: `namespace`, `bin`, `indexType`.
+*   **Optional field**: `binValuesRatio` — an estimate of the cardinality of values in the indexed bin.
+*   **`binValuesRatio` behavior and validation**:
+    * If omitted, it defaults to `0`.
     * Must be non-negative (`>= 0`).
+    * Providing a realistic, non-negative cardinality value is recommended for better automatic index selection (indexes with higher `binValuesRatio` are preferred).
 
 ## Example API Flow
 
