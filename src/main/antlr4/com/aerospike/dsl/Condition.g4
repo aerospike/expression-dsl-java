@@ -33,6 +33,7 @@ comparisonExpression
     | bitwiseExpression '<=' bitwiseExpression                                  # LessThanOrEqualExpression
     | bitwiseExpression '==' bitwiseExpression                                  # EqualityExpression
     | bitwiseExpression '!=' bitwiseExpression                                  # InequalityExpression
+    | bitwiseExpression IN bitwiseExpression                                    # InExpression
     | bitwiseExpression                                                         # BitwiseExpressionWrapper
     ;
 
@@ -129,7 +130,7 @@ stringOperand: QUOTED_STRING;
 
 QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
-listConstant: '[' unaryExpression? (',' unaryExpression)* ']';
+listConstant: '[' unaryExpression? (',' unaryExpression)* ']' | LIST_TYPE_DESIGNATOR;
 
 orderedMapConstant: '{' mapPairConstant? (',' mapPairConstant)* '}';
 
@@ -531,6 +532,8 @@ pathFunctionGet
 pathFunctionParams: pathFunctionParam (',' pathFunctionParam)*?;
 
 pathFunctionParam: pathFunctionParamName ':' pathFunctionParamValue;
+
+IN: [iI][nN];
 
 NAME_IDENTIFIER: [a-zA-Z0-9_]+;
 

@@ -5,7 +5,9 @@ import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.PlaceholderValues;
 import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.cdt.ListReturnType;
 import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.client.query.Filter;
 import com.aerospike.dsl.client.query.IndexType;
 import com.aerospike.dsl.parts.AbstractPart;
@@ -1136,6 +1138,10 @@ public class VisitorUtils {
         boolean rightIsPlaceholder = !expr.isUnary() && expr.getRight().getPartType() == PLACEHOLDER_OPERAND;
         boolean isResolved = false;
 
+        if (expr.getOperationType() == IN && rightIsPlaceholder) {
+            validateInPlaceholderValue((PlaceholderOperand) expr.getRight(), placeholderValues);
+        }
+
         // Resolve left placeholder and replace it with the resolved operand
         if (leftIsPlaceholder) {
             PlaceholderOperand placeholder = (PlaceholderOperand) expr.getLeft();
@@ -1150,6 +1156,14 @@ public class VisitorUtils {
 
         if (isResolved && List.of(LT, LTEQ, GT, GTEQ, NOTEQ, EQ).contains(expr.getOperationType())) {
             overrideTypeInfo(expr.getLeft(), expr.getRight());
+        }
+    }
+
+    private static void validateInPlaceholderValue(PlaceholderOperand placeholder,
+                                                   PlaceholderValues placeholderValues) {
+        Object value = placeholderValues.getValue(placeholder.getIndex());
+        if (!(value instanceof java.util.List)) {
+            throw new DslParseException("IN operation requires a List as the right operand");
         }
     }
 
@@ -1333,6 +1347,11 @@ public class VisitorUtils {
         // For binary expressions
         AbstractPart right = getExistingPart(expr.getRight(), "Unable to parse right operand");
 
+        // IN operation: ListExp.getByValue(EXISTS, leftExp, rightExp)
+        if (expr.getOperationType() == IN) {
+            return buildInExpression(left, right);
+        }
+
         // Process operands
         Exp leftExp = processOperand(left);
         Exp rightExp = processOperand(right);
@@ -1442,6 +1461,12 @@ public class VisitorUtils {
             }
         }
         return null;
+    }
+
+    private static Exp buildInExpression(AbstractPart left, AbstractPart right) {
+        Exp leftExp = processOperand(left);
+        Exp rightExp = processOperand(right);
+        return ListExp.getByValue(ListReturnType.EXISTS, leftExp, rightExp);
     }
 
     private static boolean isArithmeticExpressionContainer(AbstractPart part) {
@@ -1605,6 +1630,9 @@ public class VisitorUtils {
         Consumer<AbstractPart> exprsPerCardinalityCollector = part -> {
             if (part.getPartType() == EXPRESSION_CONTAINER) {
                 ExpressionContainer expr = (ExpressionContainer) part;
+
+                if (expr.getOperationType() == IN) return;
+
                 BinPart binPart = getBinPart(expr, 2);
 
                 if (binPart == null) return; // no bin found

@@ -260,6 +260,62 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     }
 
     @Override
+    public AbstractPart visitInExpression(ConditionParser.InExpressionContext ctx) {
+        AbstractPart left = visit(ctx.bitwiseExpression(0));
+        AbstractPart right = visit(ctx.bitwiseExpression(1));
+
+        validateInRightOperand(left, right);
+        inferInTypes(left, right);
+
+        return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.IN);
+    }
+
+    private static void validateInRightOperand(AbstractPart left, AbstractPart right) {
+        if (left == null) {
+            throw new DslParseException("Unable to parse left operand");
+        }
+        if (right == null) {
+            throw new DslParseException("Unable to parse right operand");
+        }
+        if (right.getPartType() == AbstractPart.PartType.PLACEHOLDER_OPERAND
+                || right.getPartType() == AbstractPart.PartType.LIST_OPERAND
+                || right.getPartType() == AbstractPart.PartType.BIN_PART
+                || right.getPartType() == AbstractPart.PartType.PATH_OPERAND
+                || right.getPartType() == AbstractPart.PartType.VARIABLE_OPERAND) {
+            return;
+        }
+        throw new DslParseException("IN operation requires a List as the right operand");
+    }
+
+    private static void inferInTypes(AbstractPart left, AbstractPart right) {
+        if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
+            ((BinPart) right).updateExp(Exp.Type.LIST);
+        }
+        if (left.getPartType() == AbstractPart.PartType.BIN_PART
+                && !((BinPart) left).isTypeExplicitlySet()
+                && right.getPartType() == AbstractPart.PartType.LIST_OPERAND) {
+            ListOperand listOperand = (ListOperand) right;
+            Exp.Type inferredType = inferTypeFromListElements(listOperand);
+            if (inferredType != null) {
+                ((BinPart) left).updateExp(inferredType);
+            }
+        }
+    }
+
+    private static Exp.Type inferTypeFromListElements(ListOperand listOperand) {
+        List<Object> values = listOperand.getValue();
+        if (values.isEmpty()) return null;
+        Object first = values.get(0);
+        if (first instanceof String) return Exp.Type.STRING;
+        if (first instanceof Boolean) return Exp.Type.BOOL;
+        if (first instanceof Float || first instanceof Double) return Exp.Type.FLOAT;
+        if (first instanceof Integer || first instanceof Long) return Exp.Type.INT;
+        if (first instanceof java.util.List) return Exp.Type.LIST;
+        if (first instanceof java.util.Map) return Exp.Type.MAP;
+        return null;
+    }
+
+    @Override
     public AbstractPart visitGreaterThanExpression(ConditionParser.GreaterThanExpressionContext ctx) {
         AbstractPart left = visit(ctx.bitwiseExpression(0));
         AbstractPart right = visit(ctx.bitwiseExpression(1));
