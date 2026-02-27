@@ -93,19 +93,19 @@ Index ageIndex = Index.builder()
 IndexContext indexContext = IndexContext.withBinHint("test", List.of(cityIndex, ageIndex), "city");
 ```
 
-The bin hint behaves as follows:
+If the hinted bin name matches no indexes in the collection, the hint is ignored and the parser falls back
+to fully automatic selection (by cardinality, then alphabetically) across all given indexes.
+Passing `null` or a blank string bin name hint also triggers fallback to automatic selection.
 
-- If one or more indexes in the indexes collection match the given bin name and namespace,
-  the parser prefers an index on that bin. When multiple indexes exist on the same bin
-  (e.g., a STRING index and a NUMERIC index), automatic type-based and cardinality-based
-  selection takes place — for example, in a numeric expression like `$.value == 19` 
-  the NUMERIC index on `value` will be picked.
-- If the preferred bin's indexes cannot be applied to the expression (e.g. the hinted bin is not
-  referenced in the query, or there is a type mismatch), the parser falls back to automatic selection
-  across all provided indexes. If no suitable index exists, no secondary index filter is produced.
-- If the bin name matches no indexes in the collection, the hint is ignored and the parser falls back
-  to fully automatic selection (by cardinality, then alphabetically) across all indexes.
-- Passing `null` or a blank string bin name hint also triggers fallback to automatic selection.
+If one or more provided indexes match the hinted bin name and namespace, the parser prefers an index on that bin. 
+When multiple indexes exist on the same bin (e.g., a STRING index and a NUMERIC index), 
+automatic type-based and cardinality-based selection takes place — 
+for example, in a numeric expression like `$.value == 19` the NUMERIC index on `value` will be picked.
+
+If the preferred bin's indexes cannot be applied to the expression (e.g. there is a type mismatch), 
+the parser falls back to automatic selection across all provided indexes. 
+If no suitable index exists, no secondary index filter is produced.
+
 
 ## Usage Example
 
