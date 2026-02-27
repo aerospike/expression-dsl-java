@@ -23,7 +23,9 @@ The parser then does the following:
 * `Filter` (for the SI query) - given that the correct `IndexContext` was provided, and that the given DSL expression can be converted to a secondary index filter
 * `Expression` (for the scan expression filter)
 
-> **Note:** Only one secondary index can be used per query. The index will be chosen based on cardinality (preferring indexes with a higher `binValuesRatio`), otherwise alphabetically.
+> **Note:** Only one secondary index can be used per query. The index will be chosen based on cardinality
+> (preferring indexes with a higher `binValuesRatio`), otherwise alphabetically.
+> Type-matching is also applied when multiple indexes exist on the same bin.
 
 ## Choosing a Specific Index (Index Hint)
 
@@ -60,6 +62,11 @@ If the named index is not found in the collection or does not match the namespac
 the parser falls back to automatic selection (cardinality, then alphabetically).
 Passing `null` or an empty string as the third parameter also triggers automatic selection.
 
+If the named index **is** found but cannot be applied to the expression (for example, the index
+is on a different bin than any bin referenced in the query, or has a type mismatch),
+the parser falls back to automatic selection across all provided indexes.
+If no suitable index exists in the collection, no secondary index filter is produced.
+
 ### Hint by Bin Name
 
 If you know which bin should be used for the secondary index filter but not the specific index name,
@@ -88,10 +95,16 @@ IndexContext indexContext = IndexContext.withBinHint("test", List.of(cityIndex, 
 
 The bin hint behaves as follows:
 
-- If exactly one index in the indexes collection matches the given bin name and namespace, that index is used.
-- If the bin name matches multiple indexes (for example, indexes of different types on the same bin),
-  or if there is no match, the hint is ignored and the parser falls back to fully automatic selection
-  (by cardinality, then alphabetically).
+- If one or more indexes in the indexes collection match the given bin name and namespace, only those
+  indexes are considered first. When exactly one matches, it is used directly. When multiple
+  match (e.g., a STRING index and a NUMERIC index on the same bin), automatic type-based and
+  cardinality-based selection is applied within that narrowed set — for example, a numeric comparison
+  like `$.value == 19` will automatically pick the NUMERIC index on `value`.
+- If the matching indexes cannot be applied to the expression (e.g. the hinted bin is not referenced
+  in the query, or there is a type mismatch), the parser falls back to automatic selection across
+  all provided indexes. If no suitable index exists, no secondary index filter is produced.
+- If the bin name matches no indexes in the collection, the hint is ignored and the parser falls back
+  to fully automatic selection (by cardinality, then alphabetically) across all indexes.
 - Passing `null` or a blank string bin name hint also triggers fallback to automatic selection.
 
 ## Usage Example
@@ -154,7 +167,9 @@ Expression filterExpression = Exp.build(result.getExp()); // This will contain t
 ```
 ### 4. Execute the Query
 
-When you execute the query, you need to use both the `Filter` and the `Expression`. The Java client handles this by applying the secondary index `Filter` first to select the initial set of records, and then applying the `filterExp` on the server to those results.
+When you execute the query, you need to use both the `Filter` and the `Expression`. The Java client handles this
+by applying the secondary index `Filter` first to select the initial set of records, 
+and then applying the `filterExp` on the server to those results.
 
 ```java
 Statement stmt = new Statement();

@@ -68,13 +68,13 @@ public class DSLParserImpl implements DSLParser {
         final String namespace = Optional.ofNullable(indexContext)
                 .map(IndexContext::getNamespace)
                 .orElse(null);
-        final Collection<Index> indexes = Optional.ofNullable(indexContext)
-                .map(IndexContext::getIndexes)
-                .orElse(Collections.emptyList());
 
-        Map<String, List<Index>> indexesMap = indexes.stream()
-                .filter(idx -> namespace != null && namespace.equals(idx.getNamespace()))
-                .collect(Collectors.groupingBy(Index::getBin));
+        Map<String, List<Index>> indexesMap = buildIndexesMap(
+                Optional.ofNullable(indexContext).map(IndexContext::getIndexes).orElse(null), namespace);
+        Map<String, List<Index>> fallbackIndexesMap = Optional.ofNullable(indexContext)
+                .map(IndexContext::getFallbackIndexes)
+                .map(all -> buildIndexesMap(all, namespace))
+                .orElse(null);
 
         AbstractPart resultingPart = new ExpressionConditionVisitor().visit(parseTree);
 
@@ -83,7 +83,13 @@ public class DSLParserImpl implements DSLParser {
             throw new DslParseException("Could not parse given DSL expression input");
         }
 
-        // Return the parsed tree along with indexes Map
-        return new ParsedExpression(resultingPart, placeholderValues, indexesMap);
+        return new ParsedExpression(resultingPart, placeholderValues, indexesMap, fallbackIndexesMap);
+    }
+
+    private Map<String, List<Index>> buildIndexesMap(Collection<Index> indexes, String namespace) {
+        if (indexes == null || indexes.isEmpty() || namespace == null) return Collections.emptyMap();
+        return indexes.stream()
+                .filter(idx -> namespace.equals(idx.getNamespace()))
+                .collect(Collectors.groupingBy(Index::getBin));
     }
 }

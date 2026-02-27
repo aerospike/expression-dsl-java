@@ -39,7 +39,7 @@ public class Index {
      * Cardinality of the index calculated using "sindex-stat" command and looking at the ratio of entries
      * to unique bin values for the given secondary index on the node (entries_per_bval)
      */
-    private final Integer binValuesRatio;
+    private final int binValuesRatio;
     /**
      * {@link IndexCollectionType} of the index
      */
@@ -49,7 +49,7 @@ public class Index {
      */
     private final CTX[] ctx;
 
-    public Index(String namespace, String bin, String name, IndexType indexType, Integer binValuesRatio,
+    public Index(String namespace, String bin, String name, IndexType indexType, int binValuesRatio,
                  IndexCollectionType indexCollectionType, CTX[] ctx) {
         validateMandatory(namespace, bin, indexType, binValuesRatio);
         this.namespace = namespace;
@@ -61,11 +61,10 @@ public class Index {
         this.ctx = ctx;
     }
 
-    private static void validateMandatory(String namespace, String bin, IndexType indexType, Integer binValuesRatio) {
+    private static void validateMandatory(String namespace, String bin, IndexType indexType, int binValuesRatio) {
         requireNonBlank(namespace, "namespace");
         requireNonBlank(bin, "bin");
         requireNonNull(indexType, "indexType");
-        requireNonNull(binValuesRatio, "binValuesRatio");
         if (binValuesRatio < 0) {
             throw new IllegalArgumentException("binValuesRatio must not be negative");
         }

@@ -21,10 +21,20 @@ public class IndexContext {
      * with bins in DSL String
      */
     private final Collection<Index> indexes;
+    /**
+     * The original (un-narrowed) index collection, or {@code null} when no hint-based narrowing occurred.
+     * Used to fall back to automatic selection when the narrowed set cannot produce a filter.
+     */
+    private final Collection<Index> fallbackIndexes;
 
     private IndexContext(String namespace, Collection<Index> indexes) {
+        this(namespace, indexes, null);
+    }
+
+    private IndexContext(String namespace, Collection<Index> indexes, Collection<Index> fallbackIndexes) {
         this.namespace = namespace;
         this.indexes = indexes;
+        this.fallbackIndexes = fallbackIndexes;
     }
 
     /**
@@ -46,8 +56,10 @@ public class IndexContext {
      * @param namespace  Namespace to be used for creating {@link com.aerospike.dsl.client.query.Filter}.
      *                   Must not be null or blank
      * @param indexes    Collection of {@link Index} objects to be used for creating Filter
-     * @param indexToUse The name of an index to use. If not found, null, or empty, index is chosen
-     *                   by cardinality or alphabetically
+     * @param indexToUse The name of an index to use. If null, blank, or not found in the collection,
+     *                   index is chosen automatically by cardinality then alphabetically.
+     *                   If found, that index is tried first; if it cannot be applied to the
+     *                   expression (e.g. type mismatch), selection falls back to all indexes
      * @return A new instance of {@code IndexContext}
      */
     public static IndexContext of(String namespace, Collection<Index> indexes, String indexToUse) {
@@ -58,20 +70,27 @@ public class IndexContext {
         List<Index> matchingIndexes = indexes.stream()
                 .filter(idx -> indexMatches(idx, namespace, indexToUse))
                 .toList();
-        return new IndexContext(namespace, matchingIndexes.isEmpty() ? indexes : matchingIndexes);
+        if (matchingIndexes.isEmpty()) {
+            return new IndexContext(namespace, indexes);
+        }
+        return new IndexContext(namespace, matchingIndexes, indexes);
     }
 
     /**
      * Create index context with a bin name hint specifying which bin's index to use.
-     * If exactly one index in the collection matches the given bin name and namespace,
-     * that index is used. Otherwise, all indexes are kept and selection falls back to
-     * the automatic cardinality / alphabetical strategy.
+     * If one or more indexes in the collection match the given bin name and namespace, only those
+     * indexes are used for selection. When exactly one matches, it is used directly. When multiple
+     * match (e.g., a STRING index and a NUMERIC index on the same bin), automatic type-based and
+     * cardinality-based selection is applied within that narrowed set, allowing the correct index
+     * type to be inferred from the query (e.g., a numeric comparison picks the NUMERIC index).
+     * If there is no match, the hint is ignored and the parser falls back to fully automatic
+     * selection across all indexes.
      *
      * @param namespace Namespace to be used for creating {@link com.aerospike.dsl.client.query.Filter}.
      *                  Must not be null or blank
      * @param indexes   Collection of {@link Index} objects to be used for creating Filter
-     * @param binToUse  The name of the bin whose index should be used. If not found, null,
-     *                  blank, or matches multiple indexes, index is chosen automatically
+     * @param binToUse  The name of the bin whose index should be used. If not found, null, or blank,
+     *                  index is chosen automatically across all indexes
      * @return A new instance of {@code IndexContext}
      */
     public static IndexContext withBinHint(String namespace, Collection<Index> indexes, String binToUse) {
@@ -82,7 +101,10 @@ public class IndexContext {
         List<Index> matchingIndexes = indexes.stream()
                 .filter(idx -> binMatches(idx, namespace, binToUse))
                 .toList();
-        return new IndexContext(namespace, matchingIndexes.size() == 1 ? matchingIndexes : indexes);
+        if (matchingIndexes.isEmpty()) {
+            return new IndexContext(namespace, indexes);
+        }
+        return new IndexContext(namespace, matchingIndexes, indexes);
     }
 
     private static void validateNamespace(String namespace) {

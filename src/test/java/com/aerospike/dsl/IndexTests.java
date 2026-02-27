@@ -117,14 +117,14 @@ class IndexTests {
     }
 
     @Test
-    void build_fails_when_binValuesRatio_omitted() {
-        assertThatThrownBy(() -> Index.builder()
+    void build_defaults_to_zero_when_binValuesRatio_omitted() {
+        Index index = Index.builder()
                 .namespace(NAMESPACE)
                 .bin(BIN)
                 .indexType(IndexType.NUMERIC)
-                .build())
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("binValuesRatio must not be null");
+                .build();
+
+        assertThat(index.getBinValuesRatio()).isZero();
     }
 
     @Test

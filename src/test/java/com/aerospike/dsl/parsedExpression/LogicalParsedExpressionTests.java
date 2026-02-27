@@ -1015,4 +1015,230 @@ public class LogicalParsedExpressionTests {
         TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("exclusive($.hand == \"stand\", $.pun == \"done\")"),
                 filter, exp);
     }
+
+    @Test
+    void withBinHint_mixedTypes_numericQuerySelectsNumeric() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_value_str").bin("value")
+                        .indexType(IndexType.STRING).binValuesRatio(5).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_value_num").bin("value")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(5).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_name_str").bin("name")
+                        .indexType(IndexType.STRING).binValuesRatio(100).build()
+        );
+        Filter filter = Filter.equal("value", 19);
+        Exp exp = Exp.eq(Exp.stringBin("name"), Exp.val("Tim"));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.value == 19 and $.name == 'Tim'"),
+                filter, exp,
+                IndexContext.withBinHint(TestUtils.NAMESPACE, indexes, "value"));
+    }
+
+    @Test
+    void withBinHint_mixedTypes_stringQuerySelectsString() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_status_str").bin("status")
+                        .indexType(IndexType.STRING).binValuesRatio(3).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_status_num").bin("status")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(3).build()
+        );
+        Filter filter = Filter.equal("status", "active");
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.status == 'active'"),
+                filter, null,
+                IndexContext.withBinHint(TestUtils.NAMESPACE, indexes, "status"));
+    }
+
+    @Test
+    void withBinHint_singleIndexTypeMismatch_noFilter() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_value_str").bin("value")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build()
+        );
+        Exp exp = Exp.and(
+                Exp.eq(Exp.intBin("value"), Exp.val(19)),
+                Exp.eq(Exp.stringBin("name"), Exp.val("Tim"))
+        );
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.value == 19 and $.name == 'Tim'"),
+                null, exp,
+                IndexContext.withBinHint(TestUtils.NAMESPACE, indexes, "value"));
+    }
+
+    @Test
+    void withBinHint_allIndexesTypeMismatch_noFilter() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_value_str").bin("value")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_value_blob").bin("value")
+                        .indexType(IndexType.BLOB).binValuesRatio(5).build()
+        );
+        Exp exp = Exp.and(
+                Exp.eq(Exp.intBin("value"), Exp.val(19)),
+                Exp.eq(Exp.stringBin("name"), Exp.val("Tim"))
+        );
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.value == 19 and $.name == 'Tim'"),
+                null, exp,
+                IndexContext.withBinHint(TestUtils.NAMESPACE, indexes, "value"));
+    }
+
+    @Test
+    void withBinHint_hintedBinNotInQuery_fallsBack() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_city_str").bin("city")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_age_num").bin("age")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(50).build()
+        );
+        Filter filter = Filter.equal("age", 30);
+        Exp exp = Exp.eq(Exp.stringBin("name"), Exp.val("Tim"));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.age == 30 and $.name == 'Tim'"),
+                filter, exp,
+                IndexContext.withBinHint(TestUtils.NAMESPACE, indexes, "city"));
+    }
+
+    @Test
+    void withBinHint_typeMismatch_fallsBackToOther() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_value_str").bin("value")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_age_num").bin("age")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(50).build()
+        );
+        Filter filter = Filter.range("age", 26, Long.MAX_VALUE);
+        Exp exp = Exp.eq(Exp.intBin("value"), Exp.val(19));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.value == 19 and $.age > 25"),
+                filter, exp,
+                IndexContext.withBinHint(TestUtils.NAMESPACE, indexes, "value"));
+    }
+
+    @Test
+    void withBinHint_allFallbackMismatch_noFilter() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_value_str").bin("value")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_age_str").bin("age")
+                        .indexType(IndexType.STRING).binValuesRatio(50).build()
+        );
+        Exp exp = Exp.and(
+                Exp.eq(Exp.intBin("value"), Exp.val(19)),
+                Exp.gt(Exp.intBin("age"), Exp.val(25))
+        );
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.value == 19 and $.age > 25"),
+                null, exp,
+                IndexContext.withBinHint(TestUtils.NAMESPACE, indexes, "value"));
+    }
+
+    @Test
+    void withBinHint_andWithOrSubexpr_fallsBack() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_intBin1_str").bin("intBin1")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_intBin2_num").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(50).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_intBin3_num").bin("intBin3")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(30).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_intBin4_num").bin("intBin4")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(20).build()
+        );
+        Filter filter = Filter.range("intBin2", 101, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                Exp.gt(Exp.intBin("intBin1"), Exp.val(100)),
+                Exp.or(
+                        Exp.gt(Exp.intBin("intBin3"), Exp.val(100)),
+                        Exp.gt(Exp.intBin("intBin4"), Exp.val(100))
+                )
+        );
+        parseDslExpressionAndCompare(
+                ExpressionContext.of(
+                        "$.intBin1 > 100 and $.intBin2 > 100 and ($.intBin3 > 100 or $.intBin4 > 100)"),
+                filter, exp,
+                IndexContext.withBinHint(TestUtils.NAMESPACE, indexes, "intBin1"));
+    }
+
+    @Test
+    void explicitHint_wrongBin_fallsBackToAutomatic() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_users_city").bin("city")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_users_age").bin("age")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(50).build()
+        );
+        Filter filter = Filter.equal("age", 30);
+        Exp exp = Exp.eq(Exp.stringBin("name"), Exp.val("Tim"));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.age == 30 and $.name == 'Tim'"),
+                filter, exp,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_users_city"));
+    }
+
+    @Test
+    void explicitHint_correctBinWrongType_noFilter() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_age_str").bin("age")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build()
+        );
+        Exp exp = Exp.and(
+                Exp.eq(Exp.intBin("age"), Exp.val(30)),
+                Exp.eq(Exp.stringBin("name"), Exp.val("Tim"))
+        );
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.age == 30 and $.name == 'Tim'"),
+                null, exp,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_age_str"));
+    }
+
+    @Test
+    void explicitHint_correctBin_producesFilter() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_users_city").bin("city")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_users_age").bin("age")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(50).build()
+        );
+        Filter filter = Filter.equal("city", "London");
+        Exp exp = Exp.gt(Exp.intBin("age"), Exp.val(30));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.city == 'London' and $.age > 30"),
+                filter, exp,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_users_city"));
+    }
+
+    @Test
+    void explicitHint_typeMismatch_fallsBackToOther() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_value_str").bin("value")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_age_num").bin("age")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(50).build()
+        );
+        Filter filter = Filter.range("age", 26, Long.MAX_VALUE);
+        Exp exp = Exp.eq(Exp.intBin("value"), Exp.val(19));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.value == 19 and $.age > 25"),
+                filter, exp,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_value_str"));
+    }
+
+    @Test
+    void explicitHint_allIndexesMismatch_noFilter() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_value_str").bin("value")
+                        .indexType(IndexType.STRING).binValuesRatio(10).build(),
+                Index.builder().namespace(TestUtils.NAMESPACE).name("idx_age_str").bin("age")
+                        .indexType(IndexType.STRING).binValuesRatio(50).build()
+        );
+        Exp exp = Exp.and(
+                Exp.eq(Exp.intBin("value"), Exp.val(19)),
+                Exp.gt(Exp.intBin("age"), Exp.val(25))
+        );
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.value == 19 and $.age > 25"),
+                null, exp,
+                IndexContext.of(TestUtils.NAMESPACE, indexes, "idx_value_str"));
+    }
 }

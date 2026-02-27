@@ -70,6 +70,7 @@ class IndexContextTests {
         IndexContext ctx = IndexContext.of(NAMESPACE, indexes, null);
 
         assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getFallbackIndexes()).isNull();
     }
 
     @Test
@@ -78,6 +79,7 @@ class IndexContextTests {
         IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "");
 
         assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getFallbackIndexes()).isNull();
     }
 
     @Test
@@ -89,6 +91,7 @@ class IndexContextTests {
         IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "idx_bin1");
 
         assertThat(ctx.getIndexes()).containsExactly(VALID_NAMED_INDEX);
+        assertThat(ctx.getFallbackIndexes()).containsExactlyElementsOf(indexes);
     }
 
     @Test
@@ -97,6 +100,7 @@ class IndexContextTests {
         IndexContext ctx = IndexContext.of(NAMESPACE, indexes, "idx_nonExistent");
 
         assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getFallbackIndexes()).isNull();
     }
 
     @Test
@@ -172,17 +176,21 @@ class IndexContextTests {
         IndexContext ctx = IndexContext.withBinHint(NAMESPACE, indexes, "bin1");
 
         assertThat(ctx.getIndexes()).containsExactly(VALID_INDEX);
+        assertThat(ctx.getFallbackIndexes()).containsExactlyElementsOf(indexes);
     }
 
     @Test
-    void withBinHint_multiple_matches_returns_all_indexes() {
+    void withBinHint_multiple_matches_returns_matching_bin_indexes() {
         Index second = Index.builder().namespace(NAMESPACE).bin("bin1")
                 .indexType(IndexType.STRING).binValuesRatio(5).build();
-        Collection<Index> indexes = List.of(VALID_INDEX, second);
+        Index other = Index.builder().namespace(NAMESPACE).bin("bin2")
+                .indexType(IndexType.NUMERIC).binValuesRatio(10).build();
+        Collection<Index> indexes = List.of(VALID_INDEX, second, other);
 
         IndexContext ctx = IndexContext.withBinHint(NAMESPACE, indexes, "bin1");
 
-        assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getIndexes()).containsExactly(VALID_INDEX, second);
+        assertThat(ctx.getFallbackIndexes()).containsExactlyElementsOf(indexes);
     }
 
     @Test
@@ -191,6 +199,7 @@ class IndexContextTests {
         IndexContext ctx = IndexContext.withBinHint(NAMESPACE, indexes, "nonExistentBin");
 
         assertThat(ctx.getIndexes()).containsExactlyElementsOf(indexes);
+        assertThat(ctx.getFallbackIndexes()).isNull();
     }
 
     @Test
