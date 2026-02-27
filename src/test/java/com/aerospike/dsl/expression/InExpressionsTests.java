@@ -488,6 +488,38 @@ class InExpressionsTests {
     }
 
     @Test
+    void negMixedIntAndStringInList() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("$.bin in [1, \"hello\"]")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("IN list elements must all be of the same type");
+    }
+
+    @Test
+    void negMixedBoolAndIntInList() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("$.bin in [true, 42]")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("IN list elements must all be of the same type");
+    }
+
+    @Test
+    void negMixedFloatAndStringInList() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("$.bin in [1.5, \"hello\"]")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("IN list elements must all be of the same type");
+    }
+
+    @Test
+    void negMixedIntAndFloatInList() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("$.bin in [1, 1.5]")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("IN list elements must all be of the same type");
+    }
+
+    @Test
     void negExplicitIntTypeOnRightBin() {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of("$.name in $.tags.get(type: INT)")))

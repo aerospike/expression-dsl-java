@@ -130,6 +130,8 @@ stringOperand: QUOTED_STRING;
 
 QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
+// LIST_TYPE_DESIGNATOR is needed here because the lexer tokenizes '[]' as a single token,
+// preventing the parser from matching it as '[' ']' for empty list literals (e.g. in "$.bin in []").
 listConstant: '[' unaryExpression? (',' unaryExpression)* ']' | LIST_TYPE_DESIGNATOR;
 
 orderedMapConstant: '{' mapPairConstant? (',' mapPairConstant)* '}';

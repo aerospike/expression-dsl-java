@@ -311,16 +311,49 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
     }
 
+    /**
+     * Infer the Aerospike Exp.Type for a list operand by examining its elements.
+     * <p>
+     * Assumes/enforces that all non-null elements in the list are of the same
+     * logical type. If heterogeneous element types are detected, a
+     * {@link DslParseException} is thrown to avoid silent type mismatches.
+     */
     static Exp.Type inferTypeFromListElements(ListOperand listOperand) {
         List<Object> values = listOperand.getValue();
-        if (values.isEmpty()) return null;
-        Object first = values.get(0);
-        if (first instanceof String) return Exp.Type.STRING;
-        if (first instanceof Boolean) return Exp.Type.BOOL;
-        if (first instanceof Float || first instanceof Double) return Exp.Type.FLOAT;
-        if (first instanceof Integer || first instanceof Long) return Exp.Type.INT;
-        if (first instanceof java.util.List) return Exp.Type.LIST;
-        if (first instanceof java.util.Map) return Exp.Type.MAP;
+        if (values.isEmpty()) {
+            return null;
+        }
+        Exp.Type inferredType = null;
+        for (Object value : values) {
+            if (value == null) {
+                continue;
+            }
+            Exp.Type currentType = inferElementType(value);
+            if (currentType == null) {
+                throw new DslParseException(
+                        "Unsupported element type in IN list: " + value.getClass().getName());
+            }
+            if (inferredType == null) {
+                inferredType = currentType;
+            } else if (inferredType != currentType) {
+                throw new DslParseException(
+                        "IN list elements must all be of the same type; found "
+                                + inferredType + " and " + currentType);
+            }
+        }
+        return inferredType;
+    }
+
+    /**
+     * Map a single Java object to the corresponding Aerospike Exp.Type.
+     */
+    private static Exp.Type inferElementType(Object element) {
+        if (element instanceof String) return Exp.Type.STRING;
+        if (element instanceof Boolean) return Exp.Type.BOOL;
+        if (element instanceof Float || element instanceof Double) return Exp.Type.FLOAT;
+        if (element instanceof Integer || element instanceof Long) return Exp.Type.INT;
+        if (element instanceof java.util.List) return Exp.Type.LIST;
+        if (element instanceof java.util.Map) return Exp.Type.MAP;
         return null;
     }
 
