@@ -49,7 +49,7 @@ DSLParser parser = new DSLParserImpl();
 // Providing list of existing secondary indexes
 // At most only one index will be chosen based on its namespace and binValuesRatio (cardinality)
 // If cardinality of multiple indexes is the same, the index is chosen alphabetically
-// binValuesRatio is mandatory for each Index and must be non-negative
+// binValuesRatio must be non-negative; defaults to 0 if omitted
 List<Index> indexes = List.of(
         Index.builder().namespace("namespace").bin("intBin1").indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
         Index.builder().namespace("namespace2").bin("intBin2").indexType(IndexType.NUMERIC).binValuesRatio(1).build()
