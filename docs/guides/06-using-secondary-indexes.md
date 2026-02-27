@@ -60,7 +60,7 @@ IndexContext indexContext = IndexContext.of("test", List.of(cityIndex, ageIndex)
 
 If the named index is not found in the collection or does not match the namespace,
 the parser falls back to automatic selection (cardinality, then alphabetically).
-Passing `null` or an empty string as the third parameter also triggers automatic selection.
+Passing `null` or a blank string as the third parameter also triggers automatic selection.
 
 If the named index **is** found but cannot be applied to the expression (for example, the index
 is on a different bin than any bin referenced in the query, or has a type mismatch),
