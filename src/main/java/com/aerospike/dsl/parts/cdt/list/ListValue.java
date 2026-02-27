@@ -7,8 +7,7 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
-import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
-import static com.aerospike.dsl.util.ParsingUtils.unquote;
+import static com.aerospike.dsl.util.ParsingUtils.parseValueIdentifier;
 
 public class ListValue extends ListPart {
     private final Object value;
@@ -19,15 +18,7 @@ public class ListValue extends ListPart {
     }
 
     public static ListValue from(ConditionParser.ListValueContext ctx) {
-        Object listValue = null;
-        if (ctx.valueIdentifier().NAME_IDENTIFIER() != null) {
-            listValue = ctx.valueIdentifier().NAME_IDENTIFIER().getText();
-        } else if (ctx.valueIdentifier().QUOTED_STRING() != null) {
-            listValue = unquote(ctx.valueIdentifier().QUOTED_STRING().getText());
-        } else if (ctx.valueIdentifier().signedInt() != null) {
-            listValue = parseSignedInt(ctx.valueIdentifier().signedInt());
-        }
-        return new ListValue(listValue);
+        return new ListValue(parseValueIdentifier(ctx.valueIdentifier()));
     }
 
     @Override

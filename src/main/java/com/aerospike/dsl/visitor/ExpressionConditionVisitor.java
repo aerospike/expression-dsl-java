@@ -30,12 +30,12 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static com.aerospike.dsl.util.ParsingUtils.*;
-import static com.aerospike.dsl.util.ValidationUtils.validateComparableTypes;
 import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
@@ -297,71 +297,17 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 throw new DslParseException(
                         "IN operation requires a List as the right operand");
             }
-        }
-        inferLeftBinTypeFromList(left, right);
-    }
-
-    static void inferLeftBinTypeFromList(AbstractPart left, AbstractPart right) {
-        if (left.getPartType() != AbstractPart.PartType.BIN_PART
-                || right.getPartType() != AbstractPart.PartType.LIST_OPERAND) {
-            return;
-        }
-        BinPart leftBin = (BinPart) left;
-        Exp.Type inferredType = inferTypeFromListElements((ListOperand) right);
-        if (inferredType == null) {
-            return;
-        }
-        if (!leftBin.isTypeExplicitlySet()) {
-            leftBin.updateExp(inferredType);
-        } else {
-            validateComparableTypes(leftBin.getExpType(), inferredType);
-        }
-    }
-
-    /**
-     * Infer the Aerospike Exp.Type for a list operand by examining its elements.
-     * <p>
-     * Assumes/enforces that all non-null elements in the list are of the same
-     * logical type. If heterogeneous element types are detected, a
-     * {@link DslParseException} is thrown to avoid silent type mismatches.
-     */
-    static Exp.Type inferTypeFromListElements(ListOperand listOperand) {
-        List<Object> values = listOperand.getValue();
-        if (values.isEmpty()) {
-            return null;
-        }
-        Exp.Type inferredType = null;
-        for (Object value : values) {
-            if (value == null) {
-                continue;
-            }
-            Exp.Type currentType = inferElementType(value);
-            if (currentType == null) {
-                throw new DslParseException(
-                        "Unsupported element type in IN list: " + value.getClass().getName());
-            }
-            if (inferredType == null) {
-                inferredType = currentType;
-            } else if (inferredType != currentType) {
-                throw new DslParseException(
-                        "IN list elements must all be of the same type; found "
-                                + inferredType + " and " + currentType);
+        } else if (right.getPartType() == AbstractPart.PartType.PATH_OPERAND) {
+            Path rightPath = (Path) right;
+            if (rightPath.getPathFunction() != null) {
+                Exp.Type pathType = rightPath.getPathFunction().getBinType();
+                if (pathType != null && pathType != Exp.Type.LIST) {
+                    throw new DslParseException(
+                            "IN operation requires a List as the right operand");
+                }
             }
         }
-        return inferredType;
-    }
-
-    /**
-     * Map a single Java object to the corresponding Aerospike Exp.Type.
-     */
-    private static Exp.Type inferElementType(Object element) {
-        if (element instanceof String) return Exp.Type.STRING;
-        if (element instanceof Boolean) return Exp.Type.BOOL;
-        if (element instanceof Float || element instanceof Double) return Exp.Type.FLOAT;
-        if (element instanceof Integer || element instanceof Long) return Exp.Type.INT;
-        if (element instanceof java.util.List) return Exp.Type.LIST;
-        if (element instanceof java.util.Map) return Exp.Type.MAP;
-        return null;
+        VisitorUtils.inferLeftBinTypeFromList(left, right);
     }
 
     @Override
@@ -673,7 +619,13 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitBinPart(ConditionParser.BinPartContext ctx) {
-        return new BinPart(ctx.NAME_IDENTIFIER().getText());
+        if (ctx.NAME_IDENTIFIER() != null) {
+            return new BinPart(ctx.NAME_IDENTIFIER().getText());
+        }
+        if (ctx.IN() != null) {
+            return new BinPart(ctx.IN().getText());
+        }
+        throw new DslParseException("Could not parse binPart from ctx: %s".formatted(ctx.getText()));
     }
 
     @Override
@@ -683,6 +635,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitListConstant(ConditionParser.ListConstantContext ctx) {
+        if (ctx.LIST_TYPE_DESIGNATOR() != null) {
+            return new ListOperand(Collections.emptyList());
+        }
         return readChildrenIntoListOperand(ctx);
     }
 

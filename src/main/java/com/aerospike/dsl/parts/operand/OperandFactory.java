@@ -62,7 +62,7 @@ public interface OperandFactory {
         } else if (value instanceof Map) {
             try {
                 return new MapOperand(new TreeMap<>((Map<Object, Object>) value));
-            } catch (ClassCastException e) {
+            } catch (ClassCastException | NullPointerException e) {
                 throw new DslParseException(
                         "Map keys must be mutually comparable for operand creation", e);
             }

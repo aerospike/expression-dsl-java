@@ -92,6 +92,29 @@ public class ParsingUtils {
     }
 
     /**
+     * Extracts a typed value from a {@code valueIdentifier} parser rule context.
+     * Handles NAME_IDENTIFIER, QUOTED_STRING, IN keyword (as literal text), and signedInt.
+     *
+     * @param ctx The valueIdentifier context from the parser
+     * @return The parsed value as String or Integer
+     */
+    public static Object parseValueIdentifier(ConditionParser.ValueIdentifierContext ctx) {
+        if (ctx.NAME_IDENTIFIER() != null) {
+            return ctx.NAME_IDENTIFIER().getText();
+        }
+        if (ctx.QUOTED_STRING() != null) {
+            return unquote(ctx.QUOTED_STRING().getText());
+        }
+        if (ctx.IN() != null) {
+            return ctx.IN().getText();
+        }
+        if (ctx.signedInt() != null) {
+            return parseSignedInt(ctx.signedInt());
+        }
+        throw new DslParseException("Could not parse valueIdentifier from ctx: %s".formatted(ctx.getText()));
+    }
+
+    /**
      * Get the string inside the quotes.
      *
      * @param str String input

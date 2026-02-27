@@ -315,4 +315,11 @@ public class PlaceholdersTests {
                         PlaceholderValues.of("stand", "done")), filter, exp);
     }
 
+    @Test
+    void bothPlaceholdersEquality() {
+        Exp exp = Exp.eq(Exp.val(42), Exp.val(42));
+        TestUtils.parseDslExpressionAndCompare(ExpressionContext.of("?0 == ?1",
+                PlaceholderValues.of(42, 42)), null, exp);
+    }
+
 }

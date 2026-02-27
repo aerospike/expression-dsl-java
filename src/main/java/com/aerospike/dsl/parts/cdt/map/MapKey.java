@@ -25,6 +25,9 @@ public class MapKey extends MapPart {
         if (ctx.NAME_IDENTIFIER() != null) {
             return new MapKey(ctx.NAME_IDENTIFIER().getText());
         }
+        if (ctx.IN() != null) {
+            return new MapKey(ctx.IN().getText());
+        }
         throw new DslParseException("Could not translate MapKey from ctx: %s".formatted(ctx));
     }
 

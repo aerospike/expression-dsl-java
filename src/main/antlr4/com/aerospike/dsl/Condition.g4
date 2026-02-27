@@ -218,7 +218,7 @@ PATH_FUNCTION_CDT_RETURN_TYPE
     | 'REVERSE_RANK'
     ;
 
-binPart: NAME_IDENTIFIER;
+binPart: NAME_IDENTIFIER | IN;
 
 mapPart
     : MAP_TYPE_DESIGNATOR
@@ -241,6 +241,7 @@ MAP_TYPE_DESIGNATOR: '{}';
 mapKey
     : NAME_IDENTIFIER
     | QUOTED_STRING
+    | IN
     ;
 
 mapValue: '{=' valueIdentifier '}';
@@ -493,6 +494,7 @@ valueIdentifier
     : NAME_IDENTIFIER
     | QUOTED_STRING
     | signedInt
+    | IN
     ;
 
 valueListIdentifier: valueIdentifier ',' valueIdentifier (',' valueIdentifier)*;
