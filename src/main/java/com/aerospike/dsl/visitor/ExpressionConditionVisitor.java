@@ -289,20 +289,29 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     private static void inferInTypes(AbstractPart left, AbstractPart right) {
         if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
-            ((BinPart) right).updateExp(Exp.Type.LIST);
+            BinPart rightBin = (BinPart) right;
+            if (!rightBin.isTypeExplicitlySet()) {
+                rightBin.updateExp(Exp.Type.LIST);
+            } else if (rightBin.getExpType() != Exp.Type.LIST) {
+                throw new DslParseException(
+                        "IN operation requires a List as the right operand");
+            }
         }
+        inferLeftBinTypeFromList(left, right);
+    }
+
+    static void inferLeftBinTypeFromList(AbstractPart left, AbstractPart right) {
         if (left.getPartType() == AbstractPart.PartType.BIN_PART
                 && !((BinPart) left).isTypeExplicitlySet()
                 && right.getPartType() == AbstractPart.PartType.LIST_OPERAND) {
-            ListOperand listOperand = (ListOperand) right;
-            Exp.Type inferredType = inferTypeFromListElements(listOperand);
+            Exp.Type inferredType = inferTypeFromListElements((ListOperand) right);
             if (inferredType != null) {
                 ((BinPart) left).updateExp(inferredType);
             }
         }
     }
 
-    private static Exp.Type inferTypeFromListElements(ListOperand listOperand) {
+    static Exp.Type inferTypeFromListElements(ListOperand listOperand) {
         List<Object> values = listOperand.getValue();
         if (values.isEmpty()) return null;
         Object first = values.get(0);

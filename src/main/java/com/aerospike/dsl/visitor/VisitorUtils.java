@@ -1157,6 +1157,9 @@ public class VisitorUtils {
         if (isResolved && List.of(LT, LTEQ, GT, GTEQ, NOTEQ, EQ).contains(expr.getOperationType())) {
             overrideTypeInfo(expr.getLeft(), expr.getRight());
         }
+        if (isResolved && expr.getOperationType() == IN) {
+            ExpressionConditionVisitor.inferLeftBinTypeFromList(expr.getLeft(), expr.getRight());
+        }
     }
 
     private static void validateInPlaceholderValue(PlaceholderOperand placeholder,

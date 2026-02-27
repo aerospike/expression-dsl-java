@@ -2,17 +2,23 @@ package com.aerospike.dsl.parts.operand;
 
 import com.aerospike.dsl.parts.AbstractPart;
 
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
 /**
  * A factory for creating different types of {@link AbstractPart} operands based on a given value.
  * <p>
  * This factory provides a static method to dynamically create concrete operand implementations
- * such as {@link StringOperand}, {@link BooleanOperand}, {@link FloatOperand}, and {@link IntOperand}
- * from various Java primitive and wrapper types. It centralizes the logic for type-specific object creation.
+ * from various Java types. It centralizes the logic for type-specific object creation.
  *
  * @see StringOperand
  * @see BooleanOperand
  * @see FloatOperand
  * @see IntOperand
+ * @see ListOperand
+ * @see MapOperand
  */
 public interface OperandFactory {
 
@@ -25,6 +31,8 @@ public interface OperandFactory {
      * <li>{@link Boolean} to {@link BooleanOperand}.</li>
      * <li>{@link Float} or {@link Double} to {@link FloatOperand}.</li>
      * <li>{@link Integer} or {@link Long} to {@link IntOperand}.</li>
+     * <li>{@link List} to {@link ListOperand}.</li>
+     * <li>{@link Map} to {@link MapOperand}.</li>
      * </ul>
      *
      * @param value The object to be converted into an operand. This cannot be {@code null}.
@@ -32,6 +40,7 @@ public interface OperandFactory {
      * @throws IllegalArgumentException      If the value provided is {@code null}.
      * @throws UnsupportedOperationException If the type of the value is not supported by the factory.
      */
+    @SuppressWarnings("unchecked")
     static AbstractPart createOperand(Object value) {
         if (value == null) {
             throw new IllegalArgumentException("Cannot create operand from null value");
@@ -45,9 +54,14 @@ public interface OperandFactory {
             return new FloatOperand(((Number) value).doubleValue());
         } else if (value instanceof Integer || value instanceof Long) {
             return new IntOperand(((Number) value).longValue());
+        } else if (value instanceof List) {
+            return new ListOperand((List<Object>) value);
+        } else if (value instanceof SortedMap) {
+            return new MapOperand((SortedMap<Object, Object>) value);
+        } else if (value instanceof Map) {
+            return new MapOperand(new TreeMap<>((Map<Object, Object>) value));
         } else {
-            throw new UnsupportedOperationException(String.format("Cannot create operand from value of type %s, " +
-                            "only String, boolean, float, double, long and integer values are currently supported",
+            throw new UnsupportedOperationException(String.format("Cannot create operand from value of type %s",
                     value.getClass().getSimpleName()));
         }
     }
