@@ -121,7 +121,8 @@ import com.aerospike.dsl.Index;
 import com.aerospike.dsl.IndexContext;
 import java.util.List;
 
-// Describe the available secondary index (namespace, bin, indexType, binValuesRatio are required)
+// Describe the available secondary index
+// namespace, bin, indexType are required, binValuesRatio must be non-negative
 Index cityIndex = Index.builder()
     .namespace("test")
     .bin("city")
