@@ -33,6 +33,7 @@ comparisonExpression
     | bitwiseExpression '<=' bitwiseExpression                                  # LessThanOrEqualExpression
     | bitwiseExpression '==' bitwiseExpression                                  # EqualityExpression
     | bitwiseExpression '!=' bitwiseExpression                                  # InequalityExpression
+    | bitwiseExpression IN bitwiseExpression                                    # InExpression
     | bitwiseExpression                                                         # BitwiseExpressionWrapper
     ;
 
@@ -129,7 +130,9 @@ stringOperand: QUOTED_STRING;
 
 QUOTED_STRING: ('\'' (~'\'')* '\'') | ('"' (~'"')* '"');
 
-listConstant: '[' unaryExpression? (',' unaryExpression)* ']';
+// LIST_TYPE_DESIGNATOR is needed here because the lexer tokenizes '[]' as a single token,
+// preventing the parser from matching it as '[' ']' for empty list literals (e.g. in "$.bin in []").
+listConstant: '[' unaryExpression? (',' unaryExpression)* ']' | LIST_TYPE_DESIGNATOR;
 
 orderedMapConstant: '{' mapPairConstant? (',' mapPairConstant)* '}';
 
@@ -215,7 +218,7 @@ PATH_FUNCTION_CDT_RETURN_TYPE
     | 'REVERSE_RANK'
     ;
 
-binPart: NAME_IDENTIFIER;
+binPart: NAME_IDENTIFIER | IN;
 
 mapPart
     : MAP_TYPE_DESIGNATOR
@@ -238,6 +241,7 @@ MAP_TYPE_DESIGNATOR: '{}';
 mapKey
     : NAME_IDENTIFIER
     | QUOTED_STRING
+    | IN
     ;
 
 mapValue: '{=' valueIdentifier '}';
@@ -490,6 +494,7 @@ valueIdentifier
     : NAME_IDENTIFIER
     | QUOTED_STRING
     | signedInt
+    | IN
     ;
 
 valueListIdentifier: valueIdentifier ',' valueIdentifier (',' valueIdentifier)*;
@@ -531,6 +536,8 @@ pathFunctionGet
 pathFunctionParams: pathFunctionParam (',' pathFunctionParam)*?;
 
 pathFunctionParam: pathFunctionParamName ':' pathFunctionParamValue;
+
+IN: [iI][nN];
 
 NAME_IDENTIFIER: [a-zA-Z0-9_]+;
 

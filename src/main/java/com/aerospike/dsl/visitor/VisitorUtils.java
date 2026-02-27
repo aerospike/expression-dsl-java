@@ -5,7 +5,9 @@ import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.Index;
 import com.aerospike.dsl.PlaceholderValues;
 import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.cdt.ListReturnType;
 import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.client.query.Filter;
 import com.aerospike.dsl.client.query.IndexType;
 import com.aerospike.dsl.parts.AbstractPart;
@@ -18,6 +20,7 @@ import com.aerospike.dsl.parts.controlstructure.WhenStructure;
 import com.aerospike.dsl.parts.controlstructure.WithStructure;
 import com.aerospike.dsl.parts.operand.FunctionArgs;
 import com.aerospike.dsl.parts.operand.IntOperand;
+import com.aerospike.dsl.parts.operand.ListOperand;
 import com.aerospike.dsl.parts.operand.MetadataOperand;
 import com.aerospike.dsl.parts.operand.PlaceholderOperand;
 import com.aerospike.dsl.parts.operand.StringOperand;
@@ -1136,13 +1139,16 @@ public class VisitorUtils {
         boolean rightIsPlaceholder = !expr.isUnary() && expr.getRight().getPartType() == PLACEHOLDER_OPERAND;
         boolean isResolved = false;
 
-        // Resolve left placeholder and replace it with the resolved operand
+        if (expr.getOperationType() == IN && rightIsPlaceholder) {
+            validateInPlaceholderValue((PlaceholderOperand) expr.getRight(), placeholderValues);
+        }
+
         if (leftIsPlaceholder) {
             PlaceholderOperand placeholder = (PlaceholderOperand) expr.getLeft();
             expr.setLeft(placeholder.resolve(placeholderValues));
             isResolved = true;
-        } else if (rightIsPlaceholder) {
-            // Resolve right placeholder and replace it with the resolved operand
+        }
+        if (rightIsPlaceholder) {
             PlaceholderOperand placeholder = (PlaceholderOperand) expr.getRight();
             expr.setRight(placeholder.resolve(placeholderValues));
             isResolved = true;
@@ -1151,6 +1157,94 @@ public class VisitorUtils {
         if (isResolved && List.of(LT, LTEQ, GT, GTEQ, NOTEQ, EQ).contains(expr.getOperationType())) {
             overrideTypeInfo(expr.getLeft(), expr.getRight());
         }
+        if (isResolved && expr.getOperationType() == IN) {
+            inferLeftBinTypeFromList(expr.getLeft(), expr.getRight());
+        }
+    }
+
+    private static void validateInPlaceholderValue(PlaceholderOperand placeholder,
+                                                   PlaceholderValues placeholderValues) {
+        Object value = placeholderValues.getValue(placeholder.getIndex());
+        if (!(value instanceof List)) {
+            throw new DslParseException("IN operation requires a List as the right operand");
+        }
+    }
+
+    static void inferLeftBinTypeFromList(AbstractPart left, AbstractPart right) {
+        if (left.getPartType() != BIN_PART
+                || right.getPartType() != LIST_OPERAND) {
+            return;
+        }
+        BinPart leftBin = (BinPart) left;
+        Exp.Type inferredType = inferTypeFromListElements((ListOperand) right);
+        if (inferredType == null) {
+            return;
+        }
+        if (!leftBin.isTypeExplicitlySet()) {
+            leftBin.updateExp(inferredType);
+        } else {
+            validateComparableTypes(leftBin.getExpType(), inferredType);
+        }
+    }
+
+    /**
+     * Infer the Aerospike Exp.Type for a list operand by examining its elements.
+     * <p>
+     * Assumes/enforces that all non-null elements in the list are of the same
+     * logical type. If heterogeneous element types are detected, a
+     * {@link DslParseException} is thrown to avoid silent type mismatches.
+     *
+     * @return the inferred type, or {@code null} if the list is empty
+     */
+    static Exp.Type inferTypeFromListElements(ListOperand listOperand) {
+        List<Object> values = listOperand.getValue();
+        if (values.isEmpty()) {
+            return null;
+        }
+        Exp.Type inferredType = null;
+        for (Object value : values) {
+            if (value == null) {
+                continue;
+            }
+            Exp.Type currentType = inferElementType(value);
+            if (currentType == null) {
+                throw new DslParseException(
+                        "Unsupported element type in IN list: " + value.getClass().getName());
+            }
+            if (inferredType == null) {
+                inferredType = currentType;
+            } else if (inferredType != currentType) {
+                throw new DslParseException(
+                        "IN list elements must all be of the same type; found "
+                                + inferredType + " and " + currentType);
+            }
+        }
+        return inferredType;
+    }
+
+    /**
+     * Map a single Java object to the corresponding Aerospike Exp.Type.
+     */
+    private static Exp.Type inferElementType(Object element) {
+        if (element instanceof String) {
+            return Exp.Type.STRING;
+        }
+        if (element instanceof Boolean) {
+            return Exp.Type.BOOL;
+        }
+        if (element instanceof Float || element instanceof Double) {
+            return Exp.Type.FLOAT;
+        }
+        if (element instanceof Integer || element instanceof Long) {
+            return Exp.Type.INT;
+        }
+        if (element instanceof List) {
+            return Exp.Type.LIST;
+        }
+        if (element instanceof Map) {
+            return Exp.Type.MAP;
+        }
+        return null;
     }
 
     /**
@@ -1333,6 +1427,11 @@ public class VisitorUtils {
         // For binary expressions
         AbstractPart right = getExistingPart(expr.getRight(), "Unable to parse right operand");
 
+        // IN operation: ListExp.getByValue(EXISTS, leftExp, rightExp)
+        if (expr.getOperationType() == IN) {
+            return buildInExpression(left, right);
+        }
+
         // Process operands
         Exp leftExp = processOperand(left);
         Exp rightExp = processOperand(right);
@@ -1442,6 +1541,12 @@ public class VisitorUtils {
             }
         }
         return null;
+    }
+
+    private static Exp buildInExpression(AbstractPart left, AbstractPart right) {
+        Exp leftExp = processOperand(left);
+        Exp rightExp = processOperand(right);
+        return ListExp.getByValue(ListReturnType.EXISTS, leftExp, rightExp);
     }
 
     private static boolean isArithmeticExpressionContainer(AbstractPart part) {
@@ -1605,6 +1710,9 @@ public class VisitorUtils {
         Consumer<AbstractPart> exprsPerCardinalityCollector = part -> {
             if (part.getPartType() == EXPRESSION_CONTAINER) {
                 ExpressionContainer expr = (ExpressionContainer) part;
+
+                if (expr.getOperationType() == IN) return;
+
                 BinPart binPart = getBinPart(expr, 2);
 
                 if (binPart == null) return; // no bin found

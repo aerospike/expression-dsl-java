@@ -30,6 +30,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -257,6 +258,56 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             throw new DslParseException("Integer literal out of range: " + input);
         }
         return -value;
+    }
+
+    @Override
+    public AbstractPart visitInExpression(ConditionParser.InExpressionContext ctx) {
+        AbstractPart left = visit(ctx.bitwiseExpression(0));
+        AbstractPart right = visit(ctx.bitwiseExpression(1));
+
+        validateInRightOperand(left, right);
+        inferInTypes(left, right);
+
+        return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.IN);
+    }
+
+    private static void validateInRightOperand(AbstractPart left, AbstractPart right) {
+        if (left == null) {
+            throw new DslParseException("Unable to parse left operand");
+        }
+        if (right == null) {
+            throw new DslParseException("Unable to parse right operand");
+        }
+        if (right.getPartType() == AbstractPart.PartType.PLACEHOLDER_OPERAND
+                || right.getPartType() == AbstractPart.PartType.LIST_OPERAND
+                || right.getPartType() == AbstractPart.PartType.BIN_PART
+                || right.getPartType() == AbstractPart.PartType.PATH_OPERAND
+                || right.getPartType() == AbstractPart.PartType.VARIABLE_OPERAND) {
+            return;
+        }
+        throw new DslParseException("IN operation requires a List as the right operand");
+    }
+
+    private static void inferInTypes(AbstractPart left, AbstractPart right) {
+        if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
+            BinPart rightBin = (BinPart) right;
+            if (!rightBin.isTypeExplicitlySet()) {
+                rightBin.updateExp(Exp.Type.LIST);
+            } else if (rightBin.getExpType() != Exp.Type.LIST) {
+                throw new DslParseException(
+                        "IN operation requires a List as the right operand");
+            }
+        } else if (right.getPartType() == AbstractPart.PartType.PATH_OPERAND) {
+            Path rightPath = (Path) right;
+            if (rightPath.getPathFunction() != null) {
+                Exp.Type pathType = rightPath.getPathFunction().getBinType();
+                if (pathType != null && pathType != Exp.Type.LIST) {
+                    throw new DslParseException(
+                            "IN operation requires a List as the right operand");
+                }
+            }
+        }
+        VisitorUtils.inferLeftBinTypeFromList(left, right);
     }
 
     @Override
@@ -568,7 +619,13 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitBinPart(ConditionParser.BinPartContext ctx) {
-        return new BinPart(ctx.NAME_IDENTIFIER().getText());
+        if (ctx.NAME_IDENTIFIER() != null) {
+            return new BinPart(ctx.NAME_IDENTIFIER().getText());
+        }
+        if (ctx.IN() != null) {
+            return new BinPart(ctx.IN().getText());
+        }
+        throw new DslParseException("Could not parse binPart from ctx: %s".formatted(ctx.getText()));
     }
 
     @Override
@@ -578,6 +635,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitListConstant(ConditionParser.ListConstantContext ctx) {
+        if (ctx.LIST_TYPE_DESIGNATOR() != null) {
+            return new ListOperand(Collections.emptyList());
+        }
         return readChildrenIntoListOperand(ctx);
     }
 
