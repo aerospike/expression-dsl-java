@@ -92,6 +92,26 @@ public class ParsingUtils {
     }
 
     /**
+     * Extracts the text content from a {@code mapKey} parser rule context.
+     * Handles NAME_IDENTIFIER, QUOTED_STRING, and IN keyword (as literal text).
+     *
+     * @param ctx The mapKey context from the parser
+     * @return The parsed key string
+     */
+    public static String parseMapKey(ConditionParser.MapKeyContext ctx) {
+        if (ctx.NAME_IDENTIFIER() != null) {
+            return ctx.NAME_IDENTIFIER().getText();
+        }
+        if (ctx.QUOTED_STRING() != null) {
+            return unquote(ctx.QUOTED_STRING().getText());
+        }
+        if (ctx.IN() != null) {
+            return ctx.IN().getText();
+        }
+        throw new DslParseException("Could not parse mapKey from ctx: %s".formatted(ctx.getText()));
+    }
+
+    /**
      * Extracts a typed value from a {@code valueIdentifier} parser rule context.
      * Handles NAME_IDENTIFIER, QUOTED_STRING, IN keyword (as literal text), and signedInt.
      *

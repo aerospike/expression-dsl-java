@@ -8,9 +8,9 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
-import java.util.Optional;
+import com.aerospike.dsl.util.ParsingUtils;
 
-import static com.aerospike.dsl.util.ParsingUtils.unquote;
+import java.util.Optional;
 
 public class MapKeyRange extends MapPart {
     private final boolean isInverted;
@@ -33,14 +33,10 @@ public class MapKeyRange extends MapPart {
                     keyRange != null ? keyRange.keyRangeIdentifier() : invertedKeyRange.keyRangeIdentifier();
             boolean isInverted = keyRange == null;
 
-            String startKey = range.mapKey(0).NAME_IDENTIFIER() != null
-                    ? range.mapKey(0).NAME_IDENTIFIER().getText()
-                    : unquote(range.mapKey(0).QUOTED_STRING().getText());
+            String startKey = ParsingUtils.parseMapKey(range.mapKey(0));
 
             String endKey = Optional.ofNullable(range.mapKey(1))
-                    .map(keyCtx -> keyCtx.NAME_IDENTIFIER() != null
-                            ? keyCtx.NAME_IDENTIFIER().getText()
-                            : unquote(keyCtx.QUOTED_STRING().getText()))
+                    .map(ParsingUtils::parseMapKey)
                     .orElse(null);
 
             return new MapKeyRange(isInverted, startKey, endKey);

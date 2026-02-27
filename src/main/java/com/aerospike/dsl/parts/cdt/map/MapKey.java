@@ -1,14 +1,12 @@
 package com.aerospike.dsl.parts.cdt.map;
 
 import com.aerospike.dsl.ConditionParser;
-import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.client.Value;
 import com.aerospike.dsl.client.cdt.CTX;
 import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
-
-import static com.aerospike.dsl.util.ParsingUtils.unquote;
+import com.aerospike.dsl.util.ParsingUtils;
 
 public class MapKey extends MapPart {
     private final String key;
@@ -19,16 +17,7 @@ public class MapKey extends MapPart {
     }
 
     public static MapKey from(ConditionParser.MapKeyContext ctx) {
-        if (ctx.QUOTED_STRING() != null) {
-            return new MapKey(unquote(ctx.QUOTED_STRING().getText()));
-        }
-        if (ctx.NAME_IDENTIFIER() != null) {
-            return new MapKey(ctx.NAME_IDENTIFIER().getText());
-        }
-        if (ctx.IN() != null) {
-            return new MapKey(ctx.IN().getText());
-        }
-        throw new DslParseException("Could not translate MapKey from ctx: %s".formatted(ctx));
+        return new MapKey(ParsingUtils.parseMapKey(ctx));
     }
 
     @Override
