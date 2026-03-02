@@ -4,6 +4,8 @@ import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.math.BigInteger;
 
@@ -92,6 +94,29 @@ public class ParsingUtils {
     }
 
     /**
+     * Resolves the string content from a parser rule context that may contain
+     * NAME_IDENTIFIER, QUOTED_STRING, or IN tokens.
+     *
+     * @param ctx Any parser rule context containing string-like tokens
+     * @return The resolved string, or {@code null} if no matching token is found
+     */
+    private static String resolveStringToken(ParserRuleContext ctx) {
+        TerminalNode nameId = ctx.getToken(ConditionParser.NAME_IDENTIFIER, 0);
+        if (nameId != null) {
+            return nameId.getText();
+        }
+        TerminalNode quoted = ctx.getToken(ConditionParser.QUOTED_STRING, 0);
+        if (quoted != null) {
+            return unquote(quoted.getText());
+        }
+        TerminalNode in = ctx.getToken(ConditionParser.IN, 0);
+        if (in != null) {
+            return in.getText();
+        }
+        return null;
+    }
+
+    /**
      * Extracts the text content from a {@code mapKey} parser rule context.
      * Handles NAME_IDENTIFIER, QUOTED_STRING, and IN keyword (as literal text).
      *
@@ -99,14 +124,9 @@ public class ParsingUtils {
      * @return The parsed key string
      */
     public static String parseMapKey(ConditionParser.MapKeyContext ctx) {
-        if (ctx.NAME_IDENTIFIER() != null) {
-            return ctx.NAME_IDENTIFIER().getText();
-        }
-        if (ctx.QUOTED_STRING() != null) {
-            return unquote(ctx.QUOTED_STRING().getText());
-        }
-        if (ctx.IN() != null) {
-            return ctx.IN().getText();
+        String result = resolveStringToken(ctx);
+        if (result != null) {
+            return result;
         }
         throw new DslParseException("Could not parse mapKey from ctx: %s".formatted(ctx.getText()));
     }
@@ -119,14 +139,9 @@ public class ParsingUtils {
      * @return The parsed value as String or Integer
      */
     public static Object parseValueIdentifier(ConditionParser.ValueIdentifierContext ctx) {
-        if (ctx.NAME_IDENTIFIER() != null) {
-            return ctx.NAME_IDENTIFIER().getText();
-        }
-        if (ctx.QUOTED_STRING() != null) {
-            return unquote(ctx.QUOTED_STRING().getText());
-        }
-        if (ctx.IN() != null) {
-            return ctx.IN().getText();
+        String result = resolveStringToken(ctx);
+        if (result != null) {
+            return result;
         }
         if (ctx.signedInt() != null) {
             return parseSignedInt(ctx.signedInt());

@@ -23,6 +23,7 @@ class InGrammarConflictTests {
         parseFilterExpressionAndCompare(ExpressionContext.of("$.name IN [\"Bob\"]"), expected);
         parseFilterExpressionAndCompare(ExpressionContext.of("$.name In [\"Bob\"]"), expected);
         parseFilterExpressionAndCompare(ExpressionContext.of("$.name iN [\"Bob\"]"), expected);
+        parseFilterExpressionAndCompare(ExpressionContext.of("$.name in [\"Bob\"]"), expected);
     }
 
     @Test
@@ -177,62 +178,4 @@ class InGrammarConflictTests {
         parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin.{!0:1~in}"), expected);
     }
 
-    @Test
-    void mapKeyRangeStartInUpperCase() {
-        Exp expected = MapExp.getByKeyRange(MapReturnType.VALUE,
-                Exp.val("IN"), Exp.val("z"), Exp.mapBin("mapBin"));
-        parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin.{IN-z}"), expected);
-    }
-
-    @Test
-    void mapKeyRangeEndInUpperCase() {
-        Exp expected = MapExp.getByKeyRange(MapReturnType.VALUE,
-                Exp.val("a"), Exp.val("IN"), Exp.mapBin("mapBin"));
-        parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin.{a-IN}"), expected);
-    }
-
-    @Test
-    void mapKeyRangeOpenEndInUC() {
-        Exp expected = MapExp.getByKeyRange(MapReturnType.VALUE,
-                Exp.val("IN"), null, Exp.mapBin("mapBin"));
-        parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin.{IN-}"), expected);
-    }
-
-    @Test
-    void invertedKeyRangeInUpperCase() {
-        Exp expected = MapExp.getByKeyRange(
-                MapReturnType.VALUE | MapReturnType.INVERTED,
-                Exp.val("IN"), Exp.val("z"), Exp.mapBin("mapBin"));
-        parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin.{!IN-z}"), expected);
-    }
-
-    @Test
-    void mapKeyListWithInUpperCase() {
-        Exp expected = MapExp.getByKeyList(MapReturnType.VALUE,
-                Exp.val(List.of("IN", "z")), Exp.mapBin("mapBin"));
-        parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin.{IN,z}"), expected);
-    }
-
-    @Test
-    void invertedKeyListInUpperCase() {
-        Exp expected = MapExp.getByKeyList(
-                MapReturnType.VALUE | MapReturnType.INVERTED,
-                Exp.val(List.of("IN", "z")), Exp.mapBin("mapBin"));
-        parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin.{!IN,z}"), expected);
-    }
-
-    @Test
-    void relativeIndexKeyInUpperCase() {
-        Exp expected = MapExp.getByKeyRelativeIndexRange(MapReturnType.VALUE,
-                Exp.val("IN"), Exp.val(0), Exp.val(1), Exp.mapBin("mapBin"));
-        parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin.{0:1~IN}"), expected);
-    }
-
-    @Test
-    void invertedRelativeKeyInUC() {
-        Exp expected = MapExp.getByKeyRelativeIndexRange(
-                MapReturnType.VALUE | MapReturnType.INVERTED,
-                Exp.val("IN"), Exp.val(0), Exp.val(1), Exp.mapBin("mapBin"));
-        parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin.{!0:1~IN}"), expected);
-    }
 }

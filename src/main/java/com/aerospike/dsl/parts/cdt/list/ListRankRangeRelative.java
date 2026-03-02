@@ -8,9 +8,10 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import com.aerospike.dsl.util.ParsingUtils;
+
 import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
-import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class ListRankRangeRelative extends ListPart {
     private final boolean isInverted;
@@ -43,17 +44,9 @@ public class ListRankRangeRelative extends ListPart {
             }
 
             Object relativeValue = null;
-
             if (range.relativeRankEnd().relativeValue() != null) {
-                ConditionParser.ValueIdentifierContext valueIdentifierContext
-                        = range.relativeRankEnd().relativeValue().valueIdentifier();
-                if (valueIdentifierContext.signedInt() != null) {
-                    relativeValue = parseSignedInt(valueIdentifierContext.signedInt());
-                } else if (valueIdentifierContext.NAME_IDENTIFIER() != null) {
-                    relativeValue = valueIdentifierContext.NAME_IDENTIFIER().getText();
-                } else if (valueIdentifierContext.QUOTED_STRING() != null) {
-                    relativeValue = unquote(valueIdentifierContext.QUOTED_STRING().getText());
-                }
+                relativeValue = ParsingUtils.parseValueIdentifier(
+                        range.relativeRankEnd().relativeValue().valueIdentifier());
             }
 
             return new ListRankRangeRelative(isInverted, start, end, relativeValue);
