@@ -5,6 +5,7 @@ import com.aerospike.dsl.ExpressionContext;
 import com.aerospike.dsl.PlaceholderValues;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
@@ -92,7 +93,8 @@ class InNegativeTests {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of("$.name in ?0", PlaceholderValues.of("Bob"))))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("IN operation requires a List as the right operand");
+                .hasMessageContaining("IN operation requires a List as the right operand")
+                .hasMessageContaining("placeholder ?0");
     }
 
     @Test
@@ -100,7 +102,8 @@ class InNegativeTests {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of("$.name in ?0", PlaceholderValues.of(42))))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("IN operation requires a List as the right operand");
+                .hasMessageContaining("IN operation requires a List as the right operand")
+                .hasMessageContaining("placeholder ?0");
     }
 
     @Test
@@ -108,7 +111,8 @@ class InNegativeTests {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of("$.name in ?0", PlaceholderValues.of(1.5))))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("IN operation requires a List as the right operand");
+                .hasMessageContaining("IN operation requires a List as the right operand")
+                .hasMessageContaining("placeholder ?0");
     }
 
     @Test
@@ -116,7 +120,8 @@ class InNegativeTests {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of("$.name in ?0", PlaceholderValues.of(true))))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("IN operation requires a List as the right operand");
+                .hasMessageContaining("IN operation requires a List as the right operand")
+                .hasMessageContaining("placeholder ?0");
     }
 
     @Test
@@ -125,6 +130,50 @@ class InNegativeTests {
                 ExpressionContext.of("$.name in ?0",
                         PlaceholderValues.of(Map.of("a", 1)))))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("IN operation requires a List as the right operand");
+                .hasMessageContaining("IN operation requires a List as the right operand")
+                .hasMessageContaining("placeholder ?0");
+    }
+
+    @Test
+    void negLiteralInMixedTypeList() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("\"x\" in [1, \"y\"]")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("IN list elements must all be of the same type");
+    }
+
+    @Test
+    void negPlaceholderInMixedTypeList() {
+        // Placeholder value is irrelevant: homogeneity validation fires at parse time before resolution
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("?0 in [1, \"y\"]",
+                        PlaceholderValues.of(42))))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("IN list elements must all be of the same type");
+    }
+
+    @Test
+    void negPathInMixedTypeList() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("$.rooms.room1.name in [1, \"y\"]")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("IN list elements must all be of the same type");
+    }
+
+    @Test
+    void negMixedTypeListViaPlaceholder() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("$.name in ?0",
+                        PlaceholderValues.of(List.of(1, "hello")))))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("IN list elements must all be of the same type");
+    }
+
+    @Test
+    void negVariableInMixedTypeList() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("with(x = 1) do (${x} in [1, \"y\"])")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("IN list elements must all be of the same type");
     }
 }

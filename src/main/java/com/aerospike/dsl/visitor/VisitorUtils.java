@@ -1132,7 +1132,8 @@ public class VisitorUtils {
      *   <li>For comparison operations (LT, LTEQ, GT, GTEQ, NOTEQ, EQ) —
      *       {@code overrideTypeInfo} reconciles operand types.</li>
      *   <li>For IN operations — the right placeholder is validated to be a {@link java.util.List}
-     *       before resolution, then {@code inferLeftBinTypeFromList} infers the left bin type.</li>
+     *       before resolution, then {@code validateListHomogeneity} enforces uniform element types
+     *       and {@code inferBinTypeFromList} infers the left bin type.</li>
      * </ul>
      *
      * @param part              The {@link AbstractPart} representing the {@link ExpressionContainer}
@@ -1163,7 +1164,8 @@ public class VisitorUtils {
             overrideTypeInfo(expr.getLeft(), expr.getRight());
         }
         if (isResolved && expr.getOperationType() == IN) {
-            inferLeftBinTypeFromList(expr.getLeft(), expr.getRight());
+            Exp.Type inferredType = validateListHomogeneity(expr.getRight());
+            inferBinTypeFromList(expr.getLeft(), inferredType);
         }
     }
 
@@ -1176,33 +1178,47 @@ public class VisitorUtils {
      */
     private static void validateInPlaceholderValue(PlaceholderOperand placeholder,
                                                    PlaceholderValues placeholderValues) {
-        Object value = placeholderValues.getValue(placeholder.getIndex());
+        int index = placeholder.getIndex();
+        Object value = placeholderValues.getValue(index);
         if (!(value instanceof List)) {
-            throw new DslParseException("IN operation requires a List as the right operand");
+            throw new DslParseException(
+                    "IN operation requires a List as the right operand for placeholder ?" + index);
         }
     }
 
     /**
-     * Infers the left bin's Exp type from the elements of the right list operand.
+     * Validates that all elements in a LIST_OPERAND are of the same type.
      * <p>
-     * Only applies when the left operand is a BIN_PART and the right is a LIST_OPERAND.
-     * If the bin type is not explicitly set, it is updated to the inferred type;
-     * if it is explicitly set, compatibility is validated via {@code validateComparableTypes}.
-     * Empty lists are silently skipped (no inference possible).
+     * If the right operand is not a LIST_OPERAND, returns {@code null} (nothing to validate).
+     * Empty or all-null lists also return {@code null} (no type can be inferred).
      *
-     * @param left  the left operand of the IN expression
      * @param right the right operand of the IN expression
+     * @return the inferred element type, or {@code null} when validation is not applicable
+     * @throws DslParseException if the list contains elements of different types
      */
-    static void inferLeftBinTypeFromList(AbstractPart left, AbstractPart right) {
-        if (left.getPartType() != BIN_PART
-                || right.getPartType() != LIST_OPERAND) {
+    static Exp.Type validateListHomogeneity(AbstractPart right) {
+        if (right.getPartType() != LIST_OPERAND) {
+            return null;
+        }
+        return inferTypeFromListElements((ListOperand) right);
+    }
+
+    /**
+     * Infers or validates the left BIN_PART's Exp type against the list element type.
+     * <p>
+     * If the left operand is not a BIN_PART or {@code inferredType} is {@code null},
+     * this method is a no-op.
+     * When the bin type is not explicitly set, it is updated to {@code inferredType};
+     * when it is explicitly set, compatibility is validated via {@code validateComparableTypes}.
+     *
+     * @param left         the left operand of the IN expression
+     * @param inferredType the element type inferred from the right list operand (may be {@code null})
+     */
+    static void inferBinTypeFromList(AbstractPart left, Exp.Type inferredType) {
+        if (inferredType == null || left.getPartType() != BIN_PART) {
             return;
         }
         BinPart leftBin = (BinPart) left;
-        Exp.Type inferredType = inferTypeFromListElements((ListOperand) right);
-        if (inferredType == null) {
-            return;
-        }
         if (!leftBin.isTypeExplicitlySet()) {
             leftBin.updateExp(inferredType);
         } else {
@@ -1217,7 +1233,8 @@ public class VisitorUtils {
      * logical type. If heterogeneous element types are detected, a
      * {@link DslParseException} is thrown to avoid silent type mismatches.
      *
-     * @return the inferred type, or {@code null} if the list is empty
+     * @return the inferred type, or {@code null} if the list is empty or contains only nulls
+     *         (no type can be inferred, so homogeneity validation is intentionally skipped)
      */
     static Exp.Type inferTypeFromListElements(ListOperand listOperand) {
         List<Object> values = listOperand.getValue();

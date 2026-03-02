@@ -304,8 +304,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
      * If it is a PATH_OPERAND with a path function whose type is non-LIST, an error
      * is thrown.
      * <p>
-     * For the left operand: delegates to {@link VisitorUtils#inferLeftBinTypeFromList}
-     * to infer the bin type from the list elements when the right operand is a list literal.
+     * For the left operand: delegates to {@link VisitorUtils#validateListHomogeneity}
+     * and {@link VisitorUtils#inferBinTypeFromList} to enforce uniform list element types
+     * and infer the bin type when the right operand is a list literal.
      */
     private static void inferInTypes(AbstractPart left, AbstractPart right) {
         if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
@@ -326,7 +327,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                 }
             }
         }
-        VisitorUtils.inferLeftBinTypeFromList(left, right);
+        Exp.Type inferredType = VisitorUtils.validateListHomogeneity(right);
+        VisitorUtils.inferBinTypeFromList(left, inferredType);
     }
 
     @Override
