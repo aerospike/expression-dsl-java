@@ -1174,12 +1174,17 @@ public class VisitorUtils {
      * resolves to a {@link java.util.List}. Called before placeholder resolution
      * so that the error message references the placeholder index.
      *
-     * @throws DslParseException if the placeholder value is not a List
+     * @throws DslParseException if the placeholder index is missing or the placeholder value is not a List
      */
     private static void validateInPlaceholderValue(PlaceholderOperand placeholder,
                                                    PlaceholderValues placeholderValues) {
         int index = placeholder.getIndex();
-        Object value = placeholderValues.getValue(index);
+        Object value;
+        try {
+            value = placeholderValues.getValue(index);
+        } catch (IllegalArgumentException e) {
+            throw new DslParseException(e.getMessage(), e);
+        }
         if (!(value instanceof List)) {
             throw new DslParseException(
                     "IN operation requires a List as the right operand for placeholder ?" + index);

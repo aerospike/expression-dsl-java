@@ -176,4 +176,20 @@ class InNegativeTests {
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN list elements must all be of the same type");
     }
+
+    @Test
+    void negPlaceholderMissingValue() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("$.name in ?0", PlaceholderValues.of())))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Missing value for placeholder ?0");
+    }
+
+    @Test
+    void negPlaceholderIndexOutOfBounds() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of("$.name in ?1", PlaceholderValues.of(42))))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("Missing value for placeholder ?1");
+    }
 }
