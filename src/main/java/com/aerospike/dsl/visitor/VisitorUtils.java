@@ -1123,12 +1123,17 @@ public class VisitorUtils {
     /**
      * Replaces placeholders within an {@link ExpressionContainer}.
      * <p>
-     * This method checks the left and right operands of the {@link ExpressionContainer}. If either
-     * operand is a {@link PlaceholderOperand}, it resolves the placeholder using the provided
-     * {@link PlaceholderValues} and updates the operand. For specific comparison operations
-     * (LT, LTEQ, GT, GTEQ, NOTEQ, EQ), it also calls {@code overrideTypeInfo} after
-     * resolution.
+     * Both the left and right operands are checked independently, so both may be
+     * placeholders and both will be resolved in a single pass (e.g. {@code ?0 == ?1}).
      * </p>
+     * <p>
+     * After resolution, operation-specific type inference is applied:
+     * <ul>
+     *   <li>For comparison operations (LT, LTEQ, GT, GTEQ, NOTEQ, EQ) —
+     *       {@code overrideTypeInfo} reconciles operand types.</li>
+     *   <li>For IN operations — the right placeholder is validated to be a {@link java.util.List}
+     *       before resolution, then {@code inferLeftBinTypeFromList} infers the left bin type.</li>
+     * </ul>
      *
      * @param part              The {@link AbstractPart} representing the {@link ExpressionContainer}
      * @param placeholderValues An object storing placeholder indexes and their resolved values
@@ -1162,6 +1167,13 @@ public class VisitorUtils {
         }
     }
 
+    /**
+     * Validates that a placeholder used as the right operand of an IN expression
+     * resolves to a {@link java.util.List}. Called before placeholder resolution
+     * so that the error message references the placeholder index.
+     *
+     * @throws DslParseException if the placeholder value is not a List
+     */
     private static void validateInPlaceholderValue(PlaceholderOperand placeholder,
                                                    PlaceholderValues placeholderValues) {
         Object value = placeholderValues.getValue(placeholder.getIndex());
@@ -1170,6 +1182,17 @@ public class VisitorUtils {
         }
     }
 
+    /**
+     * Infers the left bin's Exp type from the elements of the right list operand.
+     * <p>
+     * Only applies when the left operand is a BIN_PART and the right is a LIST_OPERAND.
+     * If the bin type is not explicitly set, it is updated to the inferred type;
+     * if it is explicitly set, compatibility is validated via {@code validateComparableTypes}.
+     * Empty lists are silently skipped (no inference possible).
+     *
+     * @param left  the left operand of the IN expression
+     * @param right the right operand of the IN expression
+     */
     static void inferLeftBinTypeFromList(AbstractPart left, AbstractPart right) {
         if (left.getPartType() != BIN_PART
                 || right.getPartType() != LIST_OPERAND) {
@@ -1543,6 +1566,13 @@ public class VisitorUtils {
         return null;
     }
 
+    /**
+     * Builds an Exp for an IN expression using {@code ListExp.getByValue(EXISTS, ...)}.
+     *
+     * @param left  the value to search for
+     * @param right the list to search in
+     * @return an Exp that evaluates to true if the left value exists in the right list
+     */
     private static Exp buildInExpression(AbstractPart left, AbstractPart right) {
         Exp leftExp = processOperand(left);
         Exp rightExp = processOperand(right);

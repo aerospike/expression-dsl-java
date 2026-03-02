@@ -41,7 +41,6 @@ public interface OperandFactory {
      * @throws IllegalArgumentException      If the value provided is {@code null}.
      * @throws UnsupportedOperationException If the type of the value is not supported by the factory.
      */
-    @SuppressWarnings("unchecked")
     static AbstractPart createOperand(Object value) {
         if (value == null) {
             throw new IllegalArgumentException("Cannot create operand from null value");
@@ -55,13 +54,19 @@ public interface OperandFactory {
             return new FloatOperand(((Number) value).doubleValue());
         } else if (value instanceof Integer || value instanceof Long) {
             return new IntOperand(((Number) value).longValue());
-        } else if (value instanceof List) {
-            return new ListOperand((List<Object>) value);
-        } else if (value instanceof SortedMap) {
-            return new MapOperand((SortedMap<Object, Object>) value);
-        } else if (value instanceof Map) {
+        } else if (value instanceof List<?> list) {
+            @SuppressWarnings("unchecked")
+            List<Object> objectList = (List<Object>) list;
+            return new ListOperand(objectList);
+        } else if (value instanceof SortedMap<?, ?> sortedMap) {
+            @SuppressWarnings("unchecked")
+            SortedMap<Object, Object> objectMap = (SortedMap<Object, Object>) sortedMap;
+            return new MapOperand(objectMap);
+        } else if (value instanceof Map<?, ?> map) {
             try {
-                return new MapOperand(new TreeMap<>((Map<Object, Object>) value));
+                @SuppressWarnings("unchecked")
+                Map<Object, Object> objectMap = (Map<Object, Object>) map;
+                return new MapOperand(new TreeMap<>(objectMap));
             } catch (ClassCastException | NullPointerException e) {
                 throw new DslParseException(
                         "Map keys must be mutually comparable for operand creation", e);

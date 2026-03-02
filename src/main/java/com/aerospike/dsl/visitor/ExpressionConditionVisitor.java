@@ -271,6 +271,14 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return new ExpressionContainer(left, right, ExpressionContainer.ExprPartsOperation.IN);
     }
 
+    /**
+     * Validates that both operands of an IN expression are non-null and that
+     * the right operand is a list-compatible type (LIST_OPERAND, BIN_PART,
+     * PATH_OPERAND, VARIABLE_OPERAND, or PLACEHOLDER_OPERAND).
+     *
+     * @throws DslParseException if either operand is null or the right operand
+     *                           is not a list-compatible type
+     */
     private static void validateInRightOperand(AbstractPart left, AbstractPart right) {
         if (left == null) {
             throw new DslParseException("Unable to parse left operand");
@@ -288,6 +296,17 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         throw new DslParseException("IN operation requires a List as the right operand");
     }
 
+    /**
+     * Infers and validates Exp types for IN expression operands.
+     * <p>
+     * For the right operand: if it is a BIN_PART without an explicit type, its
+     * type is set to LIST; if it has an explicit non-LIST type, an error is thrown.
+     * If it is a PATH_OPERAND with a path function whose type is non-LIST, an error
+     * is thrown.
+     * <p>
+     * For the left operand: delegates to {@link VisitorUtils#inferLeftBinTypeFromList}
+     * to infer the bin type from the list elements when the right operand is a list literal.
+     */
     private static void inferInTypes(AbstractPart left, AbstractPart right) {
         if (right.getPartType() == AbstractPart.PartType.BIN_PART) {
             BinPart rightBin = (BinPart) right;

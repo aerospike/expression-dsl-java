@@ -150,6 +150,23 @@ public class ParsingUtils {
     }
 
     /**
+     * Parses a {@code valueIdentifier} context and requires the result to be an {@link Integer}.
+     * Used by value-range elements where only integer operands are valid.
+     *
+     * @param ctx The valueIdentifier context from the parser
+     * @return The parsed integer value
+     * @throws DslParseException if the parsed value is not an integer
+     */
+    public static Integer requireIntValueIdentifier(ConditionParser.ValueIdentifierContext ctx) {
+        Object result = parseValueIdentifier(ctx);
+        if (result instanceof Integer intValue) {
+            return intValue;
+        }
+        throw new DslParseException(
+                "Value range requires integer operands, got: %s".formatted(ctx.getText()));
+    }
+
+    /**
      * Get the string inside the quotes.
      *
      * @param str String input
