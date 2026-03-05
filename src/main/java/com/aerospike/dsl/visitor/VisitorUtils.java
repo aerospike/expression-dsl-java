@@ -1004,16 +1004,19 @@ public class VisitorUtils {
      * @param expr              The {@link ExpressionContainer} representing the expression tree
      * @param placeholderValues The {@link PlaceholderValues} to match with placeholders by index
      * @param indexes           A map of available secondary indexes, keyed by bin name
+     * @param preferredBin      Optional bin name hint; if non-null the selection algorithm prefers
+     *                          an index on this bin, falling back to cardinality-based selection
+     *                          when the hint cannot be applied
      * @return The updated {@link ExpressionContainer} with the generated {@link Filter} and {@link Exp}.
      * Either of them can be null if there is no suitable filter
      */
     public static AbstractPart buildExpr(ExpressionContainer expr, PlaceholderValues placeholderValues,
-                                         Map<String, List<Index>> indexes) {
+                                         Map<String, List<Index>> indexes, String preferredBin) {
         if (placeholderValues != null) resolvePlaceholders(expr, placeholderValues);
 
         Filter secondaryIndexFilter = null;
         try {
-            secondaryIndexFilter = getSIFilter(expr, indexes);
+            secondaryIndexFilter = getSIFilter(expr, indexes, preferredBin);
         } catch (NoApplicableFilterException ignored) {
         }
         expr.setFilter(secondaryIndexFilter);
@@ -1516,16 +1519,17 @@ public class VisitorUtils {
      * for secondary index filters), the method attempts to find the most suitable
      * expression within the tree to apply a filter based on index availability and cardinality.
      *
-     * @param expr    The {@link ExpressionContainer} representing the expression tree
-     * @param indexes A map of available secondary indexes, keyed by bin name
+     * @param expr         The {@link ExpressionContainer} representing the expression tree
+     * @param indexes      A map of available secondary indexes, keyed by bin name
+     * @param preferredBin Optional bin name hint for index selection preference
      * @return A secondary index {@link Filter}, or {@code null} if no applicable filter can be generated
      * @throws NoApplicableFilterException if the expression operation type is not supported
      */
-    private static Filter getSIFilter(ExpressionContainer expr, Map<String, List<Index>> indexes) {
-        // If it is an OR query
+    private static Filter getSIFilter(ExpressionContainer expr, Map<String, List<Index>> indexes,
+                                      String preferredBin) {
         if (expr.getOperationType() == OR) return null;
 
-        ExpressionContainer chosenExpr = chooseExprForFilter(expr, indexes);
+        ExpressionContainer chosenExpr = chooseExprForFilter(expr, indexes, preferredBin);
         if (chosenExpr == null) return null;
 
         return getFilterOrNull(
@@ -1537,54 +1541,80 @@ public class VisitorUtils {
 
     /**
      * Chooses the most suitable {@link ExpressionContainer} within a tree to apply a secondary index filter.
-     * Identifies all potential expressions within the tree that could
-     * utilize a secondary index. Selects the expression associated with the secondary index
-     * having the largest cardinality (highest ratio of unique
-     * bin values). If multiple expressions have the same largest cardinality, it
-     * chooses alphabetically based on the bin name. The chosen expression is marked
-     * as having a secondary index filter applied.
+     * Identifies all potential expressions within the tree that could utilize a secondary index.
+     * When a {@code preferredBin} hint is provided, candidates matching that bin are tried first;
+     * if none match, falls back to all candidates. Selection within a candidate set uses the
+     * largest cardinality, then alphabetical bin name as a tiebreaker. The chosen expression
+     * is marked as having a secondary index filter applied.
      *
      * @param exprContainer The root {@link ExpressionContainer} of the expression tree
      * @param indexes       A map of available secondary indexes, keyed by bin name
+     * @param preferredBin  Optional bin name hint for index selection preference
      * @return The chosen {@link ExpressionContainer} for secondary index filtering,
      * or {@code null} if no suitable expression is found
      */
     private static ExpressionContainer chooseExprForFilter(ExpressionContainer exprContainer,
-                                                           Map<String, List<Index>> indexes) {
+                                                           Map<String, List<Index>> indexes,
+                                                           String preferredBin) {
         if (indexes == null || indexes.isEmpty()) return null;
 
         Map<Integer, List<ExpressionContainer>> exprsPerCardinality =
                 getExpressionsPerCardinality(exprContainer, indexes);
 
-        Map<Integer, List<ExpressionContainer>> largestCardinalityMap;
-        if (exprsPerCardinality.size() > 1) {
-            // Find the entry with the largest key (cardinality)
-            largestCardinalityMap = exprsPerCardinality.entrySet().stream()
-                    .max(Map.Entry.comparingByKey())
-                    .map(entry -> Map.of(entry.getKey(), entry.getValue()))
-                    .orElse(Collections.emptyMap());
-        } else {
-            largestCardinalityMap = new HashMap<>(exprsPerCardinality);
+        if (preferredBin != null) {
+            Map<Integer, List<ExpressionContainer>> hintedCandidates = filterByBin(exprsPerCardinality, preferredBin);
+            ExpressionContainer hinted = selectByCardinalityThenAlpha(hintedCandidates);
+            if (hinted != null) return hinted;
         }
 
-        List<ExpressionContainer> largestCardinalityExprs;
-        if (largestCardinalityMap.isEmpty()) return null;
-        largestCardinalityExprs = largestCardinalityMap.values().iterator().next();
+        return selectByCardinalityThenAlpha(exprsPerCardinality);
+    }
 
-        ExpressionContainer chosenExpr;
-        if (largestCardinalityExprs.size() > 1) {
-            // Choosing alphabetically from a number of expressions
-            chosenExpr = largestCardinalityExprs.stream()
-                    .min(Comparator.comparing(expr -> getBinPart(expr, 1).getBinName()))
-                    .orElse(null);
-            chosenExpr.hasSecondaryIndexFilter(true);
-            return chosenExpr;
+    /**
+     * Filters a cardinality map to only include expressions whose bin matches the given name.
+     */
+    private static Map<Integer, List<ExpressionContainer>> filterByBin(
+            Map<Integer, List<ExpressionContainer>> exprsPerCardinality, String binName) {
+        Map<Integer, List<ExpressionContainer>> filtered = new HashMap<>();
+        for (Map.Entry<Integer, List<ExpressionContainer>> entry : exprsPerCardinality.entrySet()) {
+            List<ExpressionContainer> matching = entry.getValue().stream()
+                    .filter(expr -> binName.equals(getBinPart(expr, 1).getBinName()))
+                    .toList();
+            if (!matching.isEmpty()) {
+                filtered.put(entry.getKey(), matching);
+            }
         }
+        return filtered;
+    }
 
-        // There is only one expression with the largest cardinality
-        chosenExpr = largestCardinalityExprs.get(0);
-        chosenExpr.hasSecondaryIndexFilter(true);
-        return chosenExpr;
+    /**
+     * Selects an expression from a cardinality map using highest cardinality first,
+     * then alphabetical bin name as a tiebreaker. Marks the chosen expression with
+     * {@code hasSecondaryIndexFilter(true)}.
+     *
+     * @return The chosen expression, or {@code null} if the map is empty
+     */
+    private static ExpressionContainer selectByCardinalityThenAlpha(
+            Map<Integer, List<ExpressionContainer>> exprsPerCardinality) {
+        if (exprsPerCardinality.isEmpty()) return null;
+
+        List<ExpressionContainer> topExprs = exprsPerCardinality.entrySet().stream()
+                .max(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
+                .orElse(Collections.emptyList());
+
+        if (topExprs.isEmpty()) return null;
+
+        ExpressionContainer chosen = topExprs.size() > 1
+                ? topExprs.stream()
+                .min(Comparator.comparing(expr -> getBinPart(expr, 1).getBinName()))
+                .orElse(null)
+                : topExprs.get(0);
+
+        if (chosen != null) {
+            chosen.hasSecondaryIndexFilter(true);
+        }
+        return chosen;
     }
 
     /**
