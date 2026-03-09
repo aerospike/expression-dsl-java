@@ -31,7 +31,10 @@ import org.antlr.v4.runtime.tree.RuleNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -40,20 +43,30 @@ import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
+    private int withNestingDepth = 0;
+
     @Override
     public AbstractPart visitWithExpression(ConditionParser.WithExpressionContext ctx) {
-        List<WithOperand> expressions = new ArrayList<>();
+        withNestingDepth++;
+        try {
+            List<WithOperand> expressions = new ArrayList<>();
 
-        // iterate through each definition
-        for (ConditionParser.VariableDefinitionContext vdc : ctx.variableDefinition()) {
-            AbstractPart part = visit(vdc.expression());
-            WithOperand withOperand = new WithOperand(part, vdc.stringOperand().getText());
-            expressions.add(withOperand);
+            // iterate through each definition
+            for (ConditionParser.VariableDefinitionContext vdc : ctx.variableDefinition()) {
+                AbstractPart part = visit(vdc.expression());
+                WithOperand withOperand = new WithOperand(part, vdc.stringOperand().getText());
+                expressions.add(withOperand);
+            }
+            // last expression is the action (described after "do")
+            expressions.add(new WithOperand(visit(ctx.expression()), true));
+            if (withNestingDepth == 1) {
+                validateInVariableBindings(expressions);
+            }
+            return new ExpressionContainer(new WithStructure(expressions),
+                    ExpressionContainer.ExprPartsOperation.WITH_STRUCTURE);
+        } finally {
+            withNestingDepth--;
         }
-        // last expression is the action (described after "do")
-        expressions.add(new WithOperand(visit(ctx.expression()), true));
-        return new ExpressionContainer(new WithStructure(expressions),
-                ExpressionContainer.ExprPartsOperation.WITH_STRUCTURE);
     }
 
     @Override
@@ -319,13 +332,9 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
                         "IN operation requires a List as the right operand");
             }
         } else if (right.getPartType() == AbstractPart.PartType.PATH_OPERAND) {
-            Path rightPath = (Path) right;
-            if (rightPath.getPathFunction() != null) {
-                Exp.Type pathType = rightPath.getPathFunction().getBinType();
-                if (pathType != null && pathType != Exp.Type.LIST) {
-                    throw new DslParseException(
-                            "IN operation requires a List as the right operand");
-                }
+            if (isPathExplicitlyNonList((Path) right)) {
+                throw new DslParseException(
+                        "IN operation requires a List as the right operand");
             }
         }
         Exp.Type inferredType = VisitorUtils.validateListHomogeneity(right);
@@ -374,33 +383,153 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         return false;
     }
 
+    private enum PathListClassification { DEFINITELY_LIST, DEFINITELY_NOT_LIST, UNKNOWN }
+
     /**
-     * A PATH_OPERAND is ambiguous unless it has:
+     * Classifies a PATH_OPERAND as definitely a list, definitely not a list, or unknown.
+     * <p>
+     * Classification is based on (checked in order):
      * <ul>
-     *   <li>a path function with an explicit binType (e.g. {@code .get(type: X)}), or</li>
-     *   <li>a COUNT or SIZE path function (returns INT), or</li>
-     *   <li>a type designator as the last CDT part ({@code []} or {@code {}}).</li>
+     *   <li>a path function with an explicit binType — LIST vs non-LIST,</li>
+     *   <li>a COUNT or SIZE path function — always INT (DEFINITELY_NOT_LIST),</li>
+     *   <li>a list type designator ({@code []}) as the last CDT part — DEFINITELY_LIST,</li>
+     *   <li>a map type designator ({@code {}}) as the last CDT part — DEFINITELY_NOT_LIST.</li>
      * </ul>
+     * Falls back to UNKNOWN when none of the above applies.
      */
-    private static boolean isPathTypeAmbiguous(Path path) {
+    private static PathListClassification classifyPathListness(Path path) {
         PathFunction pathFunc = path.getPathFunction();
         if (pathFunc != null) {
             // CAST is also covered here: always constructed with a non-null binType
             if (pathFunc.getBinType() != null) {
-                return false;
+                return pathFunc.getBinType() == Exp.Type.LIST
+                        ? PathListClassification.DEFINITELY_LIST
+                        : PathListClassification.DEFINITELY_NOT_LIST;
             }
             PathFunction.PathFunctionType pathFuncType = pathFunc.getPathFunctionType();
             if (pathFuncType == PathFunction.PathFunctionType.COUNT
                     || pathFuncType == PathFunction.PathFunctionType.SIZE) {
-                return false;
+                return PathListClassification.DEFINITELY_NOT_LIST;
             }
         }
         List<AbstractPart> cdtParts = path.getBasePath().getCdtParts();
         if (!cdtParts.isEmpty()) {
             AbstractPart lastCdt = cdtParts.get(cdtParts.size() - 1);
-            return !(lastCdt instanceof ListTypeDesignator) && !(lastCdt instanceof MapTypeDesignator);
+            if (lastCdt instanceof ListTypeDesignator) {
+                return PathListClassification.DEFINITELY_LIST;
+            }
+            if (lastCdt instanceof MapTypeDesignator) {
+                return PathListClassification.DEFINITELY_NOT_LIST;
+            }
         }
-        return true;
+        return PathListClassification.UNKNOWN;
+    }
+
+    private static boolean isPathTypeAmbiguous(Path path) {
+        return classifyPathListness(path) == PathListClassification.UNKNOWN;
+    }
+
+    private static boolean isPathExplicitlyNonList(Path path) {
+        return classifyPathListness(path) == PathListClassification.DEFINITELY_NOT_LIST;
+    }
+
+    /**
+     * Validates that variables used as the right operand of an IN expression
+     * within a WITH block are bound to list-compatible values.
+     * <p>
+     * Variable definitions are known at parse time, so scalar/map bindings
+     * can be rejected early instead of deferring to server-side failure.
+     */
+    private static void validateInVariableBindings(List<WithOperand> expressions) {
+        // WITH block always has at least one variable definition (grammar-enforced)
+        Map<String, AbstractPart> varBindings = new HashMap<>();
+        for (WithOperand operand : expressions) {
+            if (!operand.isLastPart()) {
+                validateInVariablesInTree(operand.getPart(), varBindings);
+                varBindings.put(operand.getString(), operand.getPart());
+            }
+        }
+        validateInVariablesInTree(getWithBody(expressions), varBindings);
+    }
+
+    private static AbstractPart getWithBody(List<WithOperand> operands) {
+        return operands.get(operands.size() - 1).getPart();
+    }
+
+    // Handles every AbstractPart subclass that can contain expression children:
+    // ExpressionContainer, WithStructure, And/Or/ExclusiveStructure, WhenStructure, FunctionArgs.
+    // Leaf types (operands, BinPart, Path, etc.) are terminal — no recursion needed.
+    // When adding a new composite AbstractPart subclass, add a branch here.
+    private static void validateInVariablesInTree(AbstractPart part,
+                                                  Map<String, AbstractPart> varBindings) {
+        if (part instanceof ExpressionContainer expr) {
+            validateInVariableIsListCompatible(expr, varBindings);
+            if (expr.getLeft() != null) {
+                validateInVariablesInTree(expr.getLeft(), varBindings);
+            }
+            if (!expr.isUnary() && expr.getRight() != null) {
+                validateInVariablesInTree(expr.getRight(), varBindings);
+            }
+        } else if (part instanceof WithStructure ws) {
+            Map<String, AbstractPart> merged = new HashMap<>(varBindings);
+            for (WithOperand op : ws.getOperands()) {
+                if (!op.isLastPart()) {
+                    validateInVariablesInTree(op.getPart(), merged);
+                    merged.put(op.getString(), op.getPart());
+                }
+            }
+            validateInVariablesInTree(getWithBody(ws.getOperands()), merged);
+        } else if (part instanceof AndStructure s) {
+            s.getOperands().forEach(op -> validateInVariablesInTree(op, varBindings));
+        } else if (part instanceof OrStructure s) {
+            s.getOperands().forEach(op -> validateInVariablesInTree(op, varBindings));
+        } else if (part instanceof ExclusiveStructure s) {
+            s.getOperands().forEach(op -> validateInVariablesInTree(op, varBindings));
+        } else if (part instanceof WhenStructure s) {
+            s.getOperands().forEach(op -> validateInVariablesInTree(op, varBindings));
+        } else if (part instanceof FunctionArgs fa) {
+            fa.getOperands().forEach(op -> validateInVariablesInTree(op, varBindings));
+        }
+    }
+
+    private static void validateInVariableIsListCompatible(ExpressionContainer expr,
+                                                          Map<String, AbstractPart> varBindings) {
+        if (expr.getOperationType() != ExpressionContainer.ExprPartsOperation.IN) return;
+        if (expr.getRight() == null) return;
+        if (expr.getRight().getPartType() != AbstractPart.PartType.VARIABLE_OPERAND) return;
+
+        String varName = ((VariableOperand) expr.getRight()).getValue();
+        AbstractPart boundPart = varBindings.get(varName);
+        if (boundPart != null && isNotList(boundPart)) {
+            throw new DslParseException(
+                    "IN operation requires a List as the right operand; "
+                            + "variable '" + varName + "' contains a non-List type");
+        }
+    }
+
+    private static final EnumSet<AbstractPart.PartType> NOT_LIST_TYPES = EnumSet.of(
+            AbstractPart.PartType.INT_OPERAND,
+            AbstractPart.PartType.FLOAT_OPERAND,
+            AbstractPart.PartType.BOOL_OPERAND,
+            AbstractPart.PartType.STRING_OPERAND,
+            AbstractPart.PartType.MAP_OPERAND,
+            AbstractPart.PartType.METADATA_OPERAND
+    );
+
+    private static boolean isNotList(AbstractPart part) {
+        if (NOT_LIST_TYPES.contains(part.getPartType())) {
+            return true;
+        }
+        if (part instanceof BinPart bin) {
+            return bin.isTypeExplicitlySet() && bin.getExpType() != Exp.Type.LIST;
+        }
+        if (part.getPartType() == AbstractPart.PartType.PATH_OPERAND) {
+            return isPathExplicitlyNonList((Path) part);
+        }
+        if (part instanceof ExpressionContainer expr && expr.getOperationType() != null) {
+            return expr.getOperationType().isScalar();
+        }
+        return false;
     }
 
     @Override
