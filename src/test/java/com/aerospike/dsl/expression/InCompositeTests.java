@@ -41,7 +41,7 @@ class InCompositeTests {
                 ListExp.getByValue(ListReturnType.EXISTS,
                         Exp.val("available"), Exp.listBin("bookableStates")));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("$.cost > 50 and $.status in $.allowedStatuses" +
+                ExpressionContext.of("$.cost > 50 and $.status.get(type: INT) in $.allowedStatuses" +
                         " and \"available\" in $.bookableStates"), expected);
     }
 

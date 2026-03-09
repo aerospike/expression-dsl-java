@@ -71,7 +71,7 @@ class InBinTests {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
                 Exp.intBin("itemType"), Exp.listBin("allowedItems"));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("$.itemType in $.allowedItems"), expected);
+                ExpressionContext.of("$.itemType.get(type: INT) in $.allowedItems"), expected);
     }
 
     @Test
@@ -85,6 +85,6 @@ class InBinTests {
                         Exp.mapBin("rooms"),
                         CTX.mapKey(Value.get("config"))));
         parseFilterExpressionAndCompare(ExpressionContext.of(
-                "$.intBin in $.rooms.config.allowedNames"), expected);
+                "$.intBin.get(type: INT) in $.rooms.config.allowedNames"), expected);
     }
 }

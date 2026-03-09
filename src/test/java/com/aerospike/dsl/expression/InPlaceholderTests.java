@@ -80,7 +80,7 @@ class InPlaceholderTests {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
                 Exp.stringBin("name"), Exp.val(List.of("Bob", "Mary")));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("$.name in ?0",
+                ExpressionContext.of("$.name.get(type: STRING) in ?0",
                         PlaceholderValues.of(List.of("Bob", "Mary"))), expected);
     }
 
@@ -89,7 +89,7 @@ class InPlaceholderTests {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
                 Exp.intBin("age"), Exp.val(List.of(1, 2, 3)));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("$.age in ?0",
+                ExpressionContext.of("$.age.get(type: INT) in ?0",
                         PlaceholderValues.of(List.of(1, 2, 3))), expected);
     }
 
@@ -98,7 +98,7 @@ class InPlaceholderTests {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
                 Exp.floatBin("score"), Exp.val(List.of(1.5, 2.5)));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("$.score in ?0",
+                ExpressionContext.of("$.score.get(type: FLOAT) in ?0",
                         PlaceholderValues.of(List.of(1.5, 2.5))), expected);
     }
 
@@ -107,7 +107,7 @@ class InPlaceholderTests {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
                 Exp.boolBin("isActive"), Exp.val(List.of(true, false)));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("$.isActive in ?0",
+                ExpressionContext.of("$.isActive.get(type: BOOL) in ?0",
                         PlaceholderValues.of(List.of(true, false))), expected);
     }
 
@@ -118,7 +118,7 @@ class InPlaceholderTests {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
                 Exp.listBin("listBin"), Exp.val(outerList));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("$.listBin in ?0",
+                ExpressionContext.of("$.listBin.get(type: LIST) in ?0",
                         PlaceholderValues.of(outerList)), expected);
     }
 
@@ -132,7 +132,7 @@ class InPlaceholderTests {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
                 Exp.mapBin("mapBin"), Exp.val(mapList));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("$.mapBin in ?0",
+                ExpressionContext.of("$.mapBin.get(type: MAP) in ?0",
                         PlaceholderValues.of(mapList)), expected);
     }
 
@@ -141,7 +141,7 @@ class InPlaceholderTests {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
                 Exp.intBin("intBin1"), Exp.val(Collections.emptyList()));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("$.intBin1 in ?0",
+                ExpressionContext.of("$.intBin1.get(type: INT) in ?0",
                         PlaceholderValues.of(Collections.emptyList())), expected);
     }
 

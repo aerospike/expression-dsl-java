@@ -304,7 +304,8 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
      * If it is a PATH_OPERAND with a path function whose type is non-LIST, an error
      * is thrown.
      * <p>
-     * For the left operand: delegates to {@link VisitorUtils#validateListHomogeneity}
+     * For the left operand: validates that the type is not ambiguous, then delegates
+     * to {@link VisitorUtils#validateListHomogeneity}
      * and {@link VisitorUtils#inferBinTypeFromList} to enforce uniform list element types
      * and infer the bin type when the right operand is a list literal.
      */
@@ -328,7 +329,78 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             }
         }
         Exp.Type inferredType = VisitorUtils.validateListHomogeneity(right);
+        validateLeftTypeNotAmbiguous(left, inferredType);
         VisitorUtils.inferBinTypeFromList(left, inferredType);
+    }
+
+    /**
+     * Validates that the left operand of an IN expression has a deterministic type.
+     * <p>
+     * When the right operand is a typed list literal, the left type can be inferred
+     * from the list elements ({@code inferredType != null}). Otherwise, BIN_PART
+     * and PATH_OPERAND operands must carry an explicit type annotation
+     * (e.g. {@code .get(type: INT)}, {@code .asInt()}, {@code []}, {@code {}}).
+     *
+     * @param left         the left operand of the IN expression
+     * @param inferredType the element type inferred from the right list (may be {@code null})
+     * @throws DslParseException if the left operand type cannot be determined
+     */
+    private static void validateLeftTypeNotAmbiguous(AbstractPart left, Exp.Type inferredType) {
+        if (inferredType != null) {
+            return;
+        }
+        if (!isLeftTypeAmbiguous(left)) {
+            return;
+        }
+        throw new DslParseException(
+                "cannot infer the type of the left operand for IN operation; "
+                        + "use .get(type: <TYPE>) to specify it");
+    }
+
+    /**
+     * Checks whether a left operand of IN has ambiguous type.
+     * <p>
+     * Only {@code BIN_PART} and {@code PATH_OPERAND} can be ambiguous.
+     * Literals, expressions, placeholders, and variables always carry
+     * concrete types and are never ambiguous.
+     */
+    private static boolean isLeftTypeAmbiguous(AbstractPart left) {
+        if (left.getPartType() == AbstractPart.PartType.BIN_PART) {
+            return !((BinPart) left).isTypeExplicitlySet();
+        }
+        if (left.getPartType() == AbstractPart.PartType.PATH_OPERAND) {
+            return isPathTypeAmbiguous((Path) left);
+        }
+        return false;
+    }
+
+    /**
+     * A PATH_OPERAND is ambiguous unless it has:
+     * <ul>
+     *   <li>a path function with an explicit binType (e.g. {@code .get(type: X)}), or</li>
+     *   <li>a COUNT or SIZE path function (returns INT), or</li>
+     *   <li>a type designator as the last CDT part ({@code []} or {@code {}}).</li>
+     * </ul>
+     */
+    private static boolean isPathTypeAmbiguous(Path path) {
+        PathFunction pathFunc = path.getPathFunction();
+        if (pathFunc != null) {
+            // CAST is also covered here: always constructed with a non-null binType
+            if (pathFunc.getBinType() != null) {
+                return false;
+            }
+            PathFunction.PathFunctionType pathFuncType = pathFunc.getPathFunctionType();
+            if (pathFuncType == PathFunction.PathFunctionType.COUNT
+                    || pathFuncType == PathFunction.PathFunctionType.SIZE) {
+                return false;
+            }
+        }
+        List<AbstractPart> cdtParts = path.getBasePath().getCdtParts();
+        if (!cdtParts.isEmpty()) {
+            AbstractPart lastCdt = cdtParts.get(cdtParts.size() - 1);
+            return !(lastCdt instanceof ListTypeDesignator) && !(lastCdt instanceof MapTypeDesignator);
+        }
+        return true;
     }
 
     @Override

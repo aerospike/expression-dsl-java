@@ -10,7 +10,6 @@ import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.client.exp.MapExp;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -138,10 +137,11 @@ class InLiteralTests {
     }
 
     @Test
-    void inWithEmptyList() {
+    void explicitIntBinInListDesignator() {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
-                Exp.intBin("name"), Exp.val(Collections.emptyList()));
-        parseFilterExpressionAndCompare(ExpressionContext.of("$.name in []"), expected);
+                Exp.intBin("name"), Exp.listBin("binName"));
+        parseFilterExpressionAndCompare(
+                ExpressionContext.of("$.name.get(type: INT) in $.binName.[]"), expected);
     }
 
     @Test
