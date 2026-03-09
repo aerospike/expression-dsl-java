@@ -358,4 +358,510 @@ class InFilterTests {
                 ExpressionContext.of("$.b1 in [1] and $.b2 in [2] and $.b3 == 100"),
                 filter, exp, IndexContext.of(NAMESPACE, indexes));
     }
+
+    // --- Index Name Hint: IN + comparison ---
+
+    @Test
+    void inAndEq_indexHint_selectsEq() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin2"));
+    }
+
+    @Test
+    void inAndEq_indexHint_onInBin() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin1"));
+    }
+
+    @Test
+    void inAndEqAndGt_indexHint_overrides() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(10).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin3").bin("intBin3")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+        );
+        Filter filter = Filter.range("intBin3", 51, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                Exp.eq(Exp.intBin("intBin2"), Exp.val(100)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 == 100 and $.intBin3 > 50"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin3"));
+    }
+
+    @Test
+    void twoInsAndEq_indexHint() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin3").bin("intBin3")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin3", 100);
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin2"), Exp.val(List.of(3, 4))));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 in [3, 4] and $.intBin3 == 100"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin3"));
+    }
+
+    @Test
+    void twoIns_indexHint_noFilter() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+        );
+        Filter filter = null;
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin2"), Exp.val(List.of(3, 4))));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 in [3, 4]"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin1"));
+    }
+
+    @Test
+    void inAndEq_indexHint_unavailable() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "nonExistent"));
+    }
+
+    @Test
+    void inAndEq_indexHint_nsMismatch() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace("other_ns").name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin1"));
+    }
+
+    @Test
+    void inAndEq_indexHint_null() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, null));
+    }
+
+    @Test
+    void inAndEq_indexHint_empty() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, ""));
+    }
+
+    @Test
+    void inAndEq_indexHint_overridesAlpha() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(100).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(100).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin3").bin("intBin3")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(100).build()
+        );
+        Filter filter = Filter.range("intBin3", 51, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                Exp.eq(Exp.intBin("intBin2"), Exp.val(100)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 == 100 and $.intBin3 > 50"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin3"));
+    }
+
+    // --- Index Name Hint: 3 sub-expressions with hint on IN bin ---
+
+    @Test
+    void inAndEqAndGt_indexHint_onInBin() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin3").bin("intBin3")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(50)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 == 100 and $.intBin3 > 50"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin1"));
+    }
+
+    @Test
+    void twoInsAndLt_indexHint_onInBin() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin3").bin("intBin3")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+        );
+        Filter filter = Filter.range("intBin3", Long.MIN_VALUE, 49);
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin2"), Exp.val(List.of(3, 4))));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 in [3, 4] and $.intBin3 < 50"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin1"));
+    }
+
+    // --- Index Name Hint: OR expressions ---
+
+    @Test
+    void inOrEq_indexHint_noFilter() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build()
+        );
+        Filter filter = null;
+        Exp exp = Exp.or(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                Exp.eq(Exp.intBin("intBin2"), Exp.val(100)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] or $.intBin2 == 100"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin2"));
+    }
+
+    @Test
+    void orInAndGt_indexHint_onOrInBin() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).name("idx_intBin1").bin("intBin1")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin2").bin("intBin2")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(1).build(),
+                Index.builder().namespace(NAMESPACE).name("idx_intBin3").bin("intBin3")
+                        .indexType(IndexType.NUMERIC).binValuesRatio(0).build()
+        );
+        Filter filter = Filter.range("intBin3", 51, Long.MAX_VALUE);
+        Exp exp = Exp.or(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                Exp.eq(Exp.intBin("intBin2"), Exp.val(100)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("($.intBin1 in [1, 2] or $.intBin2 == 100) and $.intBin3 > 50"),
+                filter, exp, IndexContext.of(NAMESPACE, indexes, "idx_intBin1"));
+    }
+
+    // --- Bin Name Hint: IN + comparison ---
+
+    @Test
+    void inAndEq_binHint_selectsEq() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin2"));
+    }
+
+    @Test
+    void inAndEq_binHint_onInBin() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin1"));
+    }
+
+    @Test
+    void inAndEqAndGt_binHint_overrides() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(10).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build()
+        );
+        Filter filter = Filter.range("intBin3", 51, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                Exp.eq(Exp.intBin("intBin2"), Exp.val(100)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 == 100 and $.intBin3 > 50"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin3"));
+    }
+
+    @Test
+    void twoInsAndEq_binHint() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin3", 100);
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin2"), Exp.val(List.of(3, 4))));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 in [3, 4] and $.intBin3 == 100"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin3"));
+    }
+
+    @Test
+    void twoIns_binHint_noFilter() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build()
+        );
+        Filter filter = null;
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin2"), Exp.val(List.of(3, 4))));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 in [3, 4]"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin1"));
+    }
+
+    @Test
+    void inAndEq_binHint_noMatch() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "nonExistent"));
+    }
+
+    @Test
+    void inAndEq_binHint_null() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, null));
+    }
+
+    @Test
+    void inAndEq_binHint_nsMismatch() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace("other_ns").bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = ListExp.getByValue(ListReturnType.EXISTS,
+                Exp.intBin("intBin1"), Exp.val(List.of(1, 2, 3)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2, 3] and $.intBin2 == 100"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin1"));
+    }
+
+    @Test
+    void inAndEq_binHint_overridesAlpha() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(100).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(100).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(100).build()
+        );
+        Filter filter = Filter.range("intBin3", 51, Long.MAX_VALUE);
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                Exp.eq(Exp.intBin("intBin2"), Exp.val(100)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 == 100 and $.intBin3 > 50"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin3"));
+    }
+
+    // --- Bin Name Hint: 3 sub-expressions with hint on IN bin ---
+
+    @Test
+    void inAndEqAndGt_binHint_onInBin() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build()
+        );
+        Filter filter = Filter.equal("intBin2", 100);
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                Exp.gt(Exp.intBin("intBin3"), Exp.val(50)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 == 100 and $.intBin3 > 50"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin1"));
+    }
+
+    @Test
+    void twoInsAndLt_binHint_onInBin() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build()
+        );
+        Filter filter = Filter.range("intBin3", Long.MIN_VALUE, 49);
+        Exp exp = Exp.and(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin2"), Exp.val(List.of(3, 4))));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] and $.intBin2 in [3, 4] and $.intBin3 < 50"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin1"));
+    }
+
+    // --- Bin Name Hint: OR expressions ---
+
+    @Test
+    void inOrEq_binHint_noFilter() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build()
+        );
+        Filter filter = null;
+        Exp exp = Exp.or(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                Exp.eq(Exp.intBin("intBin2"), Exp.val(100)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("$.intBin1 in [1, 2] or $.intBin2 == 100"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin2"));
+    }
+
+    @Test
+    void orInAndGt_binHint_onOrInBin() {
+        List<Index> indexes = List.of(
+                Index.builder().namespace(NAMESPACE).bin("intBin1").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin2").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(1).build(),
+                Index.builder().namespace(NAMESPACE).bin("intBin3").indexType(IndexType.NUMERIC)
+                        .binValuesRatio(0).build()
+        );
+        Filter filter = Filter.range("intBin3", 51, Long.MAX_VALUE);
+        Exp exp = Exp.or(
+                ListExp.getByValue(ListReturnType.EXISTS,
+                        Exp.intBin("intBin1"), Exp.val(List.of(1, 2))),
+                Exp.eq(Exp.intBin("intBin2"), Exp.val(100)));
+        parseDslExpressionAndCompare(
+                ExpressionContext.of("($.intBin1 in [1, 2] or $.intBin2 == 100) and $.intBin3 > 50"),
+                filter, exp, IndexContext.withBinHint(NAMESPACE, indexes, "intBin1"));
+    }
 }
