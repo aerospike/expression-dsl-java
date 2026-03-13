@@ -8,10 +8,9 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
-import java.util.List;
+import com.aerospike.dsl.util.ParsingUtils;
 
-import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
-import static com.aerospike.dsl.util.ParsingUtils.unquote;
+import java.util.List;
 
 public class MapValueList extends MapPart {
     private final boolean isInverted;
@@ -32,16 +31,9 @@ public class MapValueList extends MapPart {
                     valueList != null ? valueList.valueListIdentifier() : invertedValueList.valueListIdentifier();
             boolean isInverted = valueList == null;
 
-            List<?> valueListObjects = list.valueIdentifier().stream().map(
-                    listValue -> {
-                        if (listValue.NAME_IDENTIFIER() != null) {
-                            return listValue.NAME_IDENTIFIER().getText();
-                        } else if (listValue.QUOTED_STRING() != null) {
-                            return unquote(listValue.QUOTED_STRING().getText());
-                        }
-                        return parseSignedInt(listValue.signedInt());
-                    }
-            ).toList();
+            List<?> valueListObjects = list.valueIdentifier().stream()
+                    .map(ParsingUtils::parseValueIdentifier)
+                    .toList();
 
             return new MapValueList(isInverted, valueListObjects);
         }

@@ -8,9 +8,10 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import com.aerospike.dsl.util.ParsingUtils;
+
 import static com.aerospike.dsl.util.ParsingUtils.parseSignedInt;
 import static com.aerospike.dsl.util.ParsingUtils.subtractNullable;
-import static com.aerospike.dsl.util.ParsingUtils.unquote;
 
 public class MapIndexRangeRelative extends MapPart {
     private final boolean isInverted;
@@ -44,12 +45,7 @@ public class MapIndexRangeRelative extends MapPart {
 
             String relativeKey = null;
             if (range.relativeKeyEnd().mapKey() != null) {
-                ConditionParser.MapKeyContext mapKeyContext = range.relativeKeyEnd().mapKey();
-                if (mapKeyContext.NAME_IDENTIFIER() != null) {
-                    relativeKey = mapKeyContext.NAME_IDENTIFIER().getText();
-                } else if (mapKeyContext.QUOTED_STRING() != null) {
-                    relativeKey = unquote(mapKeyContext.QUOTED_STRING().getText());
-                }
+                relativeKey = ParsingUtils.parseMapKey(range.relativeKeyEnd().mapKey());
             }
             return new MapIndexRangeRelative(isInverted, start, end, relativeKey);
         }

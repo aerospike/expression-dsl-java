@@ -14,5 +14,17 @@ out/
 *.ipr
 *.iws
 
+## Static Analysis
+static-analysis/
+
 ## OS X
 .DS_Store
+
+## Cursor
+.cursor/
+
+## Local
+tdd/
+pmd-ruleset.xml
+spotbugs-exclude.xml
+pom-analysis.xml
