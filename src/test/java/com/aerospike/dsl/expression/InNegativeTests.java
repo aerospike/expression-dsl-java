@@ -167,7 +167,7 @@ class InNegativeTests {
     @Test
     void negVariableInMixedTypeList() {
         assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of("with(x = 1) do (${x} in [1, \"y\"])")))
+                ExpressionContext.of("let(x = 1) then (${x} in [1, \"y\"])")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN list elements must all be of the same type");
     }
@@ -209,7 +209,7 @@ class InNegativeTests {
     @Test
     void negVarBoundToInt() {
         assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of("with(x = 1) do (\"100\" in ${x})")))
+                ExpressionContext.of("let(x = 1) then (\"100\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -218,7 +218,7 @@ class InNegativeTests {
     @Test
     void negVarBoundToFloat() {
         assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of("with(x = 1.5) do (\"100\" in ${x})")))
+                ExpressionContext.of("let(x = 1.5) then (\"100\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -227,7 +227,7 @@ class InNegativeTests {
     @Test
     void negVarBoundToBool() {
         assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of("with(x = true) do (\"100\" in ${x})")))
+                ExpressionContext.of("let(x = true) then (\"100\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -236,7 +236,7 @@ class InNegativeTests {
     @Test
     void negVarBoundToString() {
         assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of("with(x = \"hello\") do (\"100\" in ${x})")))
+                ExpressionContext.of("let(x = \"hello\") then (\"100\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -245,7 +245,7 @@ class InNegativeTests {
     @Test
     void negVarBoundToMap() {
         assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of("with(x = {\"a\": 1}) do (\"100\" in ${x})")))
+                ExpressionContext.of("let(x = {\"a\": 1}) then (\"100\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -254,7 +254,7 @@ class InNegativeTests {
     @Test
     void negVarBoundToMetadata() {
         assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of("with(x = $.ttl()) do (\"100\" in ${x})")))
+                ExpressionContext.of("let(x = $.ttl()) then (\"100\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -265,7 +265,7 @@ class InNegativeTests {
     @Test
     void negVarBoundToArithmeticExpr() {
         assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of("with(x = 1 + 2) do (\"foo\" in ${x})")))
+                ExpressionContext.of("let(x = 1 + 2) then (\"foo\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -274,7 +274,7 @@ class InNegativeTests {
     @Test
     void negVarBoundToFunctionExpr() {
         assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of("with(x = abs(1)) do (\"foo\" in ${x})")))
+                ExpressionContext.of("let(x = abs(1)) then (\"foo\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -286,7 +286,7 @@ class InNegativeTests {
     void negVarBoundToExplicitIntBin() {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of(
-                        "with(x = $.someBin.get(type: INT)) do (\"foo\" in ${x})")))
+                        "let(x = $.someBin.get(type: INT)) then (\"foo\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -296,39 +296,39 @@ class InNegativeTests {
     void negVarBoundToExplicitStrPath() {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of(
-                        "with(x = $.a.b.get(type: STRING)) do (\"foo\" in ${x})")))
+                        "let(x = $.a.b.get(type: STRING)) then (\"foo\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
     }
 
-    // --- Nested WITH variable validation ---
+    // --- Nested LET variable validation ---
 
     @Test
-    void negNestedWithOuterNonListVar() {
+    void negNestedLetOuterNonListVar() {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of(
-                        "with(x = 1) do (with(y = [1, 2]) do (\"foo\" in ${x}))")))
-                .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("IN operation requires a List as the right operand")
-                .hasMessageContaining("variable 'x'");
-    }
-
-    @Test
-    void negNestedShadowedVarWithScalar() {
-        assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of(
-                        "with(x = [1]) do (with(x = 1) do (\"foo\" in ${x}))")))
+                        "let(x = 1) then (let(y = [1, 2]) then (\"foo\" in ${x}))")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
     }
 
     @Test
-    void negNotWrappingInWithScalarVar() {
+    void negNestedShadowedVarLetScalar() {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of(
-                        "with(x = 1) do (not(\"foo\" in ${x}))")))
+                        "let(x = [1]) then (let(x = 1) then (\"foo\" in ${x}))")))
+                .isInstanceOf(DslParseException.class)
+                .hasMessageContaining("IN operation requires a List as the right operand")
+                .hasMessageContaining("variable 'x'");
+    }
+
+    @Test
+    void negNotWrappingInLetScalarVar() {
+        assertThatThrownBy(() -> parseFilterExp(
+                ExpressionContext.of(
+                        "let(x = 1) then (not(\"foo\" in ${x}))")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -338,17 +338,17 @@ class InNegativeTests {
     void negVarBoundToCountPath() {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of(
-                        "with(x = $.a.[].count()) do (\"foo\" in ${x})")))
+                        "let(x = $.a.[].count()) then (\"foo\" in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
     }
 
     @Test
-    void negVarDefWithInScalarVar() {
+    void negVarDefLetInScalarVar() {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of(
-                        "with(x = 5, y = ($.bin.get(type: INT) in ${x})) do (y == true)")))
+                        "let(x = 5, y = ($.bin.get(type: INT) in ${x})) then (y == true)")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
@@ -357,7 +357,7 @@ class InNegativeTests {
     @Test
     void negBinInVariableAmbiguous() {
         assertThatThrownBy(() -> parseFilterExp(
-                ExpressionContext.of("with(x = [\"a\"]) do ($.name in ${x})")))
+                ExpressionContext.of("let(x = [\"a\"]) then ($.name in ${x})")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("cannot infer the type of the left operand for IN operation");
     }

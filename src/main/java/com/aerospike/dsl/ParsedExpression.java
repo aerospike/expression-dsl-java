@@ -13,7 +13,6 @@ import java.util.Map;
 import static com.aerospike.dsl.parts.AbstractPart.PartType.EXPRESSION_CONTAINER;
 import static com.aerospike.dsl.visitor.VisitorUtils.buildExpr;
 
-
 /**
  * A class to build and store the results of DSL expression parsing: parsed {@code expressionTree}, {@code indexesMap}
  * of given indexes, {@code placeholderValues} to match with placeholders and {@link ParseResult} that holds

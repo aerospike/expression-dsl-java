@@ -21,7 +21,7 @@ logicalAndExpression
 basicExpression
     : 'not' '(' expression ')'                                                  # NotExpression
     | 'exclusive' '(' expression (',' expression)+ ')'                          # ExclusiveExpression
-    | 'with' '(' variableDefinition (',' variableDefinition)* ')' 'do' '(' expression ')'       # WithExpression
+    | 'let' '(' variableDefinition (',' variableDefinition)* ')' 'then' '(' expression ')'      # LetExpression
     | 'when' '(' expressionMapping (',' expressionMapping)* ',' 'default' '=>' expression ')'   # WhenExpression
     | comparisonExpression                                                      # ComparisonExpressionWrapper
     ;

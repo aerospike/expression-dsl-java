@@ -20,7 +20,7 @@ import com.aerospike.dsl.parts.controlstructure.AndStructure;
 import com.aerospike.dsl.parts.controlstructure.ExclusiveStructure;
 import com.aerospike.dsl.parts.controlstructure.OrStructure;
 import com.aerospike.dsl.parts.controlstructure.WhenStructure;
-import com.aerospike.dsl.parts.controlstructure.WithStructure;
+import com.aerospike.dsl.parts.controlstructure.LetStructure;
 import com.aerospike.dsl.parts.operand.*;
 import com.aerospike.dsl.parts.path.BasePath;
 import com.aerospike.dsl.parts.path.BinPart;
@@ -43,29 +43,29 @@ import static com.aerospike.dsl.visitor.VisitorUtils.*;
 
 public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPart> {
 
-    private int withNestingDepth = 0;
+    private int letNestingDepth = 0;
 
     @Override
-    public AbstractPart visitWithExpression(ConditionParser.WithExpressionContext ctx) {
-        withNestingDepth++;
+    public AbstractPart visitLetExpression(ConditionParser.LetExpressionContext ctx) {
+        letNestingDepth++;
         try {
-            List<WithOperand> expressions = new ArrayList<>();
+            List<LetOperand> expressions = new ArrayList<>();
 
             // iterate through each definition
             for (ConditionParser.VariableDefinitionContext vdc : ctx.variableDefinition()) {
                 AbstractPart part = visit(vdc.expression());
-                WithOperand withOperand = new WithOperand(part, vdc.stringOperand().getText());
-                expressions.add(withOperand);
+                LetOperand letOperand = new LetOperand(part, vdc.stringOperand().getText());
+                expressions.add(letOperand);
             }
-            // last expression is the action (described after "do")
-            expressions.add(new WithOperand(visit(ctx.expression()), true));
-            if (withNestingDepth == 1) {
+            // last expression is the action (described after "then")
+            expressions.add(new LetOperand(visit(ctx.expression()), true));
+            if (letNestingDepth == 1) {
                 validateInVariableBindings(expressions);
             }
-            return new ExpressionContainer(new WithStructure(expressions),
-                    ExpressionContainer.ExprPartsOperation.WITH_STRUCTURE);
+            return new ExpressionContainer(new LetStructure(expressions),
+                    ExpressionContainer.ExprPartsOperation.LET_STRUCTURE);
         } finally {
-            withNestingDepth--;
+            letNestingDepth--;
         }
     }
 
@@ -435,29 +435,29 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     /**
      * Validates that variables used as the right operand of an IN expression
-     * within a WITH block are bound to list-compatible values.
+     * within a LET block are bound to list-compatible values.
      * <p>
      * Variable definitions are known at parse time, so scalar/map bindings
      * can be rejected early instead of deferring to server-side failure.
      */
-    private static void validateInVariableBindings(List<WithOperand> expressions) {
-        // WITH block always has at least one variable definition (grammar-enforced)
+    private static void validateInVariableBindings(List<LetOperand> expressions) {
+        // LET block always has at least one variable definition (grammar-enforced)
         Map<String, AbstractPart> varBindings = new HashMap<>();
-        for (WithOperand operand : expressions) {
+        for (LetOperand operand : expressions) {
             if (!operand.isLastPart()) {
                 validateInVariablesInTree(operand.getPart(), varBindings);
                 varBindings.put(operand.getString(), operand.getPart());
             }
         }
-        validateInVariablesInTree(getWithBody(expressions), varBindings);
+        validateInVariablesInTree(getLetBody(expressions), varBindings);
     }
 
-    private static AbstractPart getWithBody(List<WithOperand> operands) {
+    private static AbstractPart getLetBody(List<LetOperand> operands) {
         return operands.get(operands.size() - 1).getPart();
     }
 
     // Handles every AbstractPart subclass that can contain expression children:
-    // ExpressionContainer, WithStructure, And/Or/ExclusiveStructure, WhenStructure, FunctionArgs.
+    // ExpressionContainer, LetStructure, And/Or/ExclusiveStructure, WhenStructure, FunctionArgs.
     // Leaf types (operands, BinPart, Path, etc.) are terminal — no recursion needed.
     // When adding a new composite AbstractPart subclass, add a branch here.
     private static void validateInVariablesInTree(AbstractPart part,
@@ -470,15 +470,15 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             if (!expr.isUnary() && expr.getRight() != null) {
                 validateInVariablesInTree(expr.getRight(), varBindings);
             }
-        } else if (part instanceof WithStructure ws) {
+        } else if (part instanceof LetStructure ws) {
             Map<String, AbstractPart> merged = new HashMap<>(varBindings);
-            for (WithOperand op : ws.getOperands()) {
+            for (LetOperand op : ws.getOperands()) {
                 if (!op.isLastPart()) {
                     validateInVariablesInTree(op.getPart(), merged);
                     merged.put(op.getString(), op.getPart());
                 }
             }
-            validateInVariablesInTree(getWithBody(ws.getOperands()), merged);
+            validateInVariablesInTree(getLetBody(ws.getOperands()), merged);
         } else if (part instanceof AndStructure s) {
             s.getOperands().forEach(op -> validateInVariablesInTree(op, varBindings));
         } else if (part instanceof OrStructure s) {

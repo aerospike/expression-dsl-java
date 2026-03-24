@@ -177,5 +177,4 @@ class InGrammarConflictTests {
                 Exp.val("in"), Exp.val(0), Exp.val(1), Exp.mapBin("mapBin"));
         parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin.{!0:1~in}"), expected);
     }
-
 }
