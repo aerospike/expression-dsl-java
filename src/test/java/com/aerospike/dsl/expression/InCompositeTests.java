@@ -57,14 +57,14 @@ class InCompositeTests {
     }
 
     @Test
-    void inInsideWithStructure() {
+    void inInsideLetStructure() {
         Exp expected = Exp.let(
                 Exp.def("allowed", Exp.val(List.of("Bob", "Mary"))),
                 ListExp.getByValue(ListReturnType.EXISTS,
                         Exp.stringBin("name"), Exp.var("allowed")));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("with(allowed = [\"Bob\", \"Mary\"])" +
-                        " do ($.name.get(type: STRING) in ${allowed})"), expected);
+                ExpressionContext.of("let(allowed = [\"Bob\", \"Mary\"])" +
+                        " then ($.name.get(type: STRING) in ${allowed})"), expected);
     }
 
     @Test
@@ -88,7 +88,7 @@ class InCompositeTests {
     }
 
     @Test
-    void nestedWithOuterListVar() {
+    void nestedLetOuterListVar() {
         Exp expected = Exp.let(
                 Exp.def("x", Exp.val(List.of("a", "b"))),
                 Exp.let(
@@ -96,12 +96,12 @@ class InCompositeTests {
                         ListExp.getByValue(ListReturnType.EXISTS,
                                 Exp.stringBin("name"), Exp.var("x"))));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("with(x = [\"a\", \"b\"]) do " +
-                        "(with(y = 3) do ($.name.get(type: STRING) in ${x}))"), expected);
+                ExpressionContext.of("let(x = [\"a\", \"b\"]) then " +
+                        "(let(y = 3) then ($.name.get(type: STRING) in ${x}))"), expected);
     }
 
     @Test
-    void nestedWithShadowedVar() {
+    void nestedLetShadowedVar() {
         Exp expected = Exp.let(
                 Exp.def("x", Exp.val(1)),
                 Exp.let(
@@ -109,12 +109,12 @@ class InCompositeTests {
                         ListExp.getByValue(ListReturnType.EXISTS,
                                 Exp.stringBin("name"), Exp.var("x"))));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("with(x = 1) do " +
-                        "(with(x = [\"a\"]) do ($.name.get(type: STRING) in ${x}))"), expected);
+                ExpressionContext.of("let(x = 1) then " +
+                        "(let(x = [\"a\"]) then ($.name.get(type: STRING) in ${x}))"), expected);
     }
 
     @Test
-    void nestedWithVarBoundToVar() {
+    void nestedLetVarBoundToVar() {
         Exp expected = Exp.let(
                 Exp.def("x", Exp.val(List.of(1, 2))),
                 Exp.let(
@@ -122,8 +122,8 @@ class InCompositeTests {
                         ListExp.getByValue(ListReturnType.EXISTS,
                                 Exp.val(1), Exp.var("y"))));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("with(x = [1, 2]) do " +
-                        "(with(y = ${x}) do (1 in ${y}))"), expected);
+                ExpressionContext.of("let(x = [1, 2]) then " +
+                        "(let(y = ${x}) then (1 in ${y}))"), expected);
     }
 
     // Known limitation: transitive variable indirection is not resolved statically.
@@ -138,8 +138,8 @@ class InCompositeTests {
                         ListExp.getByValue(ListReturnType.EXISTS,
                                 Exp.val("foo"), Exp.var("y"))));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("with(x = 1) do " +
-                        "(with(y = ${x}) do (\"foo\" in ${y}))"), expected);
+                ExpressionContext.of("let(x = 1) then " +
+                        "(let(y = ${x}) then (\"foo\" in ${y}))"), expected);
     }
 
     // Known limitation: WHEN_STRUCTURE return type is not analyzed branch-by-branch,
@@ -153,8 +153,8 @@ class InCompositeTests {
                 ListExp.getByValue(ListReturnType.EXISTS,
                         Exp.val("foo"), Exp.var("x")));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("with(x = when(true => 1, default => 2))" +
-                        " do (\"foo\" in ${x})"), expected);
+                ExpressionContext.of("let(x = when(true => 1, default => 2))" +
+                        " then (\"foo\" in ${x})"), expected);
     }
 
     @Test
@@ -237,7 +237,7 @@ class InCompositeTests {
     }
 
     @Test
-    void inInsideWhenWithVariable() {
+    void inInsideWhenWithLetVariable() {
         Exp expected = Exp.let(
                 Exp.def("allowed", Exp.val(List.of("Bob", "Mary"))),
                 Exp.cond(
@@ -246,7 +246,7 @@ class InCompositeTests {
                         Exp.val("found"),
                         Exp.val("missing")));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("with(allowed = [\"Bob\", \"Mary\"]) do " +
+                ExpressionContext.of("let(allowed = [\"Bob\", \"Mary\"]) then " +
                         "(when($.name.get(type: STRING) in ${allowed} => \"found\"," +
                         " default => \"missing\"))"), expected);
     }

@@ -1,6 +1,6 @@
-# Conditional Logic: Control Structures `with` and  `when`
+# Conditional Logic: Control Structures `let` and  `when`
 
-The Expression DSL supports conditional logic through `when` and `with` control structures, similar to a `CASE` statement in SQL. This allows you to build sophisticated expressions that can return different values based on a set of conditions.
+The Expression DSL supports conditional logic through `when` and `let` control structures, similar to a `CASE` statement in SQL. This allows you to build sophisticated expressions that can return different values based on a set of conditions.
 
 This is particularly useful for server-side data transformation or implementing complex business rules.
 
@@ -86,27 +86,27 @@ Expression filter = Exp.build(parsed.getResult().getExp());
 
 The `when` structure enables you to push complex conditional logic directly to the server, reducing the need to pull data to the client for evaluation and minimizing data transfer.
 
-## Control Structure `with`
+## Control Structure `let`
 
-The basic structure of a with expression allows you to declare temporary variables and use them within a subsequent expression:
+The basic structure of a let expression allows you to declare temporary variables and use them within a subsequent expression:
 
 ```
-with (
+let (
     var1 = val1,
     var2 = val2,
     ...
-) do (expression)
+) then (expression)
 
 ```
 
-The server evaluates the variable assignments in order, making each variable available for use in later assignments and in the final expression after the `do` keyword.
+The server evaluates the variable assignments in order, making each variable available for use in later assignments and in the final expression after the `then` keyword.
 
 ## Simple Example
 
 For a simpler illustration of variable usage and calculations:
 
 ```
-"with (x = 1, y = ${x} + 1) do (${x} + ${y})"
+"let (x = 1, y = ${x} + 1) then (${x} + ${y})"
 ```
 
 This expression:
@@ -115,7 +115,7 @@ This expression:
 2. Defines variable y with value ${x} + 1 (which evaluates to 2)
 3. Returns the result of ${x} + ${y} (which evaluates to 3)
 
-The `with` structure enables us to create more readable and maintainable expressions by breaking complex logic into named variables. This is especially valuable when the same intermediate calculation is used multiple times in an expression or when the expression logic is complex.
+The `let` structure enables us to create more readable and maintainable expressions by breaking complex logic into named variables. This is especially valuable when the same intermediate calculation is used multiple times in an expression or when the expression logic is complex.
 
 ## Use Case: More Complex Calculations
 
@@ -129,15 +129,15 @@ Imagine we want to calculate a user's eligibility score based on multiple factor
 
 ### DSL String
 
-We can use the `with` construct to make this complex calculation more readable and maintainable:
+We can use the `let` construct to make this complex calculation more readable and maintainable:
 
 ```
-"with (
+"let (
     baseScore = $.accountAgeMonths * 0.5,
     transactionBonus = $.transactionCount > 100 ? 25 : 0,
     creditMultiplier = $.creditScore > 700 ? 1.5 : 1.0,
     finalScore = (${baseScore} + ${transactionBonus}) * ${creditMultiplier}
-) do (${finalScore} >= 75 && $.premiumEligible == true)"
+) then (${finalScore} >= 75 && $.premiumEligible == true)"
 ```
 
 Let's break this down:
@@ -152,12 +152,12 @@ Let's break this down:
 ### Using Static DSL String in Java
 
 ```java
-String dslString = "with (" +
+String dslString = "let (" +
         "baseScore = $.accountAgeMonths * 0.5, " +
         "transactionBonus = $.transactionCount > 100 ? 25 : 0, " +
         "creditMultiplier = $.creditScore > 700 ? 1.5 : 1.0, " +
         "finalScore = (${baseScore} + ${transactionBonus}) * ${creditMultiplier}" +
-        ") do (${finalScore} >= 75 && $.premiumEligible == true)";
+        ") then (${finalScore} >= 75 && $.premiumEligible == true)";
 
 ExpressionContext context = ExpressionContext.of(dslString);
 ParsedExpression parsed = parser.parseExpression(context);
@@ -173,20 +173,20 @@ queryPolicy.filterExp = filter;
 
 ### Using DSL String with Placeholders in Java
 
-You can also use placeholders within a with expression for greater flexibility. Placeholders mark the places where values provided separately are matched by indexes.
+You can also use placeholders within a let expression for greater flexibility. Placeholders mark the places where values provided separately are matched by indexes.
 This way the same DSL String can be used multiple times with different values for the same placeholders.
 
 For example, let's add placeholders to our previous DSL expression and use the same API for generating an `Expression`:
 
 ```java
-String dsl = "with (" +
+String dsl = "let (" +
         "baseScore = $.accountAgeMonths * ?0, " +
         "transactionThreshold = ?1, " +
         "transactionBonus = $.transactionCount > ${transactionThreshold} ? ?2 : 0, " +
         "creditThreshold = ?3, " +
         "creditMultiplier = $.creditScore > ${creditThreshold} ? ?4 : 1.0, " +
         "finalScore = (${baseScore} + ${transactionBonus}) * ${creditMultiplier}" +
-        ") do (${finalScore} >= ?5 && $.premiumEligible == true)";
+        ") then (${finalScore} >= ?5 && $.premiumEligible == true)";
 
 PlaceholderValues values = PlaceholderValues.of(
         0.5,    // Age multiplier

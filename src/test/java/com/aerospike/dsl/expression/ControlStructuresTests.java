@@ -79,10 +79,10 @@ public class ControlStructuresTests {
                 Exp.add(Exp.var("x"), Exp.var("y"))
         );
 
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("with (x = 1, y = ${x} + 1) do (${x} + ${y})"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("let (x = 1, y = ${x} + 1) then (${x} + ${y})"),
                 expected);
         // different spacing style
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("with(x = 1, y = ${x} + 1) do(${x} + ${y})"),
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("let(x = 1, y = ${x} + 1) then(${x} + ${y})"),
                 expected);
     }
 }

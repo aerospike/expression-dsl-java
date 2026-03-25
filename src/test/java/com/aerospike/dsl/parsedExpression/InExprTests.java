@@ -15,7 +15,7 @@ import java.util.List;
 import static com.aerospike.dsl.util.TestUtils.NAMESPACE;
 import static com.aerospike.dsl.util.TestUtils.parseDslExpressionAndCompare;
 
-class InFilterTests {
+class InExprTests {
 
     // --- Single IN + comparison with indexes — IN always excluded from Filter ---
 

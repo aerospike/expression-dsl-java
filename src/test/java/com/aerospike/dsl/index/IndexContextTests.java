@@ -1,5 +1,7 @@
-package com.aerospike.dsl;
+package com.aerospike.dsl.index;
 
+import com.aerospike.dsl.Index;
+import com.aerospike.dsl.IndexContext;
 import com.aerospike.dsl.client.query.IndexType;
 import org.junit.jupiter.api.Test;
 

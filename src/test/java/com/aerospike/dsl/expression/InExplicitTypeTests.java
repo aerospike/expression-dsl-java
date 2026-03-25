@@ -318,7 +318,7 @@ class InExplicitTypeTests {
                 ListExp.getByValue(ListReturnType.EXISTS,
                         Exp.var("x"), Exp.listBin("list")));
         parseFilterExpressionAndCompare(
-                ExpressionContext.of("with(x = 1) do (${x} in $.list)"), expected);
+                ExpressionContext.of("let(x = 1) then (${x} in $.list)"), expected);
     }
 
     // --- PATH_OPERAND with type designator (not ambiguous) ---

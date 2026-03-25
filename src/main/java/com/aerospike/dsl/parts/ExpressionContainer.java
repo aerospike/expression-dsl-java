@@ -81,7 +81,7 @@ public class ExpressionContainer extends AbstractPart {
         LT,
         LTEQ,
         IN,
-        WITH_STRUCTURE, // unary
+        LET_STRUCTURE, // unary
         WHEN_STRUCTURE, // unary
         EXCLUSIVE_STRUCTURE, // unary
         AND_STRUCTURE,

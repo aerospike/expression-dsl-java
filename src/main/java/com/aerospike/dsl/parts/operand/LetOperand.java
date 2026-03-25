@@ -5,22 +5,22 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-public class WithOperand extends AbstractPart {
+public class LetOperand extends AbstractPart {
 
     private final String string;
     @Setter
     private AbstractPart part;
     private final boolean isLastPart;
 
-    public WithOperand(AbstractPart part, String string) {
-        super(PartType.WITH_OPERAND);
+    public LetOperand(AbstractPart part, String string) {
+        super(PartType.LET_OPERAND);
         this.string = string;
         this.part = part;
         this.isLastPart = false;
     }
 
-    public WithOperand(AbstractPart part, boolean isLastPart) {
-        super(PartType.WITH_OPERAND);
+    public LetOperand(AbstractPart part, boolean isLastPart) {
+        super(PartType.LET_OPERAND);
         this.string = null;
         this.part = part;
         this.isLastPart = isLastPart;
