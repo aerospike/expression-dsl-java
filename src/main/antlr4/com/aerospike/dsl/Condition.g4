@@ -15,15 +15,7 @@ logicalOrExpression
     ;
 
 logicalAndExpression
-    : basicExpression ('and' basicExpression)*                                  # AndExpression
-    ;
-
-basicExpression
-    : 'not' '(' expression ')'                                                  # NotExpression
-    | 'exclusive' '(' expression (',' expression)+ ')'                          # ExclusiveExpression
-    | 'let' '(' variableDefinition (',' variableDefinition)* ')' 'then' '(' expression ')'      # LetExpression
-    | 'when' '(' expressionMapping (',' expressionMapping)* ',' 'default' '=>' expression ')'   # WhenExpression
-    | comparisonExpression                                                      # ComparisonExpressionWrapper
+    : comparisonExpression ('and' comparisonExpression)*                        # AndExpression
     ;
 
 comparisonExpression
@@ -97,7 +89,19 @@ operand
     | placeholder
     | '$.' pathOrMetadata
     | '(' expression ')'
+    | notExpression
+    | exclusiveExpression
+    | letExpression
+    | whenExpression
     ;
+
+notExpression: 'not' '(' expression ')';
+
+exclusiveExpression: 'exclusive' '(' expression (',' expression)+ ')';
+
+letExpression: 'let' '(' variableDefinition (',' variableDefinition)* ')' 'then' '(' expression ')';
+
+whenExpression: 'when' '(' expressionMapping (',' expressionMapping)* ',' 'default' '=>' expression ')';
 
 functionCall
     : NAME_IDENTIFIER '(' expression (',' expression)* ')'

@@ -86,14 +86,12 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
 
     @Override
     public AbstractPart visitAndExpression(ConditionParser.AndExpressionContext ctx) {
-        // If there's only one basicExpression and no 'and' operators, just pass through
-        if (ctx.basicExpression().size() == 1) {
-            return visit(ctx.basicExpression(0));
+        if (ctx.comparisonExpression().size() == 1) {
+            return visit(ctx.comparisonExpression(0));
         }
 
         List<ExpressionContainer> expressions = new ArrayList<>();
-        // iterate through each sub-expression
-        for (ConditionParser.BasicExpressionContext ec : ctx.basicExpression()) {
+        for (ConditionParser.ComparisonExpressionContext ec : ctx.comparisonExpression()) {
             ExpressionContainer expr = (ExpressionContainer) visit(ec);
             if (expr == null) return null;
 
@@ -144,12 +142,6 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
         }
         return new ExpressionContainer(new ExclusiveStructure(expressions),
                 ExpressionContainer.ExprPartsOperation.EXCLUSIVE_STRUCTURE);
-    }
-
-    @Override
-    public AbstractPart visitComparisonExpressionWrapper(ConditionParser.ComparisonExpressionWrapperContext ctx) {
-        // Pass through the wrapper
-        return visit(ctx.comparisonExpression());
     }
 
     @Override

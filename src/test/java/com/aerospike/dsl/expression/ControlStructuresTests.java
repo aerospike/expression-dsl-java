@@ -68,6 +68,48 @@ public class ControlStructuresTests {
     }
 
     @Test
+    void whenWithArithmeticBranchesComparedToValue() {
+        Exp expected = Exp.eq(
+                Exp.cond(
+                        Exp.eq(Exp.intBin("A"), Exp.val(0)), Exp.add(Exp.intBin("D"), Exp.intBin("E")),
+                        Exp.eq(Exp.intBin("A"), Exp.val(1)), Exp.sub(Exp.intBin("D"), Exp.intBin("E")),
+                        Exp.eq(Exp.intBin("A"), Exp.val(2)), Exp.mul(Exp.intBin("D"), Exp.intBin("E")),
+                        Exp.val(-1)
+                ),
+                Exp.val(2)
+        );
+
+        TestUtils.parseFilterExpressionAndCompare(
+                ExpressionContext.of("when($.A == 0 => $.D + $.E, " +
+                        "$.A == 1 => $.D - $.E, " +
+                        "$.A == 2 => $.D * $.E, " +
+                        "default => -1) == 2"),
+                expected);
+    }
+
+    @Test
+    void notWhenWithArithmeticBranches() {
+        Exp expected = Exp.not(
+                Exp.eq(
+                        Exp.cond(
+                                Exp.eq(Exp.intBin("A"), Exp.val(0)), Exp.add(Exp.intBin("D"), Exp.intBin("E")),
+                                Exp.eq(Exp.intBin("A"), Exp.val(1)), Exp.sub(Exp.intBin("D"), Exp.intBin("E")),
+                                Exp.eq(Exp.intBin("A"), Exp.val(2)), Exp.mul(Exp.intBin("D"), Exp.intBin("E")),
+                                Exp.val(-1)
+                        ),
+                        Exp.val(2)
+                )
+        );
+
+        TestUtils.parseFilterExpressionAndCompare(
+                ExpressionContext.of("not(when($.A == 0 => $.D + $.E, " +
+                        "$.A == 1 => $.D - $.E, " +
+                        "$.A == 2 => $.D * $.E, " +
+                        "default => -1) == 2)"),
+                expected);
+    }
+
+    @Test
     void withMultipleVariablesDefinitionAndUsage() {
         Exp expected = Exp.let(
                 Exp.def("x",
