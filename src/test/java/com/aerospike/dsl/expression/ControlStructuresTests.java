@@ -81,7 +81,7 @@ public class ControlStructuresTests {
 
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("let (x = 1, y = ${x} + 1) then (${x} + ${y})"),
                 expected);
-        // different spacing style
+        // Different spacing style
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("let(x = 1, y = ${x} + 1) then(${x} + ${y})"),
                 expected);
     }

@@ -49,8 +49,8 @@ public class DSLParserImpl implements DSLParser {
             throw new DslParseException("Path must not be null or empty");
         }
 
-        ParseTree parseTree = getParseTree(pathToCtx);
         try {
+            ParseTree parseTree = getParseTree(pathToCtx);
             return buildCtx(new ExpressionConditionVisitor().visit(parseTree));
         } catch (Exception e) {
             throw new DslParseException("Could not parse the given DSL path input", e);
@@ -61,8 +61,13 @@ public class DSLParserImpl implements DSLParser {
         ConditionLexer lexer = new ConditionLexer(CharStreams.fromString(input));
         CommonTokenStream tokenStream = new CommonTokenStream(lexer);
         ConditionParser parser = new ConditionParser(tokenStream);
-        parser.addErrorListener(new DSLParserErrorListener());
-        return parser.parse();
+        DSLParserErrorListener errorListener = new DSLParserErrorListener();
+        parser.addErrorListener(errorListener);
+        ParseTree tree = parser.parse();
+        if (errorListener.hasErrors()) {
+            throw new DslParseException("Could not parse given DSL expression input");
+        }
+        return tree;
     }
 
     private ParsedExpression getParsedExpression(ParseTree parseTree, PlaceholderValues placeholderValues,

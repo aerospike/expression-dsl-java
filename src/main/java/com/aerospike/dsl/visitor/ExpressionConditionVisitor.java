@@ -54,7 +54,7 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
             // iterate through each definition
             for (ConditionParser.VariableDefinitionContext vdc : ctx.variableDefinition()) {
                 AbstractPart part = visit(vdc.expression());
-                LetOperand letOperand = new LetOperand(part, vdc.stringOperand().getText());
+                LetOperand letOperand = new LetOperand(part, vdc.NAME_IDENTIFIER().getText());
                 expressions.add(letOperand);
             }
             // last expression is the action (described after "then")

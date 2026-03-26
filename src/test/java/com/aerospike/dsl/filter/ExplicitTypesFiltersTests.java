@@ -58,7 +58,7 @@ public class ExplicitTypesFiltersTests {
         // A String constant must be quoted
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.stringBin1.get(type: STRING) == yes")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Unexpected identifier");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
@@ -104,7 +104,7 @@ public class ExplicitTypesFiltersTests {
     void listComparison_constantOnRightSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.listBin1.get(type: LIST) == [yes, of course]")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Unexpected identifier");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
@@ -128,7 +128,7 @@ public class ExplicitTypesFiltersTests {
     void mapComparison_constantOnRightSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.mapBin1.get(type: MAP) == {yes, of course}")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Unable to parse map operand");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test

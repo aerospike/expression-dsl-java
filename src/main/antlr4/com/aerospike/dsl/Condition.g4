@@ -78,7 +78,7 @@ unaryExpression
     ;
 
 variableDefinition
-    : stringOperand '=' expression
+    : NAME_IDENTIFIER '=' expression
     ;
 
 expressionMapping

@@ -115,6 +115,6 @@ public class LogicalExpressionsTests {
                 Exp.exclusive(
                         Exp.eq(Exp.stringBin("hand"), Exp.val("hook")))))
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Exclusive logical operator requires 2 or more expressions");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 }

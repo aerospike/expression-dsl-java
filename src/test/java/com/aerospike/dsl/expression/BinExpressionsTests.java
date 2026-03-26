@@ -66,7 +66,7 @@ class BinExpressionsTests {
     void negativeStringBinEquals() {
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.strBin == yes")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Unexpected identifier");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     // TODO: Will be handled in FMWK-486

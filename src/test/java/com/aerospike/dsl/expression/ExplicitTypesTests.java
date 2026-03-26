@@ -48,7 +48,7 @@ public class ExplicitTypesTests {
                 TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.stringBin1.get(type: STRING) == yes"),
                 Exp.eq(Exp.stringBin("stringBin1"), Exp.val("yes"))))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Unexpected identifier");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
@@ -130,7 +130,7 @@ public class ExplicitTypesTests {
                         Exp.eq(Exp.listBin("listBin1"), Exp.val(List.of("yes", "of course"))))
         )
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Unexpected identifier");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
@@ -243,7 +243,7 @@ public class ExplicitTypesTests {
                         Exp.eq(Exp.mapBin("mapBin1"), Exp.val(treeMapOf("yes", "of course"))))
         )
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Unable to parse map operand");
+                .hasMessageContaining("Could not parse given DSL expression input");
 
         assertThatThrownBy(() ->
                 TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.get(type: MAP) == ['yes', 'of course']"),
@@ -258,7 +258,7 @@ public class ExplicitTypesTests {
                         Exp.eq(Exp.mapBin("mapBin1"), Exp.val(List.of("yes", "of course"))))
         )
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Unable to parse map operand");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
