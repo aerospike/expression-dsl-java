@@ -249,7 +249,7 @@ public class NumericLiteralsTests {
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0xGG == 0")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input");
     }
 
     @Test
@@ -258,7 +258,7 @@ public class NumericLiteralsTests {
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("0b2 == 0")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input");
     }
 
     @Test
@@ -267,7 +267,7 @@ public class NumericLiteralsTests {
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("10. == 10.0")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input");
     }
 
     @Test

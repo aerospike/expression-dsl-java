@@ -49,7 +49,7 @@ public class ExplicitTypesTests {
                 Exp.eq(Exp.stringBin("stringBin1"), Exp.val("yes"))))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("mismatched input '<EOF>'");
+                .hasMessageContaining("[Parser] mismatched input '<EOF>'");
     }
 
     @Test
@@ -132,7 +132,7 @@ public class ExplicitTypesTests {
         )
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("mismatched input ','");
+                .hasMessageContaining("[Parser] mismatched input ','");
     }
 
     @Test
@@ -176,7 +176,7 @@ public class ExplicitTypesTests {
         )
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input");
     }
 
     @SuppressWarnings("unchecked")
@@ -247,7 +247,7 @@ public class ExplicitTypesTests {
         )
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("extraneous input 'yes'");
+                .hasMessageContaining("[Parser] extraneous input 'yes'");
 
         assertThatThrownBy(() ->
                 TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.get(type: MAP) == ['yes', 'of course']"),
@@ -263,7 +263,7 @@ public class ExplicitTypesTests {
         )
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("extraneous input '['");
+                .hasMessageContaining("[Parser] extraneous input '['");
     }
 
     @Test
@@ -318,7 +318,7 @@ public class ExplicitTypesTests {
         )
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input");
 
         assertThatThrownBy(() ->
                 TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("['yes', 'of course'] == $.mapBin1.get(type: MAP)"), // incorrect: must be {}
@@ -334,7 +334,7 @@ public class ExplicitTypesTests {
         )
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input");
     }
 
     @Test

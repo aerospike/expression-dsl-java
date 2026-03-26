@@ -95,22 +95,22 @@ public class LogicalExpressionsTests {
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("($.intBin1 > 100 and ($.intBin2 > 100) or")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input");
 
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("and ($.intBin1 > 100 and ($.intBin2 > 100)")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("extraneous input 'and'");
+                .hasMessageContaining("[Parser] extraneous input 'and'");
 
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("($.intBin1 > 100 and ($.intBin2 > 100) not")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input");
 
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("($.intBin1 > 100 and ($.intBin2 > 100) exclusive")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input");
     }
 
     @Test
@@ -120,6 +120,6 @@ public class LogicalExpressionsTests {
                         Exp.eq(Exp.stringBin("hand"), Exp.val("hook")))))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input");
     }
 }

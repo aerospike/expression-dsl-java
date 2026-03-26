@@ -57,14 +57,23 @@ public class DSLParserImpl implements DSLParser {
         }
     }
 
-    private ParseTree getParseTree(String input) {
+    private ConditionParser createParser(String input, DSLParserErrorListener errorListener) {
         ConditionLexer lexer = new ConditionLexer(CharStreams.fromString(input));
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(errorListener);
         CommonTokenStream tokenStream = new CommonTokenStream(lexer);
         ConditionParser parser = new ConditionParser(tokenStream);
-        DSLParserErrorListener errorListener = new DSLParserErrorListener();
+        parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
+        return parser;
+    }
+
+    private ParseTree getParseTree(String input) {
+        DSLParserErrorListener errorListener = new DSLParserErrorListener();
+        ConditionParser parser = createParser(input, errorListener);
         ParseTree tree = parser.parse();
-        String errorMessage = errorListener.getFirstErrorMessage();
+
+        String errorMessage = errorListener.getErrorMessage();
         if (errorMessage != null) {
             throw new DslParseException("Could not parse given DSL expression input: " + errorMessage);
         }

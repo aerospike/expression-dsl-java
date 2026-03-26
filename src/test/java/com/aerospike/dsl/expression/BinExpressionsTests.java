@@ -67,7 +67,7 @@ class BinExpressionsTests {
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.strBin == yes")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("mismatched input '<EOF>'");
+                .hasMessageContaining("[Parser] mismatched input '<EOF>'");
     }
 
     // TODO: Will be handled in FMWK-486
