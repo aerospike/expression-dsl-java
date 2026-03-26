@@ -58,7 +58,8 @@ public class ExplicitTypesFiltersTests {
         // A String constant must be quoted
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.stringBin1.get(type: STRING) == yes")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Could not parse given DSL expression input");
+                .hasMessageContaining("Could not parse given DSL expression input")
+                .hasMessageContaining("mismatched input '<EOF>'");
     }
 
     @Test
@@ -104,7 +105,8 @@ public class ExplicitTypesFiltersTests {
     void listComparison_constantOnRightSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.listBin1.get(type: LIST) == [yes, of course]")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Could not parse given DSL expression input");
+                .hasMessageContaining("Could not parse given DSL expression input")
+                .hasMessageContaining("mismatched input ','");
     }
 
     @Test
@@ -116,7 +118,7 @@ public class ExplicitTypesFiltersTests {
     void listComparison_constantOnLeftSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("[yes, of course] == $.listBin1.get(type: LIST)")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Could not parse given DSL expression input");
+                .hasMessageContaining("Could not parse given DSL expression input");
     }
 
     @Test
@@ -128,7 +130,8 @@ public class ExplicitTypesFiltersTests {
     void mapComparison_constantOnRightSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.mapBin1.get(type: MAP) == {yes, of course}")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Could not parse given DSL expression input");
+                .hasMessageContaining("Could not parse given DSL expression input")
+                .hasMessageContaining("extraneous input 'yes'");
     }
 
     @Test
@@ -140,7 +143,8 @@ public class ExplicitTypesFiltersTests {
     void mapComparison_constantOnLeftSide_NegativeTest() {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("{yes, of course} == $.mapBin1.get(type: MAP)")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessage("Could not parse given DSL expression input");
+                .hasMessageContaining("Could not parse given DSL expression input")
+                .hasMessageContaining("no viable alternative at input");
     }
 
     @Test

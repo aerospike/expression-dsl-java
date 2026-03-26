@@ -64,8 +64,9 @@ public class DSLParserImpl implements DSLParser {
         DSLParserErrorListener errorListener = new DSLParserErrorListener();
         parser.addErrorListener(errorListener);
         ParseTree tree = parser.parse();
-        if (errorListener.hasErrors()) {
-            throw new DslParseException("Could not parse given DSL expression input");
+        String errorMessage = errorListener.getFirstErrorMessage();
+        if (errorMessage != null) {
+            throw new DslParseException("Could not parse given DSL expression input: " + errorMessage);
         }
         return tree;
     }

@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.Token;
 
 class DSLParserErrorListener extends BaseErrorListener {
 
-    private boolean hasErrors;
+    private String firstErrorMessage;
 
     @Override
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
@@ -34,10 +34,12 @@ class DSLParserErrorListener extends BaseErrorListener {
                 throw new DslParseException("Invalid float literal: " + token.getText() + nextText);
             }
         }
-        hasErrors = true;
+        if (firstErrorMessage == null) {
+            firstErrorMessage = msg;
+        }
     }
 
-    boolean hasErrors() {
-        return hasErrors;
+    String getFirstErrorMessage() {
+        return firstErrorMessage;
     }
 }

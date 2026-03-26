@@ -306,7 +306,8 @@ class ListExpressionsTests {
     void negativeSyntaxList() {
         assertThatThrownBy(() -> parseFilterExp(ExpressionContext.of("$.listBin1.[stringValue] == 100")))
                 .isInstanceOf(DslParseException.class)
-                .hasMessageContaining("Could not parse given DSL expression input");
+                .hasMessageContaining("Could not parse given DSL expression input")
+                .hasMessageContaining("no viable alternative at input");
     }
 
     //@Test
