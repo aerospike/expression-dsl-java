@@ -348,7 +348,7 @@ class InNegativeTests {
     void negVarDefLetInScalarVar() {
         assertThatThrownBy(() -> parseFilterExp(
                 ExpressionContext.of(
-                        "let(x = 5, y = ($.bin.get(type: INT) in ${x})) then (y == true)")))
+                        "let(x = 5, y = ($.bin.get(type: INT) in ${x})) then (${y} == true)")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("IN operation requires a List as the right operand")
                 .hasMessageContaining("variable 'x'");
