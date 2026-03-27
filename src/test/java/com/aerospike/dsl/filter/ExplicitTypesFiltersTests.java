@@ -59,7 +59,8 @@ public class ExplicitTypesFiltersTests {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.stringBin1.get(type: STRING) == yes")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("[Parser] mismatched input '<EOF>'");
+                .hasMessageContaining("[Parser] mismatched input '<EOF>'")
+                .hasMessageContaining("at character 37");
     }
 
     @Test
@@ -106,7 +107,8 @@ public class ExplicitTypesFiltersTests {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.listBin1.get(type: LIST) == [yes, of course]")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("[Parser] mismatched input ','");
+                .hasMessageContaining("[Parser] mismatched input ','")
+                .hasMessageContaining("at character 34");
     }
 
     @Test
@@ -119,7 +121,8 @@ public class ExplicitTypesFiltersTests {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("[yes, of course] == $.listBin1.get(type: LIST)")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("[Parser] no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input")
+                .hasMessageContaining("at character 4");
     }
 
     @Test
@@ -132,7 +135,8 @@ public class ExplicitTypesFiltersTests {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("$.mapBin1.get(type: MAP) == {yes, of course}")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("[Parser] extraneous input 'yes'");
+                .hasMessageContaining("[Parser] extraneous input 'yes'")
+                .hasMessageContaining("at character 29");
     }
 
     @Test
@@ -145,7 +149,8 @@ public class ExplicitTypesFiltersTests {
         assertThatThrownBy(() -> parseFilter(ExpressionContext.of("{yes, of course} == $.mapBin1.get(type: MAP)")))
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Could not parse given DSL expression input")
-                .hasMessageContaining("[Parser] no viable alternative at input");
+                .hasMessageContaining("[Parser] no viable alternative at input")
+                .hasMessageContaining("at character 1");
     }
 
     @Test

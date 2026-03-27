@@ -37,11 +37,11 @@ class DSLParserErrorListener extends BaseErrorListener {
         }
         if (recognizer instanceof Parser) {
             if (firstParserError == null) {
-                firstParserError = msg;
+                firstParserError = msg + " at character " + charPositionInLine;
             }
         } else {
             if (firstLexerError == null) {
-                firstLexerError = msg;
+                firstLexerError = msg + " at character " + charPositionInLine;
             }
         }
     }
