@@ -26,6 +26,10 @@ public class PathFunction extends AbstractPart {
         };
     }
 
+    /**
+     * Returns the source {@link Exp.Type} for a cast — the type the value must
+     * already have before the cast is applied (e.g., casting to INT requires a FLOAT source).
+     */
     public static Exp.Type castSourceExpType(CastType castType) {
         return switch (castType) {
             case INT -> Exp.Type.FLOAT;

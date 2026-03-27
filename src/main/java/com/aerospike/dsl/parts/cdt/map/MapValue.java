@@ -7,6 +7,7 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.objectToExp;
 import static com.aerospike.dsl.util.ParsingUtils.parseValueIdentifier;
 
 public class MapValue extends MapPart {
@@ -23,15 +24,8 @@ public class MapValue extends MapPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        return MapExp.getByValue(cdtReturnType, valueToExp(), Exp.bin(basePath.getBinPart().getBinName(),
+        return MapExp.getByValue(cdtReturnType, objectToExp(value), Exp.bin(basePath.getBinPart().getBinName(),
                 basePath.getBinType()), context);
-    }
-
-    private Exp valueToExp() {
-        if (value instanceof Boolean b) return Exp.val(b);
-        if (value instanceof String s) return Exp.val(s);
-        if (value instanceof Float f) return Exp.val(f);
-        return Exp.val((Integer) value);
     }
 
     @Override
