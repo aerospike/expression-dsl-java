@@ -35,12 +35,15 @@ public class Path extends AbstractPart {
             cdtReturnType = ((CdtPart) lastPathPart).getReturnType(pathFunction.getReturnParam());
         }
 
-        if (lastPathPart != null) { // only if there are other parts except a bin
-            return switch (pathFunction.getPathFunctionType()) {
-                // CAST is the same as GET with a different type
+        if (lastPathPart != null) {
+            Exp exp = switch (pathFunction.getPathFunctionType()) {
                 case GET, COUNT, CAST -> processGet(basePath, lastPathPart, valueType, cdtReturnType);
                 case SIZE -> processSize(basePath, lastPathPart, valueType, cdtReturnType);
             };
+            if (pathFunction.getPathFunctionType() == PathFunction.PathFunctionType.CAST && exp != null) {
+                exp = pathFunction.getBinType() == Exp.Type.FLOAT ? Exp.toFloat(exp) : Exp.toInt(exp);
+            }
+            return exp;
         }
         return null;
     }

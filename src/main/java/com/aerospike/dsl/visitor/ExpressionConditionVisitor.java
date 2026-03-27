@@ -1013,30 +1013,39 @@ public class ExpressionConditionVisitor extends ConditionBaseVisitor<AbstractPar
     @Override
     public AbstractPart visitPath(ConditionParser.PathContext ctx) {
         BasePath basePath = (BasePath) visit(ctx.basePath());
-        List<AbstractPart> cdtParts = basePath.getCdtParts();
-        overrideWithPathFunction(basePath.getBinPart(), ctx);
+        PathFunction pathFunction = visitPathFunctionIfPresent(ctx);
 
-        // if there are other parts except bin, get a corresponding Exp
-        if (!cdtParts.isEmpty() || ctx.pathFunction() != null && ctx.pathFunction().pathFunctionCount() != null) {
-            return new Path(basePath, ctx.pathFunction() == null
-                    ? null
-                    : (PathFunction) visit(ctx.pathFunction()));
+        if (!basePath.getCdtParts().isEmpty()
+                || pathFunction != null && pathFunction.getPathFunctionType() == PathFunction.PathFunctionType.COUNT) {
+            return new Path(basePath, pathFunction);
         }
+
+        if (pathFunction != null && pathFunction.getPathFunctionType() == PathFunction.PathFunctionType.CAST) {
+            return buildBinCast(basePath.getBinPart(), pathFunction);
+        }
+
+        overrideBinWithPathFunction(basePath.getBinPart(), pathFunction);
         return basePath.getBinPart();
     }
 
-    private void overrideWithPathFunction(BinPart binPart, ConditionParser.PathContext ctx) {
-        ConditionParser.PathFunctionContext pathFunctionContext = ctx.pathFunction();
+    private PathFunction visitPathFunctionIfPresent(ConditionParser.PathContext ctx) {
+        return ctx.pathFunction() != null ? (PathFunction) visit(ctx.pathFunction()) : null;
+    }
 
-        // Override with path function (explicit get or cast)
-        if (pathFunctionContext != null) {
-            PathFunction pathFunction = (PathFunction) visit(pathFunctionContext);
-            if (pathFunction != null) {
-                Exp.Type type = pathFunction.getBinType();
-                if (type != null) {
-                    binPart.updateExp(type);
-                    binPart.setTypeExplicitlySet(true);
-                }
+    private AbstractPart buildBinCast(BinPart binPart, PathFunction pathFunction) {
+        String castText = pathFunction.getBinType().toString();
+        PathFunction.CastType castType = PathFunction.CastType.valueOf(castText);
+        binPart.updateExp(PathFunction.castSourceExpType(castType));
+        binPart.setTypeExplicitlySet(true);
+        return new ExpressionContainer(binPart, PathFunction.castTypeToOperation(castType));
+    }
+
+    private void overrideBinWithPathFunction(BinPart binPart, PathFunction pathFunction) {
+        if (pathFunction != null) {
+            Exp.Type type = pathFunction.getBinType();
+            if (type != null) {
+                binPart.updateExp(type);
+                binPart.setTypeExplicitlySet(true);
             }
         }
     }

@@ -2,28 +2,20 @@ package com.aerospike.dsl.expression;
 
 import com.aerospike.dsl.DslParseException;
 import com.aerospike.dsl.ExpressionContext;
+import com.aerospike.dsl.client.cdt.ListReturnType;
+import com.aerospike.dsl.client.cdt.MapReturnType;
 import com.aerospike.dsl.client.exp.Exp;
+import com.aerospike.dsl.client.exp.ListExp;
+import com.aerospike.dsl.client.exp.MapExp;
 import com.aerospike.dsl.util.TestUtils;
+import com.aerospike.dsl.client.cdt.CTX;
+import com.aerospike.dsl.client.Value;
 import org.junit.jupiter.api.Test;
 
 import static com.aerospike.dsl.util.TestUtils.parseFilterExp;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class CastingTests {
-
-    @Test
-    void floatToIntComparison() {
-        Exp expectedExp = Exp.gt(Exp.intBin("intBin1"), Exp.intBin("floatBin1"));
-        // Int is default
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.intBin1 > $.floatBin1.asInt()"), expectedExp);
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.intBin1.get(type: INT) > $.floatBin1.asInt()"), expectedExp);
-    }
-
-    @Test
-    void intToFloatComparison() {
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.intBin1.get(type: INT) > $.intBin2.asFloat()"),
-                Exp.gt(Exp.intBin("intBin1"), Exp.floatBin("intBin2")));
-    }
 
     @Test
     void negativeInvalidTypesComparison() {
@@ -99,4 +91,166 @@ public class CastingTests {
                 .isInstanceOf(DslParseException.class)
                 .hasMessageContaining("Cannot compare");
     }
+
+    // --- Explicit bin casting (asFloat/asInt produce Exp.toFloat/toInt wrappers) ---
+
+    @Test
+    void binAsFloat() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.bin.asFloat() == 1.0"),
+                Exp.eq(Exp.toFloat(Exp.intBin("bin")), Exp.val(1.0)));
+    }
+
+    @Test
+    void binAsInt() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.bin.asInt() == 1"),
+                Exp.eq(Exp.toInt(Exp.floatBin("bin")), Exp.val(1)));
+    }
+
+    @Test
+    void binAsIntInComparison() {
+        Exp expectedExp = Exp.gt(Exp.intBin("intBin1"), Exp.toInt(Exp.floatBin("floatBin1")));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.intBin1 > $.floatBin1.asInt()"), expectedExp);
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.intBin1.get(type: INT) > $.floatBin1.asInt()"), expectedExp);
+    }
+
+    @Test
+    void binAsFloatInComparison() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.intBin1.get(type: INT) > $.intBin2.asFloat()"),
+                Exp.gt(Exp.intBin("intBin1"), Exp.toFloat(Exp.intBin("intBin2"))));
+    }
+
+    @Test
+    void binAsFloatInAddition() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.binA.asFloat() + 4.0 == 5.0"),
+                Exp.eq(Exp.add(Exp.toFloat(Exp.intBin("binA")), Exp.val(4.0)), Exp.val(5.0)));
+    }
+
+    @Test
+    void binAsIntInSubtraction() {
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.binA.asInt() - 3 == 0"),
+                Exp.eq(Exp.sub(Exp.toInt(Exp.floatBin("binA")), Exp.val(3)), Exp.val(0)));
+    }
+
+    // --- CDT list casting ---
+
+    @Test
+    void listIndexAsInt() {
+        Exp expected = Exp.eq(
+                Exp.toInt(ListExp.getByIndex(ListReturnType.VALUE, Exp.Type.FLOAT,
+                        Exp.val(0), Exp.listBin("listBin1"))),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].asInt() == 100"), expected);
+    }
+
+    @Test
+    void listIndexAsFloat() {
+        Exp expected = Exp.eq(
+                Exp.toFloat(ListExp.getByIndex(ListReturnType.VALUE, Exp.Type.INT,
+                        Exp.val(0), Exp.listBin("listBin1"))),
+                Exp.val(100.0));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[0].asFloat() == 100.0"), expected);
+    }
+
+    @Test
+    void listValueAsInt() {
+        Exp expected = Exp.eq(
+                Exp.toInt(ListExp.getByValue(ListReturnType.VALUE,
+                        Exp.val(100), Exp.listBin("listBin1"))),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=100].asInt() == 100"), expected);
+    }
+
+    @Test
+    void listRankAsInt() {
+        Exp expected = Exp.eq(
+                Exp.toInt(ListExp.getByRank(ListReturnType.VALUE, Exp.Type.FLOAT,
+                        Exp.val(-1), Exp.listBin("listBin1"))),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-1].asInt() == 100"), expected);
+    }
+
+    @Test
+    void listValueAsFloat() {
+        Exp expected = Exp.eq(
+                Exp.toFloat(ListExp.getByValue(ListReturnType.VALUE,
+                        Exp.val(100), Exp.listBin("listBin1"))),
+                Exp.val(100.0));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[=100].asFloat() == 100.0"), expected);
+    }
+
+    @Test
+    void listRankAsFloat() {
+        Exp expected = Exp.eq(
+                Exp.toFloat(ListExp.getByRank(ListReturnType.VALUE, Exp.Type.INT,
+                        Exp.val(-1), Exp.listBin("listBin1"))),
+                Exp.val(100.0));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.listBin1.[#-1].asFloat() == 100.0"), expected);
+    }
+
+    // --- CDT map casting ---
+
+    @Test
+    void mapKeyAsInt() {
+        Exp expected = Exp.eq(
+                Exp.toInt(MapExp.getByKey(MapReturnType.VALUE, Exp.Type.FLOAT,
+                        Exp.val("a"), Exp.mapBin("mapBin1"))),
+                Exp.val(200));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.asInt() == 200"), expected);
+    }
+
+    @Test
+    void mapKeyAsFloat() {
+        Exp expected = Exp.eq(
+                Exp.toFloat(MapExp.getByKey(MapReturnType.VALUE, Exp.Type.INT,
+                        Exp.val("a"), Exp.mapBin("mapBin1"))),
+                Exp.val(200.0));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.asFloat() == 200.0"), expected);
+    }
+
+    @Test
+    void mapIndexAsInt() {
+        Exp expected = Exp.eq(
+                Exp.toInt(MapExp.getByIndex(MapReturnType.VALUE, Exp.Type.FLOAT,
+                        Exp.val(0), Exp.mapBin("mapBin1"))),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{0}.asInt() == 100"), expected);
+    }
+
+    @Test
+    void mapIndexAsFloat() {
+        Exp expected = Exp.eq(
+                Exp.toFloat(MapExp.getByIndex(MapReturnType.VALUE, Exp.Type.INT,
+                        Exp.val(0), Exp.mapBin("mapBin1"))),
+                Exp.val(100.0));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{0}.asFloat() == 100.0"), expected);
+    }
+
+    @Test
+    void mapValueAsInt() {
+        Exp expected = Exp.eq(
+                Exp.toInt(MapExp.getByValue(MapReturnType.VALUE,
+                        Exp.val(100), Exp.mapBin("mapBin1"))),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{=100}.asInt() == 100"), expected);
+    }
+
+    @Test
+    void mapRankAsInt() {
+        Exp expected = Exp.eq(
+                Exp.toInt(MapExp.getByRank(MapReturnType.VALUE, Exp.Type.FLOAT,
+                        Exp.val(-1), Exp.mapBin("mapBin1"))),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{#-1}.asInt() == 100"), expected);
+    }
+
+    @Test
+    void nestedMapRankAsInt() {
+        Exp expected = Exp.eq(
+                Exp.toInt(MapExp.getByRank(MapReturnType.VALUE, Exp.Type.FLOAT,
+                        Exp.val(-1), Exp.mapBin("mapBin1"),
+                        CTX.mapKey(Value.get("a")))),
+                Exp.val(100));
+        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.{#-1}.asInt() == 100"), expected);
+    }
+
 }

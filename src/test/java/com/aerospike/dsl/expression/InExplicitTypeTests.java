@@ -191,7 +191,7 @@ class InExplicitTypeTests {
     @Test
     void castIntBinInBin() {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
-                Exp.intBin("val"), Exp.listBin("list"));
+                Exp.toInt(Exp.floatBin("val")), Exp.listBin("list"));
         parseFilterExpressionAndCompare(
                 ExpressionContext.of("$.val.asInt() in $.list"), expected);
     }
@@ -199,7 +199,7 @@ class InExplicitTypeTests {
     @Test
     void castFloatBinInBin() {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
-                Exp.floatBin("val"), Exp.listBin("list"));
+                Exp.toFloat(Exp.intBin("val")), Exp.listBin("list"));
         parseFilterExpressionAndCompare(
                 ExpressionContext.of("$.val.asFloat() in $.list"), expected);
     }
@@ -207,7 +207,7 @@ class InExplicitTypeTests {
     @Test
     void castIntBinInPath() {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
-                Exp.intBin("val"),
+                Exp.toInt(Exp.floatBin("val")),
                 MapExp.getByKey(MapReturnType.VALUE, Exp.Type.STRING,
                         Exp.val("tags"), Exp.mapBin("items")));
         parseFilterExpressionAndCompare(
@@ -217,7 +217,7 @@ class InExplicitTypeTests {
     @Test
     void castFloatBinInPath() {
         Exp expected = ListExp.getByValue(ListReturnType.EXISTS,
-                Exp.floatBin("val"),
+                Exp.toFloat(Exp.intBin("val")),
                 MapExp.getByKey(MapReturnType.VALUE, Exp.Type.STRING,
                         Exp.val("tags"), Exp.mapBin("items")));
         parseFilterExpressionAndCompare(

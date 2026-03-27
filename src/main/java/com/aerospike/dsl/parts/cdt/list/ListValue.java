@@ -7,6 +7,7 @@ import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.client.exp.ListExp;
 import com.aerospike.dsl.parts.path.BasePath;
 
+import static com.aerospike.dsl.util.ParsingUtils.objectToExp;
 import static com.aerospike.dsl.util.ParsingUtils.parseValueIdentifier;
 
 public class ListValue extends ListPart {
@@ -23,13 +24,7 @@ public class ListValue extends ListPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        Exp valueExp = switch (valueType) {
-            case BOOL -> Exp.val((Boolean) value);
-            case STRING -> Exp.val((String) value);
-            case FLOAT -> Exp.val((Float) value);
-            default -> Exp.val((Integer) value); // for getByValue the default is INT
-        };
-        return ListExp.getByValue(cdtReturnType, valueExp, Exp.bin(basePath.getBinPart().getBinName(),
+        return ListExp.getByValue(cdtReturnType, objectToExp(value), Exp.bin(basePath.getBinPart().getBinName(),
                 basePath.getBinType()), context);
     }
 

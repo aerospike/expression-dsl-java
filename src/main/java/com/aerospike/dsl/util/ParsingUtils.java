@@ -2,6 +2,7 @@ package com.aerospike.dsl.util;
 
 import com.aerospike.dsl.ConditionParser;
 import com.aerospike.dsl.DslParseException;
+import com.aerospike.dsl.client.exp.Exp;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -164,6 +165,21 @@ public class ParsingUtils {
         }
         throw new DslParseException(
                 "Value range requires integer operands, got: %s".formatted(ctx.getText()));
+    }
+
+    /**
+     * Converts a parsed value object to an {@link Exp} value expression.
+     * Supports the types produced by {@link #parseValueIdentifier}: {@link String} and {@link Integer}.
+     *
+     * @param value The parsed value object
+     * @return The corresponding {@link Exp} value expression
+     * @throws DslParseException if the value type is not supported
+     */
+    public static Exp objectToExp(Object value) {
+        if (value instanceof String s) return Exp.val(s);
+        if (value instanceof Integer i) return Exp.val(i);
+        throw new DslParseException(
+                "Unsupported value type for Exp conversion: " + value.getClass().getSimpleName());
     }
 
     /**
