@@ -35,7 +35,6 @@ public class MapExpressionsTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.get(type: INT) == 200"), expected);
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.get(type: INT, return: VALUE) == 200"),
                 expected);
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.asInt() == 200"), expected);
 
         // String
         expected = Exp.eq(
@@ -218,7 +217,6 @@ public class MapExpressionsTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{0}.get(type: INT) == 100"), expected);
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{0}.get(type: INT, return: VALUE) == 100"),
                 expected);
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{0}.asInt() == 100"), expected);
 
         Exp expected2 = Exp.eq(
                 MapExp.getByIndex(
@@ -247,7 +245,6 @@ public class MapExpressionsTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{=100}.get(type: INT) == 100"), expected);
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{=100}.get(type: INT, return: VALUE) == 100"),
                 expected);
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{=100}.asInt() == 100"), expected);
     }
 
     @Test
@@ -304,7 +301,6 @@ public class MapExpressionsTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{#-1}.get(type: INT) == 100"), expected);
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{#-1}.get(type: INT, return: VALUE) == 100"),
                 expected);
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.{#-1}.asInt() == 100"), expected);
     }
 
     @Test
@@ -351,7 +347,6 @@ public class MapExpressionsTests {
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.{#-1}.get(type: INT) == 100"), expected);
         TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.{#-1}.get(type: INT, return: VALUE) == 100"),
                 expected);
-        TestUtils.parseFilterExpressionAndCompare(ExpressionContext.of("$.mapBin1.a.{#-1}.asInt() == 100"), expected);
     }
 
     @Test

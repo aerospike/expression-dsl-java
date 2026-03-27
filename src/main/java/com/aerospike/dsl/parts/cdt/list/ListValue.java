@@ -23,14 +23,15 @@ public class ListValue extends ListPart {
 
     @Override
     public Exp constructExp(BasePath basePath, Exp.Type valueType, int cdtReturnType, CTX[] context) {
-        Exp valueExp = switch (valueType) {
-            case BOOL -> Exp.val((Boolean) value);
-            case STRING -> Exp.val((String) value);
-            case FLOAT -> Exp.val((Float) value);
-            default -> Exp.val((Integer) value); // for getByValue the default is INT
-        };
-        return ListExp.getByValue(cdtReturnType, valueExp, Exp.bin(basePath.getBinPart().getBinName(),
+        return ListExp.getByValue(cdtReturnType, valueToExp(), Exp.bin(basePath.getBinPart().getBinName(),
                 basePath.getBinType()), context);
+    }
+
+    private Exp valueToExp() {
+        if (value instanceof Boolean b) return Exp.val(b);
+        if (value instanceof String s) return Exp.val(s);
+        if (value instanceof Float f) return Exp.val(f);
+        return Exp.val((Integer) value);
     }
 
     @Override

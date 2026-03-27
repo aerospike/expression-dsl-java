@@ -353,9 +353,14 @@ public class VisitorUtils {
                 binExp = Exp.bin(binPart.getBinName(), binType);
                 yield anotherPart.getExp();
             }
-            case EXPRESSION_CONTAINER, PATH_OPERAND, VARIABLE_OPERAND ->
-                // Can't validate with expression container
-                    anotherPart.getExp();
+            case EXPRESSION_CONTAINER -> {
+                Exp.Type resolvedType = resolveExpType(anotherPart);
+                if (resolvedType != null) {
+                    validateComparableTypes(binPart.getExpType(), resolvedType);
+                }
+                yield anotherPart.getExp();
+            }
+            case PATH_OPERAND, VARIABLE_OPERAND -> anotherPart.getExp();
             case BIN_PART -> {
                 // Both are bin parts
                 validateComparableTypes(binPart.getExpType(), anotherPart.getExpType());

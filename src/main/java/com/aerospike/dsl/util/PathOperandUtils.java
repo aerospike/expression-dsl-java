@@ -39,7 +39,6 @@ public class PathOperandUtils {
      * @return The determined {@link Exp.Type} for the value
      */
     public static Exp.Type processValueType(AbstractPart lastPathPart, PathFunction pathFunction) {
-        // there is always a path function with non-null function type and return param
         if (pathFunction.getBinType() == null) {
             if (isListTypeDesignator(lastPathPart)) {
                 return Exp.Type.LIST;
@@ -48,6 +47,16 @@ public class PathOperandUtils {
             } else {
                 return findValueType(lastPathPart, pathFunction.getPathFunctionType());
             }
+        }
+        if (pathFunction.getPathFunctionType() == PathFunction.PathFunctionType.CAST) {
+            // Value selectors (getByValue/getByValueList/getByValueRange) have no return-type
+            // parameter; their constructExp ignores valueType. The cast wrapping is applied
+            // afterward in Path.processPath(), so the source-type logic does not apply here.
+            if (isValueSelector(lastPathPart)) {
+                return TypeUtils.getDefaultType(lastPathPart);
+            }
+            PathFunction.CastType castType = PathFunction.CastType.valueOf(pathFunction.getBinType().toString());
+            return PathFunction.castSourceExpType(castType);
         }
         return Exp.Type.valueOf(pathFunction.getBinType().toString());
     }
@@ -224,6 +233,20 @@ public class PathOperandUtils {
      */
     private static boolean isMapTypeDesignator(AbstractPart cdtPart) {
         return cdtPart.getPartType() == MAP_PART && ((MapPart) cdtPart).getMapPartType().equals(MAP_TYPE_DESIGNATOR);
+    }
+
+    private static boolean isValueSelector(AbstractPart cdtPart) {
+        if (cdtPart.getPartType() == LIST_PART) {
+            ListPart.ListPartType type = ((ListPart) cdtPart).getListPartType();
+            return type == ListPart.ListPartType.VALUE || type == ListPart.ListPartType.VALUE_LIST
+                    || type == ListPart.ListPartType.VALUE_RANGE;
+        }
+        if (cdtPart.getPartType() == MAP_PART) {
+            MapPart.MapPartType type = ((MapPart) cdtPart).getMapPartType();
+            return type == MapPart.MapPartType.VALUE || type == MapPart.MapPartType.VALUE_LIST
+                    || type == MapPart.MapPartType.VALUE_RANGE;
+        }
+        return false;
     }
 
     /**

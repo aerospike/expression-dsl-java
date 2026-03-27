@@ -2,6 +2,7 @@ package com.aerospike.dsl.parts.path;
 
 import com.aerospike.dsl.client.exp.Exp;
 import com.aerospike.dsl.parts.AbstractPart;
+import com.aerospike.dsl.parts.ExpressionContainer.ExprPartsOperation;
 import lombok.Getter;
 
 @Getter
@@ -22,6 +23,20 @@ public class PathFunction extends AbstractPart {
         return switch (castType) {
             case INT -> Exp.Type.INT;
             case FLOAT -> Exp.Type.FLOAT;
+        };
+    }
+
+    public static Exp.Type castSourceExpType(CastType castType) {
+        return switch (castType) {
+            case INT -> Exp.Type.FLOAT;
+            case FLOAT -> Exp.Type.INT;
+        };
+    }
+
+    public static ExprPartsOperation castTypeToOperation(CastType castType) {
+        return switch (castType) {
+            case INT -> ExprPartsOperation.TO_INT;
+            case FLOAT -> ExprPartsOperation.TO_FLOAT;
         };
     }
 
