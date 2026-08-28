@@ -1,3 +1,6 @@
+> [!WARNING]
+> This is not the latest copy of the AEL syntax or parser and SHOULD NOT BE USED as an AEL reference
+
 # Aerospike Expression Language
 [![Build project](https://github.com/citrusleaf/aerospike-expression-lang-java/actions/workflows/build.yml/badge.svg)](https://github.com/citrusleaf/aerospike-expression-lang-java/actions/workflows/build.yml)
 
